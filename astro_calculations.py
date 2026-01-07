@@ -46,7 +46,14 @@ import requests # Uzak dosyaları indirmek için
 
 # Swiss Ephemeris ayarları
 REMOTE_EPHE_BASE_URL = "https://erkanerdem.net/ephe/"
-SWISSEPH_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ephe")
+
+# Vercel/Serverless kontrolü (Read-only file system hatasını önlemek için)
+IS_SERVERLESS = os.environ.get("VERCEL") or os.environ.get("NETLIFY") or os.environ.get("GAE_SERVICE")
+if IS_SERVERLESS:
+    SWISSEPH_DATA_DIR = "/tmp/ephe"
+    logger.info("Serverless ortam algılandı, efemeris dizini /tmp/ephe olarak ayarlandı.")
+else:
+    SWISSEPH_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ephe")
 
 def ensure_ephe_file(filename):
     """Eğer dosya yerelde yoksa uzak sunucudan indirir."""
@@ -72,8 +79,6 @@ if not os.path.exists(SWISSEPH_DATA_DIR):
     os.makedirs(SWISSEPH_DATA_DIR, exist_ok=True)
 
 # Temel efemeris dosyalarını kontrol et/indir (Sık kullanılanlar)
-# Not: Swisseph ihtiyaç duydukça diğerlerini de isteyebilir, 
-# ama başlangıç için en kritikleri bunlardır.
 core_files = ["sepl_00.se1", "semo_00.se1", "seas_00.se1"]
 for cf in core_files:
     ensure_ephe_file(cf)
