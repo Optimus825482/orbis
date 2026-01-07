@@ -1,0 +1,893 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard - Astro AI{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<style>
+    /* Tab yapısı için CSS */
+    .tabs-container {
+        width: 100%;
+    }
+
+    .tabs-header {
+        display: flex;
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 1.5rem;
+    }
+
+    .dark .tabs-header {
+        border-color: #334155;
+    }
+
+    .tab-button {
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        color: #6b7280;
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .dark .tab-button {
+        color: #9ca3af;
+    }
+
+    .tab-button:hover {
+        color: #4b5563;
+    }
+
+    .dark .tab-button:hover {
+        color: #d1d5db;
+    }
+
+    .tab-button.active {
+        color: #6366f1;
+        border-bottom-color: #6366f1;
+    }
+
+    .dark .tab-button.active {
+        color: #818cf8;
+        border-bottom-color: #818cf8;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* Konum öneri kutuları için stillendirmeler */
+    .location-suggestions-container {
+        position: relative;
+    }
+
+    .location-suggestions {
+        position: absolute;
+        z-index: 50;
+        background-color: white;
+        width: 100%;
+        margin-top: 0.25rem;
+        border-radius: 0.375rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e5e7eb;
+        max-height: 15rem;
+        overflow-y: auto;
+    }
+
+    .dark .location-suggestions {
+        background-color: #334155;
+        border-color: #475569;
+    }
+
+    .location-suggestion-item {
+        padding: 0.5rem 0.75rem;
+        cursor: pointer;
+        color: #374151;
+        font-size: 0.875rem;
+    }
+
+    .dark .location-suggestion-item {
+        color: #e5e7eb;
+    }
+
+    .location-suggestion-item:hover {
+        background-color: #f3f4f6;
+    }
+
+    .dark .location-suggestion-item:hover {
+        background-color: #1e293b;
+    }
+
+    /* İyileştirilmiş card stilleri */
+    .dashboard-card {
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e5e7eb;
+    }
+
+    .dark .dashboard-card {
+        background-color: #1e293b;
+        border-color: #334155;
+    }
+
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #111827;
+        display: flex;
+        align-items: center;
+    }
+
+    .dark .card-title {
+        color: white;
+    }
+
+    .card-title svg {
+        margin-right: 0.5rem;
+        height: 1.25rem;
+        width: 1.25rem;
+        color: #6366f1;
+    }
+
+    .dark .card-title svg {
+        color: #818cf8;
+    }
+
+    /* Form alanları için geliştirmeler */
+    .form-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-section-title {
+        font-size: 1.125rem;
+        font-weight: 500;
+        margin-bottom: 0.75rem;
+        color: #1f2937;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 0.5rem;
+    }
+
+    .dark .form-section-title {
+        color: #f3f4f6;
+        border-color: #334155;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    @media (min-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    .form-field {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 0.25rem;
+    }
+
+    .dark .form-label {
+        color: #d1d5db;
+    }
+
+    .form-input {
+        width: 100%;
+        border-radius: 0.375rem;
+        border: 1px solid #d1d5db;
+        padding: 0.5rem 0.75rem;
+        background-color: white;
+        color: #111827;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    .form-input:focus {
+        border-color: #6366f1;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .dark .form-input {
+        background-color: #334155;
+        border-color: #475569;
+        color: white;
+    }
+
+    .form-button-primary {
+        width: 100%;
+        padding: 0.5rem 1rem;
+        border: 1px solid transparent;
+        border-radius: 0.375rem;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: white;
+        background-color: #6366f1;
+        transition: background-color 0.2s;
+    }
+
+    .form-button-primary:hover {
+        background-color: #4f46e5;
+    }
+
+    .dark .form-button-primary {
+        background-color: #4f46e5;
+    }
+
+    .dark .form-button-primary:hover {
+        background-color: #4338ca;
+    }
+
+    .info-message {
+        background-color: #eff6ff;
+        color: #1e40af;
+        padding: 1rem;
+        border-radius: 0.375rem;
+        margin: 1rem 0;
+        font-size: 0.875rem;
+    }
+
+    .dark .info-message {
+        background-color: rgba(30, 58, 138, 0.2);
+        color: #93c5fd;
+    }
+
+    .info-message-title {
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+
+    /* İçerik merkezlendirme */
+    .content-container {
+        max-width: 1024px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 1rem;
+    }
+
+    /* İkon stilleri */
+    .form-icon {
+        position: absolute;
+        top: 50%;
+        left: 0.75rem;
+        transform: translateY(-50%);
+        width: 1.25rem;
+        height: 1.25rem;
+        color: #9ca3af;
+        pointer-events: none;
+    }
+
+    .relative {
+        position: relative;
+    }
+
+    .pl-10 {
+        padding-left: 2.5rem;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="content-container py-8">
+    <!-- Hoş Geldiniz Kartı -->
+    <div class="dashboard-card">
+        <h1 class="card-title">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem; color: #6366f1;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            {% if user_is_authenticated %}
+            Hoş Geldiniz, {{ current_user.name if current_user else 'Değerli Kullanıcımız' }}!
+            {% else %}
+            Hoş Geldiniz!
+            {% endif %}
+        </h1>
+        <p style="color: #4b5563; margin-bottom: 1rem;">Astrolojik hesaplama ve analiz yapmak için aşağıdaki
+            seçeneklerden birini seçin.</p>
+    </div>
+
+    <!-- Tab Navigasyonu -->
+    <div class="dashboard-card">
+        <div class="tabs-container">
+            <div class="tabs-header">
+                {% if user_is_authenticated %}
+                <button id="personalTab" class="tab-button active" onclick="switchTab('personal')">Kendi Bilgilerimle
+                    Hesapla</button>
+                <button id="otherPersonTab" class="tab-button" onclick="switchTab('otherPerson')">Başkası İçin
+                    Hesapla</button>
+                {% else %}
+                <button id="otherPersonTab" class="tab-button active" onclick="switchTab('otherPerson')">Hesaplama
+                    Yap</button>
+                {% endif %}
+            </div>
+
+            {% if user_is_authenticated %}
+            <!-- Kendi Bilgilerimle Hesaplama Formu -->
+            <div id="personalTabContent" class="tab-content active">
+                <p class="info-message">
+                    <span class="info-message-title">Bilgi:</span> Kayıt olurken verdiğiniz doğum bilgileri otomatik
+                    olarak doldurulmuştur. Sadece transit bilgilerini girerek hesaplama yapabilirsiniz.
+                </p>
+
+                <form id="personalForm" method="POST" action="{{ url_for('main.show_results') }}">
+                    <!-- Transit Bilgileri Kartı -->
+                    <div class="dashboard-card">
+                        <h2 class="card-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem; color: #6366f1;">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M16.2 7.8l-2 6.3-6.4 2.1 2-6.3z"></path>
+                            </svg>
+                            Transit Hesaplamaları (Opsiyonel)
+                        </h2>
+
+                        <div
+                            style="background-color: #eff6ff; color: #1e40af; padding: 1rem; border-radius: 0.375rem; margin: 1rem 0; font-size: 0.875rem;">
+                            <div style="font-weight: 500; margin-bottom: 0.25rem;">Transit Hesaplamaları Hakkında</div>
+                            <p>Belirli bir tarih, saat ve konum için transit gezegen pozisyonlarını hesaplayabilirsiniz.
+                                Transitler, doğum haritanızdaki gezegenlerin geçici etkileşimlerini gösterir.</p>
+                            <ul style="list-style: disc; margin-left: 1.25rem; margin-top: 0.5rem;">
+                                <li>Tarih ve saat belirtmezseniz: Şu anki tarih ve saat kullanılır.</li>
+                                <li>Konum belirtmezseniz: Doğum yeriniz transit hesaplamaları için kullanılır.</li>
+                            </ul>
+                        </div>
+
+                        <div class="form-section">
+                            <!-- Kullanıcının kendi doğum bilgilerini gizli input olarak ekleyelim -->
+                            <input type="hidden" name="name" id="personal_name" value="Değerli Kullanıcımız">
+                            <input type="hidden" name="birth_date" id="personal_birth_date"
+                                value="{{ user_birth_data.birth_date if user_birth_data else '' }}">
+                            <input type="hidden" name="birth_time" id="personal_birth_time"
+                                value="{{ user_birth_data.birth_time if user_birth_data else '' }}">
+                            <input type="hidden" name="birth_place" id="personal_birth_place"
+                                value="{{ user_birth_data.birth_place if user_birth_data else '' }}">
+                            <input type="hidden" name="latitude" id="personal_latitude"
+                                value="{{ user_birth_data.latitude if user_birth_data else '' }}">
+                            <input type="hidden" name="longitude" id="personal_longitude"
+                                value="{{ user_birth_data.longitude if user_birth_data else '' }}">
+
+                            <div class="form-grid">
+                                <div class="form-field">
+                                    <label class="form-label" for="transit_date">Transit Tarihi</label>
+                                    <div class="relative">
+                                        <div class="form-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
+                                                <path fill-rule="evenodd"
+                                                    d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <input type="date" id="personal_transit_date" name="transit_date"
+                                            class="form-input pl-10"
+                                            placeholder="Boş bırakılırsa bugünün tarihi kullanılır">
+                                    </div>
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="transit_time">Transit Saati</label>
+                                    <div class="relative">
+                                        <div class="form-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
+                                                <path fill-rule="evenodd"
+                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                                                    clip-rule="evenodd" />
+                                        </div>
+                                        <input type="time" id="personal_transit_time" name="transit_time"
+                                            class="form-input pl-10"
+                                            placeholder="Boş bırakılırsa şu anki saat kullanılır">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-field">
+                                <label class="form-label" for="personal_transit_location_search">Transit Konumu</label>
+                                <div class="relative">
+                                    <div class="form-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                            style="width: 1.25rem; height: 1.25rem;">
+                                            <path fill-rule="evenodd"
+                                                d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                                                clip-rule="evenodd" />
+                                    </div>
+                                    <input type="text" id="personal_transit_location_search"
+                                        name="transit_location_search" class="form-input pl-10"
+                                        placeholder="Şehir, ülke adı girin (boş bırakırsanız doğum yeriniz kullanılır)...">
+                                    <div id="personal_transit_location_suggestions" class="location-suggestions"
+                                        style="display:none;"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-field">
+                                    <label class="form-label" for="personal_transit_latitude">Transit Enlemi</label>
+                                    <div class="relative">
+                                        <div class="form-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
+                                                <path fill-rule="evenodd"
+                                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                                                    clip-rule="evenodd" />
+                                        </div>
+                                        <input type="text" id="personal_transit_latitude" name="transit_latitude"
+                                            class="form-input pl-10"
+                                            placeholder="Boş bırakırsanız doğum yeriniz enlemi kullanılır">
+                                    </div>
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="personal_transit_longitude">Transit Boylamı</label>
+                                    <div class="relative">
+                                        <div class="form-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
+                                                <path fill-rule="evenodd"
+                                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                                                    clip-rule="evenodd" />
+                                        </div>
+                                        <input type="text" id="personal_transit_longitude" name="transit_longitude"
+                                            class="form-input pl-10"
+                                            placeholder="Boş bırakırsanız doğum yeriniz boylamı kullanılır">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hesapla Butonu -->
+                    <div class="dashboard-card">
+                        <div class="form-field mb-0">
+                            <button type="submit" class="form-button-primary"
+                                style="background-color: #6366f1; color: white; padding: 0.75rem 2rem; width: 100%; border-radius: 0.375rem; font-weight: 600; font-size: 1rem; text-align: center;">
+                                <span style="display: flex; align-items: center; justify-content: center;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                        style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;">
+                                        <path fill-rule="evenodd"
+                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                            clip-rule="evenodd" />
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Başkası İçin Hesaplama Formu -->
+            <div id="otherPersonTabContent" class="tab-content{% if not user_is_authenticated %} active{% endif %}">
+                <p class="info-message">
+                    <span class="info-message-title">Bilgi:</span> Başka birisi için astrolojik hesaplama yapmak için
+                    aşağıdaki formu doldurun.
+                </p>
+
+                <!-- Mevcut Kombinasyon Formu -->
+                <form id="otherPersonForm" method="POST" action="{{ url_for('main.show_results') }}">
+                    <!-- Doğum Bilgileri Kartı -->
+                    <div class="dashboard-card">
+                        <h2 class="card-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem; color: #6366f1;">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                            Doğum Bilgileri
+                        </h2>
+
+                        <div class="form-section">
+                            <div class="form-field">
+                                <label class="form-label" for="name">İsim</label>
+                                <input type="text" name="name" id="name" required placeholder="Adınız"
+                                    class="form-input">
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-field">
+                                    <label class="form-label" for="birth_date">Doğum Tarihi</label>
+                                    <div class="relative">
+                                        <div class="form-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
+                                                <path fill-rule="evenodd"
+                                                    d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <input type="date" name="birth_date" id="birth_date" required
+                                            class="form-input pl-10">
+                                    </div>
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="birth_time">Doğum Saati</label>
+                                    <div class="relative">
+                                        <div class="form-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
+                                                <path fill-rule="evenodd"
+                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                                                    clip-rule="evenodd" />
+                                        </div>
+                                        <input type="time" name="birth_time" id="birth_time" required
+                                            class="form-input pl-10">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-field">
+                                <label class="form-label" for="suggestionInput">Doğum Yeri</label>
+                                <div class="relative">
+                                    <div class="form-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                            style="width: 1.25rem; height: 1.25rem;">
+                                            <path fill-rule="evenodd"
+                                                d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                                                clip-rule="evenodd" />
+                                    </div>
+                                    <input type="text" id="suggestionInput" name="birth_place_suggestion"
+                                        autocomplete="off" placeholder="Şehir, ülke adı girin..."
+                                        class="form-input pl-10">
+                                    <div id="suggestionResults" class="location-suggestions" style="display:none;">
+                                    </div>
+                                </div>
+                                <p style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">En az 3 karakter
+                                    girerek aramaya başlayın.</p>
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-field">
+                                    <label class="form-label" for="latitude">Enlem</label>
+                                    <div class="relative">
+                                        <div class="form-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
+                                                <path fill-rule="evenodd"
+                                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                                                    clip-rule="evenodd" />
+                                        </div>
+                                        <input type="text" id="latitude" name="latitude" required
+                                            class="form-input pl-10">
+                                    </div>
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="longitude">Boylam</label>
+                                    <div class="relative">
+                                        <div class="form-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
+                                                <path fill-rule="evenodd"
+                                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                                                    clip-rule="evenodd" />
+                                        </div>
+                                        <input type="text" id="longitude" name="longitude" required
+                                            class="form-input pl-10">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transit Bilgileri Kartı - Mevcut kodu koruyoruz -->
+                    <div class="dashboard-card">
+                        <h2 class="card-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem; color: #6366f1;">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M16.2 7.8l-2 6.3-6.4 2.1 2-6.3z"></path>
+                            </svg>
+                            Transit Hesaplamaları (Opsiyonel)
+                        </h2>
+
+                        <div
+                            style="background-color: #eff6ff; color: #1e40af; padding: 1rem; border-radius: 0.375rem; margin: 1rem 0; font-size: 0.875rem;">
+                            <div style="font-weight: 500; margin-bottom: 0.25rem;">Transit Hesaplamaları Hakkında</div>
+                            <p>Belirli bir tarih, saat ve konum için transit gezegen pozisyonlarını hesaplayabilirsiniz.
+                                Transitler, doğum haritanızdaki gezegenlerin geçici etkileşimlerini gösterir.</p>
+                            <ul style="list-style: disc; margin-left: 1.25rem; margin-top: 0.5rem;">
+                                <li>Tarih ve saat belirtmezseniz: Şu anki tarih ve saat kullanılır.</li>
+                                <li>Konum belirtmezseniz: Doğum yeriniz transit hesaplamaları için kullanılır.</li>
+                            </ul>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-grid">
+                                <div class="form-field">
+                                    <label class="form-label" for="transit_date">Transit Tarihi</label>
+                                    <div class="relative">
+                                        <div class="form-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
+                                                <path fill-rule="evenodd"
+                                                    d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <input type="date" id="transit_date" name="transit_date"
+                                            class="form-input pl-10"
+                                            placeholder="Boş bırakılırsa bugünün tarihi kullanılır">
+                                    </div>
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="transit_time">Transit Saati</label>
+                                    <div class="relative">
+                                        <div class="form-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
+                                                <path fill-rule="evenodd"
+                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                                                    clip-rule="evenodd" />
+                                        </div>
+                                        <input type="time" id="transit_time" name="transit_time"
+                                            class="form-input pl-10"
+                                            placeholder="Boş bırakılırsa şu anki saat kullanılır">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-field">
+                                <label class="form-label" for="transit_location_search">Transit Konumu</label>
+                                <div class="relative">
+                                    <div class="form-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                            style="width: 1.25rem; height: 1.25rem;">
+                                            <path fill-rule="evenodd"
+                                                d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                                                clip-rule="evenodd" />
+                                    </div>
+                                    <input type="text" id="transit_location_search" name="transit_location_search"
+                                        class="form-input pl-10"
+                                        placeholder="Şehir, ülke adı girin (boş bırakırsanız doğum yeriniz kullanılır)...">
+                                    <div id="transit_location_suggestions" class="location-suggestions"
+                                        style="display:none;"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-field">
+                                    <label class="form-label" for="transit_latitude">Transit Enlemi</label>
+                                    <div class="relative">
+                                        <div class="form-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
+                                                <path fill-rule="evenodd"
+                                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                                                    clip-rule="evenodd" />
+                                        </div>
+                                        <input type="text" id="transit_latitude" name="transit_latitude"
+                                            class="form-input pl-10"
+                                            placeholder="Boş bırakırsanız doğum yeriniz enlemi kullanılır">
+                                    </div>
+                                </div>
+                                <div class="form-field">
+                                    <label class="form-label" for="transit_longitude">Transit Boylamı</label>
+                                    <div class="relative">
+                                        <div class="form-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
+                                                <path fill-rule="evenodd"
+                                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                                                    clip-rule="evenodd" />
+                                        </div>
+                                        <input type="text" id="transit_longitude" name="transit_longitude"
+                                            class="form-input pl-10"
+                                            placeholder="Boş bırakırsanız doğum yeriniz boylamı kullanılır">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hesapla Butonu -->
+                    <div class="dashboard-card">
+                        <div class="form-field mb-0">
+                            <button type="submit" class="form-button-primary"
+                                style="background-color: #6366f1; color: white; padding: 0.75rem 2rem; width: 100%; border-radius: 0.375rem; font-weight: 600; font-size: 1rem; text-align: center;">
+                                <span style="display: flex; align-items: center; justify-content: center;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                        style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;">
+                                        <path fill-rule="evenodd"
+                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                            clip-rule="evenodd" />
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sonuçlar Alanı (Gerektiğinde JavaScript ile doldurulacak) -->
+    <div id="resultsArea" class="hidden"></div>
+
+    <!-- Yükleniyor Ekranı -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-sm w-full">
+            <div class="flex flex-col items-center">
+                <div
+                    style="border-top: 4px solid #6366f1; border-radius: 50%; width: 2.5rem; height: 2.5rem; animation: spin 1s linear infinite;">
+                </div>
+                <p class="mt-3 text-gray-700 dark:text-gray-300">Hesaplanıyor...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const OPENCAGE_API_KEY = "86a739ff16b84521a20a5f492506d409";
+
+    // Tab geçişleri için fonksiyon
+    function switchTab( tabId ) {
+        // Tüm tab içeriklerini gizle
+        document.querySelectorAll( '.tab-content' ).forEach( tab => {
+            tab.classList.remove( 'active' );
+        } );
+
+        // Tüm tab butonlarını pasif yap
+        document.querySelectorAll( '.tab-button' ).forEach( button => {
+            button.classList.remove( 'active' );
+        } );
+
+        // Seçilen tab'ı göster
+        document.getElementById( tabId + 'TabContent' ).classList.add( 'active' );
+        document.getElementById( tabId + 'Tab' ).classList.add( 'active' );
+    }
+
+    // Doküman hazır olduğunda çalışacak kod
+    document.addEventListener( 'DOMContentLoaded', function () {
+        // Kullanıcının doğum bilgileri varsa, form alanlarına doldur
+        const userBirthData = {{ user_birth_data| tojson if user_birth_data else 'null'
+    }};
+    const isAuthenticated = {{ 'true' if user_is_authenticated else 'false' }};
+
+    if ( isAuthenticated && ( !userBirthData || !userBirthData.birth_date ) ) {
+        // Kullanıcının doğum bilgileri eksikse, uyarı göster
+        const personalTab = document.getElementById( 'personalTabContent' );
+        if ( personalTab ) {
+            const warningDiv = document.createElement( 'div' );
+            warningDiv.className = 'dashboard-card';
+            warningDiv.innerHTML = `
+                        <div style="background-color: #fef2f2; color: #b91c1c; padding: 1rem; border-radius: 0.375rem; margin-bottom: 1rem;">
+                            <div style="font-weight: 500; margin-bottom: 0.25rem;">Doğum Bilgileriniz Eksik!</div>
+                            <p>Hesaplama yapabilmek için lütfen doğum bilgilerinizi giriniz.</p>
+                        </div>
+                    `;
+            personalTab.insertBefore( warningDiv, personalTab.firstChild );
+        }
+    }
+
+    // Doğum yeri araması için event listener ekle
+    const suggestionInput = document.getElementById( 'suggestionInput' );
+    const suggestionResults = document.getElementById( 'suggestionResults' );
+
+    if ( suggestionInput && suggestionResults ) {
+        suggestionInput.addEventListener( 'input', function () {
+            const query = this.value.trim();
+            if ( query.length >= 3 ) {
+                fetchLocationSuggestions( query, suggestionResults );
+            } else {
+                suggestionResults.style.display = 'none';
+            }
+        } );
+    }
+
+    // Transit doğum yeri araması için event listener ekle
+    const transitLocationSearch = document.getElementById( 'transit_location_search' );
+    const transitLocationSuggestions = document.getElementById( 'transit_location_suggestions' );
+
+    if ( transitLocationSearch && transitLocationSuggestions ) {
+        transitLocationSearch.addEventListener( 'input', function () {
+            const query = this.value.trim();
+            if ( query.length >= 3 ) {
+                fetchLocationSuggestions( query, transitLocationSuggestions );
+            } else {
+                transitLocationSuggestions.style.display = 'none';
+            }
+        } );
+    }
+
+    // Kişisel bilgiler için transit doğum yeri araması
+    const personalTransitLocationSearch = document.getElementById( 'personal_transit_location_search' );
+    const personalTransitLocationSuggestions = document.getElementById( 'personal_transit_location_suggestions' );
+
+    if ( personalTransitLocationSearch && personalTransitLocationSuggestions ) {
+        personalTransitLocationSearch.addEventListener( 'input', function () {
+            const query = this.value.trim();
+            if ( query.length >= 3 ) {
+                fetchLocationSuggestions( query, personalTransitLocationSuggestions );
+            } else {
+                personalTransitLocationSuggestions.style.display = 'none';
+            }
+        } );
+    }
+    });
+
+    // Konum önerilerini getiren fonksiyon
+    function fetchLocationSuggestions( query, resultsContainer ) {
+        const OPENCAGE_API_KEY = "86a739ff16b84521a20a5f492506d409";
+
+        if ( !OPENCAGE_API_KEY ) {
+            console.error( 'OpenCage API anahtarı tanımlanmamış' );
+            return;
+        }
+
+        const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent( query )}&key=${OPENCAGE_API_KEY}&limit=5&no_annotations=1&language=tr`;
+
+        fetch( url )
+            .then( response => response.json() )
+            .then( data => {
+                resultsContainer.innerHTML = '';
+                if ( data.results && data.results.length > 0 ) {
+                    data.results.forEach( result => {
+                        const item = document.createElement( 'div' );
+                        item.className = 'location-suggestion-item';
+                        item.textContent = result.formatted;
+                        item.dataset.lat = result.geometry.lat;
+                        item.dataset.lng = result.geometry.lng;
+
+                        item.addEventListener( 'click', function () {
+                            // Doğru input alanlarını seç
+                            let inputField, latField, lngField;
+
+                            if ( resultsContainer.id === 'suggestionResults' ) {
+                                inputField = document.getElementById( 'suggestionInput' );
+                                latField = document.getElementById( 'latitude' );
+                                lngField = document.getElementById( 'longitude' );
+                            } else if ( resultsContainer.id === 'transit_location_suggestions' ) {
+                                inputField = document.getElementById( 'transit_location_search' );
+                                latField = document.getElementById( 'transit_latitude' );
+                                lngField = document.getElementById( 'transit_longitude' );
+                            } else if ( resultsContainer.id === 'personal_transit_location_suggestions' ) {
+                                inputField = document.getElementById( 'personal_transit_location_search' );
+                                latField = document.getElementById( 'personal_transit_latitude' );
+                                lngField = document.getElementById( 'personal_transit_longitude' );
+                            }
+
+                            if ( inputField && latField && lngField ) {
+                                inputField.value = result.formatted;
+                                latField.value = result.geometry.lat;
+                                lngField.value = result.geometry.lng;
+                                resultsContainer.style.display = 'none';
+                            }
+                        } );
+
+                        resultsContainer.appendChild( item );
+                    } );
+
+                    resultsContainer.style.display = 'block';
+                } else {
+                    resultsContainer.style.display = 'none';
+                }
+            } )
+            .catch( error => {
+                console.error( 'Konum araması sırasında hata oluştu:', error );
+                resultsContainer.style.display = 'none';
+            } );
+    }
+</script>
+{% endblock %}

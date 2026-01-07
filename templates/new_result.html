@@ -1,0 +1,4053 @@
+{% set planetSymbols = { 'Sun': '☉', 'Moon': '☽', 'Mercury': '☿', 'Venus': '♀',
+'Mars': '♂', 'Jupiter': '♃', 'Saturn': '♄', 'Uranus': '♅', 'Neptune': '♆',
+'Pluto': '♇', 'Chiron': '⚷', 'Pallas': 'Pal', 'Juno': 'Juno', 'Vesta': '⚶',
+'Mean_Node': '☊', 'True_Node': '☊', 'North Node': '☊', 'South Node': '☋',
+'Mean_Lilith': '⚸', 'True_Lilith': '⚸', 'Black Moon Lilith': '⚸', 'Ascendant':
+'ASC', 'MC': 'MC', 'Vertex': 'Vx', 'Part of Fortune': '⊗', 'Cupido': 'Cup',
+'Hades': 'Had', 'Zeus': 'Zeu', 'Kronos': 'Kro', 'Apollon': 'Apo', 'Admetos':
+'Adm', 'Vulkanus': 'Vul', 'Poseidon': 'Pos' } %} {% set signs = ["Koç", "Boğa",
+"İkizler", "Yengeç", "Aslan", "Başak", "Terazi", "Akrep", "Yay", "Oğlak",
+"Kova", "Balık"] %} {% set planetNamesTR = { 'Sun': 'Güneş', 'Moon': 'Ay',
+'Mercury': 'Merkür', 'Venus': 'Venüs', 'Mars': 'Mars', 'Jupiter': 'Jüpiter',
+'Saturn': 'Satürn', 'Uranus': 'Uranüs', 'Neptune': 'Neptün', 'Pluto': 'Plüton',
+'Chiron': 'Şiron', 'Lilith': 'Lilith', 'North Node': 'Kuzey Ay Düğümü', 'South
+Node': 'Güney Ay Düğümü', 'Ascendant': 'Yükselen', 'MC': 'Tepe Noktası (MC)' }
+%} {% macro getSignFromDegree(degree) %} {% if degree is not none %} {% set
+signIndex = (degree / 30) | int % 12 %} {{ signs[signIndex] }} {% else %} N/A {%
+endif %} {% endmacro %}
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    {% macro renderPlanetTable(title, planets, icon='fa-star', color='blue-400',
+    details='') %}
+    <div class="mb-8">
+      <h3
+        class="text-lg font-semibold mb-1 text-{{ color }} flex items-center gap-2"
+      >
+        <i class="fas {{ icon }}"></i> {{ title }}
+      </h3>
+      {% if details %}
+      <p class="text-xs text-slate-400 mb-3">{{ details }}</p>
+      {% endif %}
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        {% for planet, info in planets.items() %}
+        <div
+          class="bg-slate-800/40 rounded-lg p-3 flex flex-col items-center shadow-sm border border-slate-700/50 hover:border-{{ color }}/50 transition-colors"
+        >
+          <div class="text-xl mb-1 text-{{ color }}">
+            {{ planetSymbols.get(planet, '⭐') }}
+          </div>
+          <div class="font-bold text-xs truncate w-full text-center">
+            {{ planet }}
+          </div>
+          <div class="text-[10px] text-gray-300">
+            {{ info.get('sign', '-') }} {{
+            "%.2f"|format(info.get('degree_in_sign', info.get('degree', 0) %
+            30)) }}°
+          </div>
+          {% if info.get('house') %}
+          <div class="text-[9px] text-gray-500 mt-1">
+            Ev: {{ info.get('house') }}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endmacro %}
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {{ astro_data.get('user_name', 'Danışan') }} - Astroloji Sonuçları
+    </title>
+    <style>
+      .fade-in {
+        animation: fadeInAnimation 0.3s ease-in-out;
+      }
+
+      @keyframes fadeInAnimation {
+        from {
+          opacity: 0;
+          transform: translateY(5px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .tab-btn {
+        transition: background-color 0.2s ease-in-out,
+          border-color 0.2s ease-in-out, color 0.2s ease-in-out;
+      }
+
+      /* Scrollbar stilleri (isteğe bağlı, tab navigasyonu için) */
+      .overflow-x-auto::-webkit-scrollbar {
+        height: 6px;
+      }
+
+      .overflow-x-auto::-webkit-scrollbar-track {
+        background: #1e293b;
+        /* slate-800 */
+      }
+
+      .overflow-x-auto::-webkit-scrollbar-thumb {
+        background: #334155;
+        /* slate-700 */
+        border-radius: 3px;
+      }
+
+      .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+        /* slate-600 */
+      }
+      .ai-btn {
+        background: linear-gradient(45deg, #1d4ed8, #7c3aed);
+        background-size: 200% auto;
+        transition: 0.5s;
+        border: none;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 99px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+      }
+      .ai-btn:hover {
+        background-position: right center;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5);
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #1e293b;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-radius: 3px;
+      }
+      .ai-text-content p {
+        margin-bottom: 1.25rem;
+        line-height: 1.6;
+      }
+      .ai-text-content strong {
+        color: #e2e8f0;
+        font-weight: 700;
+      }
+      .ai-text-content ul,
+      .ai-text-content ol {
+        margin-bottom: 1.25rem;
+        padding-left: 1.5rem;
+      }
+      .ai-text-content li {
+        margin-bottom: 0.5rem;
+      }
+    </style>
+    <script src="https://cdn.tailwindcss.com?display=swap"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+
+  <body class="bg-slate-900 text-slate-100 min-h-screen">
+    {% set t_aspects = astro_data.get('transit_to_natal_aspects', []) %} {%
+    include 'components/navbar.html' %}
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-900 to-purple-900 shadow-lg">
+      <div class="container mx-auto px-6 py-4">
+        <h1 class="text-2xl font-bold text-center">
+          {{ astro_data.get('user_name', 'Danışan') }} - Astroloji Sonuçları
+        </h1>
+        <p class="text-center text-slate-300 mt-2">
+          Doğum: {{ astro_data.get('birth_info', {}).get('datetime',
+          'Bilinmiyor') }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="bg-slate-800 border-b border-slate-700">
+      <div class="container mx-auto px-6">
+        <div class="flex overflow-x-auto">
+          <button
+            class="tab-btn px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap"
+            data-tab="ai"
+          >
+            🤖 Yapay Zeka
+          </button>
+          <button
+            class="tab-btn px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap"
+            data-tab="natal"
+          >
+            🌟 Genel Karakter (D1)
+          </button>
+          <button
+            class="tab-btn px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap"
+            data-tab="career"
+          >
+            💼 Kariyer & İş
+          </button>
+          <button
+            class="tab-btn px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap"
+            data-tab="relationship"
+          >
+            💍 İlişki & Evlilik
+          </button>
+          <button
+            class="tab-btn px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap"
+            data-tab="finance"
+          >
+            💰 Finans & Varlık
+          </button>
+          <button
+            class="tab-btn px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap"
+            data-tab="health"
+          >
+            🏥 Sağlık & Psikoloji
+          </button>
+          <button
+            class="tab-btn px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap"
+            data-tab="karma"
+          >
+            🧘 Ruhsal & Karma
+          </button>
+          <button
+            class="tab-btn px-6 py-3 text-sm font-medium border-b-2 whitespace-nowrap"
+            data-tab="timing"
+          >
+            ⏳ Zamanlama
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <div class="container mx-auto px-6 py-8">
+      <!-- AI Tab Content -->
+      <div id="ai" class="tab-content hidden">
+        <div
+          class="bg-gradient-to-r from-purple-900 to-blue-900 rounded-lg p-6 mb-6 shadow-lg flex flex-col md:flex-row items-center gap-6"
+        >
+          <div class="flex-shrink-0 flex flex-col items-center justify-center">
+            <div class="rounded-full bg-blue-800 p-4 mb-2 shadow-lg">
+              <i class="fas fa-robot text-4xl text-white"></i>
+            </div>
+            <select
+              id="ai-analysis-type"
+              class="mt-2 px-3 py-2 rounded bg-slate-800 text-slate-100 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="daily">Günlük Yorum</option>
+              <option value="natal">Doğum Haritası Analizi</option>
+              <option value="transit">Transit Yorumu</option>
+              <option value="detailed">Detaylı Analiz</option>
+            </select>
+            <button
+              id="generate-ai-analysis"
+              class="mt-3 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow transition"
+            >
+              Analizi Oluştur
+            </button>
+          </div>
+          <div id="ai-response-container" class="flex-1 w-full">
+            <div
+              id="ai-response-content"
+              class="prose prose-invert max-w-none bg-slate-900 rounded-lg p-4 shadow-inner min-h-[120px]"
+            >
+              <p class="text-slate-400 italic">
+                Yapay zeka analizini başlatmak için analiz türünü seçip "Analizi
+                Oluştur" butonuna tıklayın.
+              </p>
+            </div>
+            <div
+              id="voice-controls"
+              class="flex flex-wrap items-center gap-2 mt-4 hidden p-3 bg-slate-800/50 rounded-xl border border-slate-700/50"
+            >
+              <button
+                id="read-aloud"
+                class="px-4 py-2 rounded-xl bg-green-600/20 hover:bg-green-600/30 text-green-400 font-bold text-xs transition-all border border-green-600/20 flex items-center gap-2"
+              >
+                <i class="fas fa-volume-up"></i> Sesli Oku
+              </button>
+              <button
+                id="tab-copy-btn"
+                class="px-4 py-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 font-bold text-xs transition-all border border-blue-600/20 flex items-center gap-2"
+              >
+                <i class="fas fa-copy"></i> Kopyala
+              </button>
+              <div id="playing-controls" class="flex items-center gap-2 hidden">
+                <button
+                  id="play-pause"
+                  class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-700 text-white"
+                >
+                  <i class="fas fa-pause"></i>
+                </button>
+                <button
+                  id="stop-voice"
+                  class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-all"
+                >
+                  <i class="fas fa-stop"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 text-center text-slate-400 text-sm">
+          <span
+            >AI analizleri deneyseldir ve profesyonel astroloji danışmanlığı
+            yerine geçmez.</span
+          >
+        </div>
+      </div>
+
+      <!-- Natal Tab Content -->
+      <div id="natal" class="tab-content hidden">
+        <div class="bg-slate-800 rounded-lg p-6 mb-6 shadow-lg">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-blue-400 flex items-center gap-2">
+              <i class="fas fa-certificate text-yellow-400 animate-pulse"></i>
+              Doğum Haritası Çarkı
+            </h2>
+            <button onclick="interpretTab('birth_chart')" class="ai-btn">
+              <i class="fas fa-magic"></i> AI Analizi
+            </button>
+          </div>
+
+          <!-- Doğum Haritası Çarkı (SVG) -->
+          <div
+            id="natal-chart-wrapper"
+            class="relative flex justify-center items-center mb-10 overflow-hidden"
+          >
+            <div
+              id="natal-chart-container"
+              class="w-full max-w-[600px] aspect-square rounded-full border-4 border-slate-700 shadow-2xl bg-slate-900/50 relative"
+            >
+              <!-- SVG buraya JS ile yüklenecek -->
+              <div
+                class="absolute inset-0 flex items-center justify-center pointer-events-none"
+              >
+                <div class="text-slate-600 text-6xl opacity-20">
+                  <i class="fas fa-bahai"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Harita Bilgi Paneli (Overlay) -->
+            <div
+              class="absolute top-4 right-4 bg-slate-800/80 backdrop-blur p-3 rounded-lg border border-slate-600 text-xs shadow-lg hidden md:block"
+            >
+              <div class="flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                <span>ASC: <span id="asc-degree">0°</span></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                <span>MC: <span id="mc-degree">0°</span></span>
+              </div>
+            </div>
+          </div>
+
+          <h2
+            class="text-xl font-bold mb-4 text-blue-400 flex items-center gap-2 border-t border-slate-700 pt-6"
+          >
+            <i class="fas fa-star text-yellow-400"></i> Natal Gezegen
+            Pozisyonları
+          </h2>
+          {% set planets = astro_data.get('natal_planet_positions', {}) %} {% if
+          planets %}
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"
+          >
+            {% for planet, info in planets.items() %}
+            <div
+              class="bg-slate-700 rounded-lg p-4 flex flex-col items-center shadow"
+            >
+              <div class="text-3xl mb-2">
+                {{ planetSymbols.get(planet, '?') }}
+              </div>
+              <div class="font-bold text-lg">{{ planet }}</div>
+              <div class="text-sm text-gray-300">
+                {{ info.get('sign', '-') }} {{ info.get('degree_in_sign', '-')
+                }}°
+              </div>
+              <div class="text-xs text-gray-400">
+                Ev: {{ info.get('house', '-') }}
+              </div>
+              <div class="text-xs text-gray-400">
+                Retro: {{ 'Evet' if info.get('retrograde') else 'Hayır' }}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="text-center text-gray-400">
+            Natal gezegen pozisyonları yakında burada olacak!
+          </div>
+          {% endif %}
+          <!-- Özel Noktalar -->
+          {% set points = astro_data.get('natal_additional_points', {}) %} {% if
+          points %}
+          <div class="mb-6">
+            <h3
+              class="text-lg font-semibold mb-3 text-pink-300 flex items-center gap-2"
+            >
+              <i class="fas fa-gem"></i> Özel Noktalar
+            </h3>
+            <div class="flex flex-wrap gap-3">
+              {% for point, info in points.items() %}
+              <div
+                class="bg-slate-700 rounded-lg p-3 flex flex-col items-center shadow min-w-[120px]"
+              >
+                <div class="text-2xl">{{ planetSymbols.get(point, '?') }}</div>
+                <div class="font-bold">{{ point }}</div>
+                <div class="text-xs text-gray-300">
+                  {{ info.get('sign', '-') }} {{ info.get('degree_in_sign', '-')
+                  }}°
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          <!-- Açılar (Natal) -->
+          {% set aspects = astro_data.get('natal_aspects', []) %} {% if aspects
+          %}
+          <div class="mb-8">
+            <h3
+              class="text-lg font-semibold mb-4 text-green-300 flex items-center gap-2"
+            >
+              <i class="fas fa-link"></i> Natal Harita Açıları
+            </h3>
+            <div
+              class="bg-slate-900/40 rounded-xl overflow-hidden border border-slate-700"
+            >
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm text-left">
+                  <thead
+                    class="bg-slate-800 text-slate-300 uppercase text-[10px] tracking-wider"
+                  >
+                    <tr>
+                      <th class="px-4 py-3">Gezegen 1</th>
+                      <th class="px-4 py-3">Açı</th>
+                      <th class="px-4 py-3">Gezegen 2</th>
+                      <th class="px-4 py-3 text-right">Orb</th>
+                    </tr>
+                  </thead>
+                  <tbody
+                    id="natal-aspects-table"
+                    class="text-slate-200 divide-y divide-slate-800"
+                  >
+                    {% for asp in aspects[:8] %}
+                    <tr class="hover:bg-slate-800/50 transition">
+                      <td class="px-4 py-3">
+                        <span class="text-blue-400 mr-1"
+                          >{{ planetSymbols.get(asp.planet1, '') }}</span
+                        >
+                        {{ asp.planet1 }}
+                      </td>
+                      <td class="px-4 py-3">
+                        {% set type = (asp.aspect_type or '')|lower %}
+                        <span
+                          class="px-2 py-0.5 rounded-full text-[10px] font-bold {% if type == 'trine' %}bg-green-900/40 text-green-300 {% elif type == 'square' or type == 'opposition' %}bg-red-900/40 text-red-300 {% elif type == 'conjunction' %}bg-yellow-900/40 text-yellow-300 {% else %}bg-purple-900/40 text-purple-300{% endif %}"
+                        >
+                          {{ asp.aspect_type }}
+                        </span>
+                      </td>
+                      <td class="px-4 py-3">
+                        <span class="text-blue-400 mr-1"
+                          >{{ planetSymbols.get(asp.planet2, '') }}</span
+                        >
+                        {{ asp.planet2 }}
+                      </td>
+                      <td class="px-4 py-3 text-right font-mono text-slate-400">
+                        {{ "%.2f"|format(asp.orb|default(0)) }}° {% if
+                        asp.orb|default(99) < 1 %}<span
+                          class="ml-1 text-yellow-500 font-bold"
+                          title="Güçlü Etki"
+                          >!</span
+                        >{% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% if aspects|length > 8 %}
+              <div
+                class="p-3 bg-slate-800/30 text-center border-t border-slate-700"
+              >
+                <button
+                  id="show-more-natal-aspects"
+                  class="text-xs text-blue-400 hover:text-blue-300 font-bold transition flex items-center justify-center mx-auto gap-1"
+                >
+                  Daha Fazla Göster <i class="fas fa-chevron-down"></i>
+                </button>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+          <!-- Evler ve Yükselen -->
+          {% set houses = astro_data.get('natal_houses', {}) %} {% if houses %}
+          <div class="mb-6">
+            <h3
+              class="text-lg font-semibold mb-3 text-cyan-300 flex items-center gap-2"
+            >
+              <i class="fas fa-home"></i> Evler
+            </h3>
+            <div class="flex flex-wrap gap-3">
+              {% for num, deg in houses.get('house_cusps', {}).items() %}
+              <div class="bg-slate-700 rounded-lg p-2 min-w-[80px] text-center">
+                {{ num }}. Ev: {{ deg }}°
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %} {% set asc = astro_data.get('natal_ascendant', {}) %} {%
+          if asc %}
+          <div class="mb-6">
+            <h3
+              class="text-lg font-semibold mb-3 text-yellow-300 flex items-center gap-2"
+            >
+              <i class="fas fa-arrow-up"></i> Yükselen
+            </h3>
+            <div
+              class="bg-slate-700 rounded-lg p-3 flex flex-col items-center shadow min-w-[120px]"
+            >
+              <div class="text-2xl">
+                {{ planetSymbols.get('Ascendant', '?') }}
+              </div>
+              <div class="font-bold">
+                {{ asc.get('sign', '-') }} {{ asc.get('degree_in_sign', '-') }}°
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- 2. Kariyer & İş Tab Content -->
+      <div id="career" class="tab-content hidden">
+        <div class="bg-slate-800 rounded-lg p-6 mb-6 shadow-lg">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-blue-400 flex items-center gap-2">
+              <i class="fas fa-briefcase text-blue-400"></i> Kariyer ve İş (MC /
+              D10)
+            </h2>
+            <button onclick="interpretTab('career')" class="ai-btn">
+              <i class="fas fa-brain"></i> Kariyer Analizi
+            </button>
+          </div>
+
+          {% set h10 = astro_data.get('deep_harmonic_analysis', {}).get('H10',
+          {}) %} {% if h10 %} {{ renderPlanetTable("Dasamsa (D10) Haritası",
+          h10.get('planet_positions', {}), 'fa-building', 'indigo-400',
+          h10.get('details')) }} {% endif %}
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+              <h4
+                class="text-sm font-bold text-slate-300 mb-3 border-b border-slate-700 pb-2"
+              >
+                Kariyer Noktaları (Radiks)
+              </h4>
+              <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-400">MC (Midheaven):</span>
+                  <span class="font-mono text-blue-300"
+                    >{{ "%.2f"|format(astro_data.get('natal_houses',
+                    {}).get('important_angles', {}).get('mc', 0)) }}°</span
+                  >
+                </div>
+              </div>
+            </div>
+            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+              <h4
+                class="text-sm font-bold text-slate-300 mb-3 border-b border-slate-700 pb-2"
+              >
+                Kariyer Gezegenleri (Radiks)
+              </h4>
+              <div class="flex flex-wrap gap-2">
+                {% for p in ['Saturn', 'Sun', 'Jupiter'] %} {% set p_pos =
+                astro_data.get('natal_planet_positions', {}).get(p) %} {% if
+                p_pos %}
+                <div
+                  class="bg-slate-800 px-3 py-1 rounded text-xs border border-slate-600"
+                >
+                  {{ planetSymbols.get(p) }} {{ p }}: {{ p_pos.get('sign') }}
+                </div>
+                {% endif %} {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. İlişki & Evlilik Tab Content -->
+      <div id="relationship" class="tab-content hidden">
+        <div class="bg-slate-800 rounded-lg p-6 mb-6 shadow-lg">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-pink-400 flex items-center gap-2">
+              <i class="fas fa-heart text-pink-400"></i> İlişki ve Evlilik (D9)
+            </h2>
+            <button onclick="interpretTab('relationship')" class="ai-btn">
+              <i class="fas fa-heartbeat"></i> İlişki Analizi
+            </button>
+          </div>
+
+          {% set h9 = astro_data.get('deep_harmonic_analysis', {}).get('H9', {})
+          %} {% if h9 %} {{ renderPlanetTable("Navamsa (D9) Haritası",
+          h9.get('planet_positions', {}), 'fa-ring', 'rose-400',
+          h9.get('details')) }} {% endif %}
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Kariyer Zamanlama Etkileri -->
+            {% set career_targets = ['MC', 'Saturn', 'Jupiter', 'Sun'] %} {% set
+            has_career_transits = false %} {% for asp in t_aspects if
+            asp.natal_body in career_targets %}{% set has_career_transits = true
+            %}{% endfor %} {% if has_career_transits %}
+            <div class="mt-8 border-t border-slate-700 pt-6">
+              <h3
+                class="text-lg font-bold mb-4 text-blue-300 flex items-center gap-2"
+              >
+                <i class="fas fa-history"></i> Kariyerde Güncel Etkiler
+                (Zamanlama)
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for asp in t_aspects if asp.natal_body in career_targets %}
+                {% if loop.index <= 4 %}
+                <div
+                  class="bg-blue-900/10 p-3 rounded-lg border border-blue-500/20 flex justify-between items-center"
+                >
+                  <div class="flex flex-col">
+                    <span class="text-[10px] text-blue-400 font-bold uppercase"
+                      >{{ asp.transit_body }} -> {{ asp.natal_body }}</span
+                    >
+                    <span class="text-xs text-slate-200"
+                      >{{ asp.aspect_type }} Etkisi</span
+                    >
+                  </div>
+                  <div class="text-xs font-mono text-slate-400">
+                    orb {{ "%.1f"|format(asp.orb|default(0)) }}°
+                  </div>
+                </div>
+                {% endif %} {% endfor %}
+              </div>
+              <div class="mt-3 text-right">
+                <button
+                  onclick="document.querySelector('[data-tab=\'timing\']').click()"
+                  class="text-[10px] text-slate-400 hover:text-blue-400 transition"
+                >
+                  Tüm zamanlama detaylarını gör
+                  <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+              </div>
+            </div>
+            {% endif %}
+            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+              <h4
+                class="text-sm font-bold text-slate-300 mb-3 border-b border-slate-700 pb-2"
+              >
+                Evlilik ve Aşk Evleri
+              </h4>
+              <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-400">5. Ev (Aşk):</span>
+                  <span class="font-mono text-pink-300"
+                    >{{ astro_data.get('natal_houses', {}).get('house_cusps',
+                    {}).get('5', '-') }}°</span
+                  >
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-400">7. Ev (Evlilik):</span>
+                  <span class="font-mono text-pink-300"
+                    >{{ astro_data.get('natal_houses', {}).get('house_cusps',
+                    {}).get('7', '-') }}°</span
+                  >
+                </div>
+              </div>
+            </div>
+            <!-- İlişki Zamanlama Etkileri -->
+            {% set love_targets = ['Venus', 'Moon', 'Mars', 'Descendant',
+            'Juno'] %} {% set has_love_transits = false %} {% for asp in
+            t_aspects if asp.natal_body in love_targets %}{% set
+            has_love_transits = true %}{% endfor %} {% if has_love_transits %}
+            <div class="mt-8 border-t border-slate-700 pt-6">
+              <h4
+                class="text-md font-bold text-pink-300 mb-4 flex items-center gap-2"
+              >
+                <i class="fas fa-heartbeat"></i> İlişkilerde Güncel Fırsat ve
+                Testler
+              </h4>
+              <div class="space-y-3">
+                {% for asp in t_aspects if asp.natal_body in love_targets %} {%
+                if loop.index <= 3 %}
+                <div
+                  class="bg-pink-900/10 p-3 rounded-lg border border-pink-500/20 flex justify-between items-center"
+                >
+                  <div class="text-xs">
+                    <span class="font-bold text-pink-300"
+                      >{{ planetNamesTR.get(asp.transit_body, asp.transit_body)
+                      }}</span
+                    >
+                    {{ asp.aspect_type|lower }} açısıyla
+                    <span class="font-bold text-blue-300"
+                      >{{ planetNamesTR.get(asp.natal_body, asp.natal_body)
+                      }}</span
+                    >
+                    noktanızı tetikliyor.
+                  </div>
+                </div>
+                {% endif %} {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Finans & Varlık Tab Content -->
+      <div id="finance" class="tab-content hidden">
+        <div class="bg-slate-800 rounded-lg p-6 mb-6 shadow-lg">
+          <div class="flex items-center justify-between mb-6">
+            <h2
+              class="text-xl font-bold text-emerald-400 flex items-center gap-2"
+            >
+              <i class="fas fa-coins text-emerald-400"></i> Finans, Varlık ve
+              Şans
+            </h2>
+            <button
+              onclick="interpretTab('finance')"
+              class="ai-btn blur-sm hover:blur-none transition-all"
+            >
+              <i class="fas fa-gem"></i> Finans Analizi
+            </button>
+          </div>
+
+          {% set h16 = astro_data.get('deep_harmonic_analysis', {}).get('H16',
+          {}) %} {% if h16 %} {{ renderPlanetTable("Shodasamsa (D16) Haritası",
+          h16.get('planet_positions', {}), 'fa-gem', 'emerald-400',
+          h16.get('details')) }} {% endif %}
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+              <h4
+                class="text-sm font-bold text-slate-300 mb-3 border-b border-slate-700 pb-2"
+              >
+                Maddi Evler (Radiks)
+              </h4>
+              <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-400">2. Ev (Nakit):</span>
+                  <span class="font-mono text-emerald-300"
+                    >{{ astro_data.get('natal_houses', {}).get('house_cusps',
+                    {}).get('2', '-') }}°</span
+                  >
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-400">4. Ev (Mülk/Ev):</span>
+                  <span class="font-mono text-emerald-300"
+                    >{{ astro_data.get('natal_houses', {}).get('house_cusps',
+                    {}).get('4', '-') }}°</span
+                  >
+                </div>
+              </div>
+            </div>
+            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+              <h4
+                class="text-sm font-bold text-slate-300 mb-3 border-b border-slate-700 pb-2"
+              >
+                Şans Noktası
+              </h4>
+              {% set pof = astro_data.get('natal_part_of_fortune', {}) %}
+              <div class="p-2 bg-emerald-900/40 rounded text-center">
+                <div class="text-xl mb-1">⊗</div>
+                <div class="text-xs font-bold text-emerald-200">
+                  {{ pof.get('sign', '-') }} {{
+                  "%.2f"|format(pof.get('degree_in_sign', 0)) }}°
+                </div>
+                <div class="text-[9px] text-emerald-400/70">
+                  Bol kazanç ve talih noktası.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Arabic Parts Section -->
+          <div class="mt-8 border-t border-slate-700 pt-6">
+            <h3 class="text-lg font-bold mb-4 text-emerald-300">
+              Arap Noktaları (Finansal Odaklı)
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900 text-emerald-500 uppercase">
+                  <tr>
+                    <th class="px-3 py-2">Nokta Adı</th>
+                    <th class="px-3 py-2">Burç / Derece</th>
+                    <th class="px-3 py-2">Ev</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700">
+                  {% for name, data in astro_data.get('natal_arabic_parts',
+                  {}).items() %}
+                  <tr class="hover:bg-slate-700/30">
+                    <td class="px-3 py-2 font-medium text-slate-200">
+                      {{ name }}
+                    </td>
+                    <td class="px-3 py-2">
+                      {{ data.sign }} {{ "%.2f"|format(data.degree_in_sign) }}°
+                    </td>
+                    <td class="px-3 py-2">
+                      <span class="bg-slate-900 px-1.5 py-0.5 rounded"
+                        >{{ data.house }}. Ev</span
+                      >
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Sağlık & Psikoloji Tab Content -->
+      <div id="health" class="tab-content hidden">
+        <div class="bg-slate-800 rounded-lg p-6 mb-6 shadow-lg">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-red-400 flex items-center gap-2">
+              <i class="fas fa-notes-medical text-red-400"></i> Sağlık ve
+              Psikoloji (D20)
+            </h2>
+            <button
+              onclick="interpretTab('health')"
+              class="ai-btn blur-sm hover:blur-none transition-all"
+            >
+              <i class="fas fa-stethoscope"></i> Sağlık Analizi
+            </button>
+          </div>
+
+          {% set h30 = astro_data.get('deep_harmonic_analysis', {}).get('H30',
+          {}) %} {% if h30 %} {{ renderPlanetTable("Trimsamsa (D30) Haritası",
+          h30.get('planet_positions', {}), 'fa-biohazard', 'lime-400',
+          h30.get('details')) }} {% endif %}
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+              <h4
+                class="text-sm font-bold text-slate-300 mb-3 border-b border-slate-700 pb-2"
+              >
+                Hassas Evler (Radiks)
+              </h4>
+              <div class="space-y-2">
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-400">6. Ev (Hastalıklar):</span>
+                  <span class="font-mono text-lime-300"
+                    >{{ astro_data.get('natal_houses', {}).get('house_cusps',
+                    {}).get('6', '-') }}°</span
+                  >
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-slate-400">12. Ev (Bilinçaltı):</span>
+                  <span class="font-mono text-lime-300"
+                    >{{ astro_data.get('natal_houses', {}).get('house_cusps',
+                    {}).get('12', '-') }}°</span
+                  >
+                </div>
+              </div>
+            </div>
+            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+              <h4
+                class="text-sm font-bold text-slate-300 mb-3 border-b border-slate-700 pb-2"
+              >
+                Uranian / Hamburg Noktaları
+              </h4>
+              <div class="grid grid-cols-2 gap-2">
+                {% for p in ['Cupido', 'Hades', 'Zeus', 'Kronos', 'Apollon',
+                'Admetos', 'Vulkanus', 'Poseidon'] %} {% set p_pos =
+                astro_data.get('natal_additional_points', {}).get(p) %} {% if
+                p_pos %}
+                <div
+                  class="bg-slate-800 p-2 rounded text-[10px] border border-slate-600"
+                >
+                  <span class="text-lime-400 font-bold">{{ p }}:</span> {{
+                  p_pos.get('sign') }} {{
+                  "%.1f"|format(p_pos.get('degree_in_sign', 0)) }}°
+                </div>
+                {% endif %} {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Midpoints Section -->
+          <div class="mt-8 border-t border-slate-700 pt-6">
+            <h3 class="text-lg font-bold mb-4 text-lime-300">
+              Orta Nokta (Midpoint) Analizi
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {% for key, mid in astro_data.get('natal_midpoint_analysis',
+              {}).items() %}
+              <div
+                class="bg-slate-900/60 p-3 rounded-lg border border-slate-700 hover:border-lime-500/50 transition-colors"
+              >
+                <div class="text-[10px] text-gray-400 uppercase font-bold">
+                  {{ key }}
+                </div>
+                <div class="text-sm text-lime-200 mt-1">
+                  {{ mid.sign }} {{ "%.2f"|format(mid.degree_in_sign) }}°
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Ruhsal & Karma Tab Content -->
+      <div id="karma" class="tab-content hidden">
+        <div class="bg-slate-800 rounded-lg p-6 mb-6 shadow-lg">
+          <div class="flex items-center justify-between mb-6">
+            <h2
+              class="text-xl font-bold text-purple-400 flex items-center gap-2"
+            >
+              <i class="fas fa-yin-yang text-purple-400"></i> Ruhsal Yapı ve
+              Karma
+            </h2>
+            <button
+              onclick="interpretTab('karma')"
+              class="ai-btn blur-sm hover:blur-none transition-all"
+            >
+              <i class="fas fa-dharmachakra"></i> Karma Analizi
+            </button>
+          </div>
+
+          <div class="space-y-8">
+            {% set h20 = astro_data.get('deep_harmonic_analysis', {}).get('H20',
+            {}) %} {% if h20 %}{{ renderPlanetTable("Vimsamsa (D20) -
+            Ruhsallık", h20.get('planet_positions', {}), 'fa-om', 'fuchsia-400',
+            h20.get('details')) }}{% endif %} {% set h40 =
+            astro_data.get('deep_harmonic_analysis', {}).get('H40', {}) %} {% if
+            h40 %}{{ renderPlanetTable("Khavedamsa (D40) - Geçmiş Eylemler",
+            h40.get('planet_positions', {}), 'fa-history', 'indigo-400',
+            h40.get('details')) }}{% endif %} {% set h45 =
+            astro_data.get('deep_harmonic_analysis', {}).get('H45', {}) %} {% if
+            h45 %}{{ renderPlanetTable("Akshavedamsa (D45) - Genel Kader",
+            h45.get('planet_positions', {}), 'fa-scroll', 'purple-400',
+            h45.get('details')) }}{% endif %}
+          </div>
+
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 border-t border-slate-700 pt-6"
+          >
+            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+              <h4
+                class="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2"
+              >
+                <i class="fas fa-star text-fuchsia-300"></i> Önemli Sabit
+                Yıldızlar
+              </h4>
+              <div
+                class="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar"
+              >
+                {% for name, star in astro_data.get('natal_fixed_stars',
+                {}).items() %}
+                <div
+                  class="flex justify-between text-[11px] border-b border-slate-800 pb-1"
+                >
+                  <span class="text-slate-200">{{ name }}</span>
+                  <span class="text-fuchsia-300"
+                    >{{ star.sign }} {{ "%.1f"|format(star.degree_in_sign)
+                    }}°</span
+                  >
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+              <h4
+                class="text-sm font-bold text-slate-300 mt-6 mb-3 flex items-center gap-2"
+              >
+                <i class="fas fa-moon text-indigo-300"></i> Kader Damgaları
+                (Tutulmalar)
+              </h4>
+              <div class="space-y-3">
+                {% for eclipse in astro_data.get('eclipses_nearby_birth', []) %}
+                <div
+                  class="bg-slate-800/80 p-2 rounded border-l-2 border-indigo-500"
+                >
+                  <div class="text-[10px] font-bold text-indigo-200">
+                    {{ eclipse.type }}
+                  </div>
+                  <div class="text-[9px] text-slate-400">
+                    {{ eclipse.date }}
+                  </div>
+                  <div class="text-[11px] text-slate-300">
+                    {{ eclipse.sign }} {{ "%.2f"|format(eclipse.degree_in_sign)
+                    }}°
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+
+              <h4
+                class="text-sm font-bold text-slate-300 mt-6 mb-3 flex items-center gap-2"
+              >
+                <i class="fas fa-ghost text-purple-300"></i> Antiscia (Gizli
+                Bağlar)
+              </h4>
+              <div class="flex flex-wrap gap-2">
+                {% for p, deg in astro_data.get('natal_antiscia', {}).items() %}
+                <div
+                  class="bg-purple-900/20 px-2 py-1 rounded text-[9px] border border-purple-500/20 text-purple-200"
+                  title="Antiscia of {{ p }}"
+                >
+                  {{ planetSymbols.get(p) }} {{ p }}
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. Zamanlama Tab Content -->
+      <div id="timing" class="tab-content hidden">
+        <div class="bg-slate-800 rounded-lg p-6 mb-6 shadow-lg">
+          <div class="flex items-center justify-between mb-6">
+            <h2
+              class="text-xl font-bold text-orange-400 flex items-center gap-2"
+            >
+              <i class="fas fa-clock text-orange-400"></i> Zamanlama ve
+              Öngörüler
+            </h2>
+            <button
+              onclick="interpretTab('timing')"
+              class="ai-btn blur-sm hover:blur-none transition-all"
+            >
+              <i class="fas fa-hourglass-half"></i> Zamanlama Analizi
+            </button>
+          </div>
+
+          <!-- Transit Overview -->
+          <div class="mb-10">
+            <h3
+              class="text-lg font-bold mb-4 text-orange-300 flex items-center gap-2"
+            >
+              <i class="fas fa-bolt"></i> Güncel Gökyüzü (Transitler)
+            </h3>
+            <div
+              class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6"
+            >
+              {% for p, info in astro_data.get('transit_positions', {}).items()
+              %}
+              <div
+                class="bg-slate-900/40 p-3 rounded-lg border border-slate-700 text-center hover:border-orange-500/50 transition"
+              >
+                <div class="text-2xl text-orange-400 mb-1">
+                  {{ planetSymbols.get(p) }}
+                </div>
+                <div
+                  class="text-xs font-bold text-slate-300 uppercase truncate"
+                >
+                  {{ p }}
+                </div>
+                <div class="text-[10px] text-orange-200 mt-1">
+                  {{ info.sign }} {{ "%.1f"|format(info.degree_in_sign) }}°
+                </div>
+                {% if info.retrograde %}
+                <span
+                  class="text-[9px] bg-red-900/60 px-1.5 py-0.5 rounded text-red-300 absolute -top-1 -right-1"
+                  >R</span
+                >
+                {% endif %}
+              </div>
+              {% endfor %}
+            </div>
+
+            <!-- Transit to Natal Aspects -->
+            {% set t_aspects = astro_data.get('transit_to_natal_aspects', []) %}
+            {% if t_aspects %}
+            <div class="mt-8">
+              <h4
+                class="text-md font-bold text-orange-200 mb-4 flex items-center gap-2"
+              >
+                <i class="fas fa-random"></i> Güncel Tetiklemeler (Transit ->
+                Natal)
+              </h4>
+              <div
+                class="bg-slate-900/40 rounded-xl overflow-hidden border border-slate-700"
+              >
+                <div class="overflow-x-auto">
+                  <table class="min-w-full text-sm text-left">
+                    <thead
+                      class="bg-slate-800 text-slate-300 uppercase text-[10px] tracking-wider"
+                    >
+                      <tr>
+                        <th class="px-4 py-3">Transit</th>
+                        <th class="px-4 py-3">Açı</th>
+                        <th class="px-4 py-3">Natal</th>
+                        <th class="px-4 py-3 text-right">Orb</th>
+                      </tr>
+                    </thead>
+                    <tbody
+                      id="transit-aspects-table"
+                      class="text-slate-200 divide-y divide-slate-800"
+                    >
+                      {% for asp in t_aspects[:8] %}
+                      <tr class="hover:bg-slate-800/50 transition">
+                        <td class="px-4 py-3 font-semibold text-orange-300">
+                          {{ asp.transit_body }}
+                        </td>
+                        <td class="px-4 py-3">
+                          {% set type = (asp.aspect_type or '')|lower %}
+                          <span
+                            class="px-2 py-0.5 rounded-full text-[10px] font-bold {% if type == 'trine' %}bg-green-900/40 text-green-300 {% elif type == 'square' or type == 'opposition' %}bg-red-900/40 text-red-300 {% elif type == 'conjunction' %}bg-yellow-900/40 text-yellow-300 {% else %}bg-purple-900/40 text-purple-300{% endif %}"
+                          >
+                            {{ asp.aspect_type }}
+                          </span>
+                        </td>
+                        <td class="px-4 py-3 font-semibold text-blue-300">
+                          {{ asp.natal_body }}
+                        </td>
+                        <td
+                          class="px-4 py-3 text-right font-mono text-slate-400"
+                        >
+                          {{ "%.2f"|format(asp.orb|default(0)) }}°
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                {% if t_aspects|length > 8 %}
+                <div
+                  class="p-3 bg-slate-800/30 text-center border-t border-slate-700"
+                >
+                  <button
+                    id="show-more-transit-aspects"
+                    class="text-xs text-orange-400 hover:text-orange-300 font-bold transition flex items-center justify-center mx-auto gap-1"
+                  >
+                    Daha Fazla Göster <i class="fas fa-chevron-down"></i>
+                  </button>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+            <!-- Dasa & Firdaria -->
+            <div class="space-y-8">
+              <div>
+                <h3
+                  class="text-lg font-bold mb-4 text-yellow-500 border-b border-yellow-900/50 pb-2 flex items-center gap-2"
+                >
+                  <i class="fas fa-dharmachakra"></i> Hint Sistemi (Dasa)
+                </h3>
+                {% set ds = astro_data.get('vimshottari_dasa', {}) %} {% if not
+                ds.get('error') %}
+                <div
+                  class="bg-gradient-to-br from-slate-900 to-indigo-950 p-5 rounded-xl border border-yellow-900/30 shadow-inner"
+                >
+                  <div class="space-y-4">
+                    <div
+                      class="flex justify-between items-center bg-slate-800/40 p-3 rounded-lg border border-slate-700/50"
+                    >
+                      <div class="flex flex-col">
+                        <span
+                          class="text-[10px] uppercase text-slate-400 tracking-wider"
+                          >Maha Dasa (Ana Dönem)</span
+                        >
+                        <span class="text-lg font-black text-yellow-400"
+                          >{{ ds.main_dasa_lord }}</span
+                        >
+                      </div>
+                      <i class="fas fa-star text-yellow-500/30 text-2xl"></i>
+                    </div>
+                    <div
+                      class="flex justify-between items-center bg-slate-800/40 p-3 rounded-lg border border-slate-700/50"
+                    >
+                      <div class="flex flex-col">
+                        <span
+                          class="text-[10px] uppercase text-slate-400 tracking-wider"
+                          >Antara Dasa (Alt Dönem)</span
+                        >
+                        <span class="text-lg font-black text-yellow-500"
+                          >{{ ds.sub_dasa_lord }}</span
+                        >
+                      </div>
+                      <i class="fas fa-moon text-yellow-600/30 text-2xl"></i>
+                    </div>
+                    {% if ds.note %}
+                    <p
+                      class="text-[11px] text-slate-400 text-center italic leading-relaxed pt-2"
+                    >
+                      <i class="fas fa-info-circle mr-1"></i> {{ ds.note }}
+                    </p>
+                    {% endif %}
+                  </div>
+                </div>
+                {% else %}
+                <div
+                  class="text-slate-500 italic text-sm p-4 bg-slate-900/30 rounded-lg"
+                >
+                  Hindu Dasa verisi hesaplanamadı.
+                </div>
+                {% endif %}
+              </div>
+
+              <div>
+                <h3
+                  class="text-lg font-bold mb-4 text-orange-500 border-b border-orange-900/50 pb-2 flex items-center gap-2"
+                >
+                  <i class="fas fa-hourglass-half"></i> Klasik Sistem (Firdaria)
+                </h3>
+                {% set fd = astro_data.get('firdaria_periods', {}) %} {% if not
+                fd.get('error') %}
+                <div
+                  class="bg-gradient-to-br from-slate-900 to-orange-950 p-5 rounded-xl border border-orange-900/30 shadow-inner space-y-4"
+                >
+                  <div
+                    class="flex justify-between items-center bg-slate-800/40 p-3 rounded-lg border border-slate-700/50"
+                  >
+                    <div class="flex flex-col">
+                      <span
+                        class="text-[10px] uppercase text-slate-400 tracking-wider"
+                        >Büyük Periyot (7-13 yıl)</span
+                      >
+                      <span class="text-lg font-black text-orange-400"
+                        >{{ fd.main_ruler }}</span
+                      >
+                    </div>
+                  </div>
+                  <div
+                    class="flex justify-between items-center bg-slate-800/40 p-3 rounded-lg border border-slate-700/50"
+                  >
+                    <div class="flex flex-col">
+                      <span
+                        class="text-[10px] uppercase text-slate-400 tracking-wider"
+                        >Küçük Periyot (~1.5 yıl)</span
+                      >
+                      <span class="text-lg font-black text-orange-500"
+                        >{{ fd.sub_ruler }}</span
+                      >
+                    </div>
+                  </div>
+                </div>
+                {% else %}
+                <div
+                  class="text-slate-500 italic text-sm p-4 bg-slate-900/30 rounded-lg"
+                >
+                  Firdaria verisi hesaplanamadı.
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Returns & Progressions -->
+            <div class="space-y-8">
+              <div>
+                <h3
+                  class="text-lg font-bold mb-4 text-rose-400 border-b border-rose-900/50 pb-2 flex items-center gap-2"
+                >
+                  <i class="fas fa-sync"></i> Dönüş Haritaları (Returns)
+                </h3>
+                <div class="grid grid-cols-1 gap-4">
+                  {% set sr = astro_data.get('solar_return_chart', {}) %} {% if
+                  not sr.get('error') %}
+                  <div
+                    class="bg-rose-900/10 p-4 rounded-xl border border-rose-500/20 shadow-lg group hover:bg-rose-900/20 transition"
+                  >
+                    <div class="flex justify-between items-start mb-3">
+                      <div>
+                        <div
+                          class="text-[10px] uppercase font-black text-rose-300 tracking-tighter shadow-sm"
+                        >
+                          Solar Return (Güneş Dönüşü)
+                        </div>
+                        <div class="text-sm font-bold text-white mt-1">
+                          {{ sr.get('datetime', 'Bilinmiyor') }}
+                        </div>
+                      </div>
+                      <i
+                        class="fas fa-sun text-rose-500 text-2xl group-hover:rotate-12 transition"
+                      ></i>
+                    </div>
+                    {% if sr.get('planet_positions') %}
+                    <div
+                      class="grid grid-cols-4 gap-1.5 mt-3 pt-3 border-t border-rose-500/20"
+                    >
+                      {% for p, info in sr.planet_positions.items() if p in
+                      ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter',
+                      'Saturn'] %}
+                      <div class="text-center">
+                        <div class="text-xs text-rose-400">
+                          {{ planetSymbols.get(p) }}
+                        </div>
+                        <div
+                          class="text-[8px] text-slate-400 font-bold uppercase"
+                        >
+                          {{ p[:3] }}
+                        </div>
+                        <div class="text-[9px] text-white">{{ info.sign }}</div>
+                      </div>
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                  {% endif %} {% set lr = astro_data.get('lunar_return_chart',
+                  {}) %} {% if not lr.get('error') %}
+                  <div
+                    class="bg-indigo-900/10 p-4 rounded-xl border border-indigo-500/20 shadow-lg group hover:bg-indigo-900/20 transition"
+                  >
+                    <div class="flex justify-between items-start mb-3">
+                      <div>
+                        <div
+                          class="text-[10px] uppercase font-black text-indigo-300 tracking-tighter"
+                        >
+                          Lunar Return (Ay Dönüşü)
+                        </div>
+                        <div class="text-sm font-bold text-white mt-1">
+                          {{ lr.get('datetime', 'Bilinmiyor') }}
+                        </div>
+                      </div>
+                      <i
+                        class="fas fa-moon text-indigo-500 text-2xl group-hover:-rotate-12 transition"
+                      ></i>
+                    </div>
+                    {% if lr.get('planet_positions') %}
+                    <div
+                      class="grid grid-cols-4 gap-1.5 mt-3 pt-3 border-t border-indigo-500/20"
+                    >
+                      {% for p, info in lr.planet_positions.items() if p in
+                      ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter',
+                      'Saturn'] %}
+                      <div class="text-center">
+                        <div class="text-xs text-indigo-400">
+                          {{ planetSymbols.get(p) }}
+                        </div>
+                        <div
+                          class="text-[8px] text-slate-400 font-bold uppercase"
+                        >
+                          {{ p[:3] }}
+                        </div>
+                        <div class="text-[9px] text-white">{{ info.sign }}</div>
+                      </div>
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div>
+                <h3
+                  class="text-lg font-bold mb-4 text-cyan-400 border-b border-cyan-900/50 pb-2 flex items-center gap-2"
+                >
+                  <i class="fas fa-walking"></i> İlerletmeler (Progressions)
+                </h3>
+
+                <!-- Secondary Progressions -->
+                {% set sp = astro_data.get('secondary_progressions', {}) %} {%
+                if sp %}
+                <div class="mb-6">
+                  <div
+                    class="text-[10px] uppercase font-bold text-cyan-500 mb-2 tracking-widest flex items-center gap-2"
+                  >
+                    <div class="h-[1px] bg-cyan-900 flex-1"></div>
+                    İkincil İlerletmeler (2nd)
+                    <div class="h-[1px] bg-cyan-900 flex-1"></div>
+                  </div>
+                  {{ renderPlanetTable("", sp, 'fa-compass', 'cyan-400', "Günlük
+                  ilerletme hızıyla (1 gün = 1 yıl) ömür boyu gelişimi
+                  gösterir.") }}
+                </div>
+                {% endif %}
+
+                <!-- Solar Arc Progressions -->
+                {% set sa = astro_data.get('solar_arc_progressions', {}) %} {%
+                if sa %}
+                <div>
+                  <div
+                    class="text-[10px] uppercase font-bold text-blue-400 mb-2 tracking-widest flex items-center gap-2"
+                  >
+                    <div class="h-[1px] bg-blue-900 flex-1"></div>
+                    Solar Arc Directions
+                    <div class="h-[1px] bg-blue-900 flex-1"></div>
+                  </div>
+                  {{ renderPlanetTable("", sa, 'fa-sun', 'blue-300', "Tüm
+                  gezegenlerin Güneş hızıyla ilerlediği, majör olayları gösteren
+                  sistem.") }}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- AI Interpretation Modal -->
+    <div
+      id="ai-modal"
+      class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md hidden transition-all"
+    >
+      <div
+        class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] scale-95 transition-transform duration-300"
+        id="ai-modal-container"
+      >
+        <!-- Modal Header -->
+        <div
+          class="px-6 py-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/80"
+        >
+          <div class="flex items-center gap-3">
+            <div class="p-2 bg-purple-600/20 rounded-lg">
+              <i class="fas fa-robot text-purple-400"></i>
+            </div>
+            <h3
+              id="ai-modal-title"
+              class="text-lg font-bold text-white tracking-wide"
+            >
+              AI Analizi
+            </h3>
+          </div>
+          <button
+            onclick="closeAIModal()"
+            class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white transition-all"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div
+          id="ai-modal-body"
+          class="p-8 overflow-y-auto custom-scrollbar flex-1 text-slate-200 text-sm leading-relaxed"
+        >
+          <!-- Content here -->
+        </div>
+
+        <!-- Modal Footer -->
+        <div
+          class="px-6 py-4 border-t border-slate-700 bg-slate-900/50 flex justify-between items-center"
+        >
+          <div class="flex gap-2">
+            <button
+              id="modal-read-aloud"
+              class="flex items-center gap-2 px-5 py-2.5 bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded-xl text-xs font-bold transition-all border border-green-600/20"
+            >
+              <i class="fas fa-volume-up"></i> Dinle
+            </button>
+            <button
+              id="modal-stop-voice"
+              class="flex items-center gap-2 px-4 py-2.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-xl text-xs font-bold transition-all border border-red-600/20 hidden"
+            >
+              <i class="fas fa-stop"></i> Durdur
+            </button>
+          </div>
+          <button
+            id="modal-copy"
+            class="flex items-center gap-2 px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-bold transition-all border border-slate-600/50"
+          >
+            <i class="fas fa-copy"></i> Kopyala
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Veri Blokları (JS Tarafından Kullanılacak) -->
+    <script id="astro-data-json" type="application/json">
+      {{ astro_data | tojson | safe }}
+    </script>
+    <script id="planet-symbols-json" type="application/json">
+      {{ planetSymbols | tojson | safe }}
+    </script>
+
+    <script>
+      // Global değişkenler
+      let isPlaying = false;
+      let interpretationAudio = null;
+      let astroData = null;
+      let planetSymbols = {};
+      let t_aspects = [];
+      let currentInterpretationText = ""; // Yeni modal için metin tutucu
+      let modalSpeechSynthesis = window.speechSynthesis;
+      let modalUtterance = null;
+
+      const aspectSymbols = {
+        Conjunction: "☌",
+        Opposition: "☍",
+        Trine: "△",
+        Square: "□",
+        Sextile: "⚹",
+        Quincunx: "⚻",
+        Semisextile: "⚺",
+        Semisquare: "∠",
+        Sesquiquadrate: "⚼",
+      };
+      const aspectNames = {
+        Conjunction: "Kavuşum",
+        Opposition: "Karşıt",
+        Trine: "Üçgen",
+        Square: "Kare",
+        Sextile: "Altmışlık",
+        Quincunx: "150° Açı",
+        Semisextile: "30° Açı",
+        Semisquare: "Yarım Kare",
+        Sesquiquadrate: "Bir Buçuk Kare",
+        semisextile: "30° Açı",
+        "semi-sextile": "30° Açı",
+        "semi sextile": "30° Açı",
+        semisquare: "Yarım Kare",
+        "semi-square": "Yarım Kare",
+        "semi square": "Yarım Kare",
+        sesquiquadrate: "Bir Buçuk Kare",
+        sesquisquare: "Bir Buçuk Kare",
+        quincunx: "150° Açı",
+        inconjunct: "150° Açı",
+        quintile: "Quintile (72°)",
+        biquintile: "Bi-Quintile (144°)",
+        septile: "Septile",
+        novile: "Novile",
+        undecile: "Undecile",
+        decile: "Decile",
+      };
+
+      function getSignFromDegree(degree) {
+        const signs = [
+          "Koç",
+          "Boğa",
+          "İkizler",
+          "Yengeç",
+          "Aslan",
+          "Başak",
+          "Terazi",
+          "Akrep",
+          "Yay",
+          "Oğlak",
+          "Kova",
+          "Balık",
+        ];
+        if (
+          degree === undefined ||
+          degree === null ||
+          isNaN(parseFloat(degree))
+        )
+          return "N/A";
+        const signIndex = Math.floor(parseFloat(degree) / 30) % 12;
+        return signs[signIndex] || "N/A";
+      }
+
+      function getDegreeInSign(degree) {
+        if (
+          degree === undefined ||
+          degree === null ||
+          isNaN(parseFloat(degree))
+        )
+          return "";
+        return (parseFloat(degree) % 30).toFixed(2);
+      }
+
+      function formatPlanetName(planetKey) {
+        if (!planetKey) return "";
+        let name = planetKey
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase());
+        if (
+          name === "Mean Node" ||
+          name === "True Node" ||
+          name === "North Node"
+        )
+          return "Kuzey Ay Düğümü";
+        if (name === "South Node") return "Güney Ay Düğümü";
+        if (
+          name === "Mean Lilith" ||
+          name === "True Lilith" ||
+          name === "Black Moon Lilith"
+        )
+          return "Kara Ay Lilith";
+        if (name === "Part Of Fortune") return "Şans Noktası";
+        return name;
+      }
+
+      function getAspectColor(aspectType) {
+        if (!aspectType) return "text-slate-300";
+        const type = aspectType
+          .toLowerCase()
+          .replace(/-/g, " ")
+          .replace(/_/g, " ");
+        if (type.includes("trine")) return "text-green-400";
+        if (type.includes("square") || type.includes("opposition"))
+          return "text-red-400";
+        if (type.includes("sextile")) return "text-blue-400";
+        if (type.includes("conjunction")) return "text-yellow-500";
+        return "text-purple-400";
+      }
+
+      // Nested object'ten güvenli veri almak için yardımcı fonksiyon
+      function getNestedValue(obj, path, defaultValue = null) {
+        if (!obj || typeof path !== "string") return defaultValue;
+        const value = path
+          .split(".")
+          .reduce((acc, part) => acc && acc[part], obj);
+        return value === undefined || value === null ? defaultValue : value;
+      }
+
+      // Debug bilgileri
+      function updateDebugInfo() {
+        const dataStatus = document.getElementById("data-status");
+        const debugInfo = document.getElementById("debug-info");
+        const hideDebugBtn = document.getElementById("hide-debug");
+
+        // Debug panel gizle butonu işlevselliği
+        if (hideDebugBtn) {
+          hideDebugBtn.addEventListener("click", function () {
+            if (debugInfo) {
+              debugInfo.style.display = "none";
+              // Tercih edersen localStorage'a kaydedebiliriz ki kullanıcı yeniden yüklendiğinde gizli kalsın
+              localStorage.setItem("hideDebug", "true");
+            }
+          });
+        }
+
+        // Daha önce gizlenmişse
+        if (localStorage.getItem("hideDebug") === "true") {
+          if (debugInfo) debugInfo.style.display = "none";
+        }
+
+        if (dataStatus) {
+          if (astroData) {
+            dataStatus.textContent = `Yüklendi - ${
+              Object.keys(astroData).length
+            } kategori`;
+            dataStatus.classList.remove("bg-red-800");
+            dataStatus.classList.add("bg-green-700");
+          } else {
+            dataStatus.textContent = "VERİ YOK!";
+            dataStatus.classList.add("bg-red-800");
+          }
+        }
+
+        // Kullanıcı ve doğum bilgilerini doldur
+        if (astroData) {
+          const userNameEl = document.getElementById("debug-user-name");
+          if (userNameEl) {
+            userNameEl.textContent = astroData.user_name || "Bilinmiyor";
+          }
+
+          const birthDateEl = document.getElementById("debug-birth-date");
+          if (birthDateEl) {
+            const birthInfo = getNestedValue(astroData, "birth_info", {});
+            birthDateEl.textContent = `${birthInfo.date || ""} ${
+              birthInfo.time || ""
+            }`;
+          }
+
+          const positionsEl = document.getElementById("debug-positions");
+          if (positionsEl) {
+            const positions = [];
+            const sun = getNestedValue(
+              astroData,
+              "natal_planet_positions.Sun.sign"
+            );
+            const moon = getNestedValue(
+              astroData,
+              "natal_planet_positions.Moon.sign"
+            );
+            if (sun) positions.push(`Güneş: ${sun}`);
+            if (moon) positions.push(`Ay: ${moon}`);
+            positionsEl.textContent =
+              positions.length > 0 ? positions.join(", ") : "Bilgi yok";
+          }
+
+          const transitDateEl = document.getElementById("debug-transit-date");
+          if (transitDateEl) {
+            const transitDate = getNestedValue(
+              astroData,
+              "reference_datetime_for_calculations.date"
+            );
+            transitDateEl.textContent = transitDate || "Belirtilmemiş";
+          }
+        }
+      }
+
+      // Nested değerleri güvenli bir şekilde alma fonksiyonu - Genişletilmiş versiyon
+      function getNestedValue(obj, path, defaultVal = null) {
+        if (!obj) return defaultVal;
+
+        try {
+          const keys = path.split(".");
+          let current = obj;
+
+          for (const key of keys) {
+            if (current[key] === undefined || current[key] === null) {
+              return defaultVal;
+            }
+            current = current[key];
+          }
+
+          return current;
+        } catch (error) {
+          console.error(`getNestedValue hatası (${path}):`, error);
+          return defaultVal;
+        }
+      }
+
+      // Show All Data butonuna işlevsellik ekle
+      function setupShowAllDataButton() {
+        const showAllDataBtn = document.getElementById("show-data-debug");
+        if (showAllDataBtn) {
+          showAllDataBtn.addEventListener("click", function () {
+            console.log("TÜM VERİLER:", astroData);
+
+            // Veri analizini konsola yazdır
+            if (astroData) {
+              console.group("Veri Analizi");
+
+              // Ana kategori listesi
+              const categories = Object.keys(astroData);
+              console.log("Ana kategoriler:", categories);
+
+              // Gezegen pozisyonları
+              const natalPlanets = getNestedValue(
+                astroData,
+                "natal_planet_positions"
+              );
+              if (natalPlanets) {
+                console.log(
+                  "Doğum haritası gezegen pozisyonları:",
+                  Object.keys(natalPlanets).map(
+                    (planet) =>
+                      `${planet}: ${natalPlanets[planet].sign} ${natalPlanets[planet].degree}°`
+                  )
+                );
+              } else {
+                console.warn("Doğum haritası gezegen pozisyonları bulunamadı!");
+              }
+
+              // Transit gezegen pozisyonları
+              const transitPlanets = getNestedValue(
+                astroData,
+                "transit_positions"
+              );
+              if (transitPlanets) {
+                console.log(
+                  "Transit gezegen pozisyonları:",
+                  Object.keys(transitPlanets).map(
+                    (planet) =>
+                      `${planet}: ${transitPlanets[planet].sign} ${transitPlanets[planet].degree}°`
+                  )
+                );
+              } else {
+                console.warn("Transit gezegen pozisyonları bulunamadı!");
+              }
+
+              // Genel veri özeti
+              console.log(
+                "Veri boyutu:",
+                new Blob([JSON.stringify(astroData)]).size / 1024,
+                "KB"
+              );
+              console.log(
+                "Kullanıcı adı:",
+                astroData.user_name || "Belirtilmemiş"
+              );
+
+              console.groupEnd();
+            } else {
+              console.error("Analiz için veri yok!");
+            }
+
+            // Dialog göster
+            alert(`Tüm veriler konsola yazdırıldı (${
+              Object.keys(astroData || {}).length
+            } kategori).
+      Geliştirici konsolunu F12 tuşuna basarak açabilirsiniz.
+      Gezegen pozisyonları ve diğer veriler konsolda listelenmiştir.`);
+
+            // URL hash'i güncelle
+            if (history.pushState) {
+              history.pushState(null, null, "#timing");
+            }
+            const timingTabBtn = document.querySelector('[data-tab="timing"]');
+            if (timingTabBtn) {
+              timingTabBtn.click();
+            }
+          });
+
+          // Butonu görsel olarak vurgula
+          showAllDataBtn.style.backgroundColor = "#4c1d95";
+          showAllDataBtn.style.fontWeight = "bold";
+          showAllDataBtn.style.animation = "pulse 2s infinite";
+
+          // Pulse animasyonu için CSS ekle
+          const style = document.createElement("style");
+          style.textContent = `
+                          @keyframes pulse {
+                              0% { transform: scale(1); }
+                              50% { transform: scale(1.05); }
+                              100% { transform: scale(1); }
+                          }
+                      `;
+          document.head.appendChild(style);
+        }
+      }
+
+      // Sayfa yüklendikten sonra çalışacak kodlar
+      document.addEventListener("DOMContentLoaded", function () {
+        try {
+          // Sayfayı şablon verileriyle doldur
+          console.log("Sayfa yükleniyor...");
+
+          // Jinja2 verisini güvenli bir şekilde aktar
+          try {
+            const dataText =
+              document.getElementById("astro-data-json").textContent;
+            astroData = JSON.parse(dataText);
+
+            const symbolsText = document.getElementById(
+              "planet-symbols-json"
+            ).textContent;
+            planetSymbols = JSON.parse(symbolsText);
+
+            // Populate t_aspects from astroData for global JS access
+            t_aspects = getNestedValue(
+              astroData,
+              "transit_to_natal_aspects",
+              []
+            );
+            console.log("astroData & symbols initialized from JSON blocks");
+
+            // Modal kontrollerini bağla
+            setupAIModalListeners();
+          } catch (e) {
+            console.error("Veri yüklenirken hata:", e);
+          }
+
+          // if ( useLocalStorage ) {
+          //    console.log( "LocalStorage kullanılıyor..." );
+          //      loadFromLocalStorage();
+          //  } else {
+          //      console.log( "Backend verileri kullanılıyor..." );
+          //      loadFromBackend();
+          //   }
+
+          updateDebugInfo();
+          initializeTabs();
+
+          setTimeout(function () {
+            activateTabs();
+            console.log(
+              "Sekme içeriği kontrolü: veri var mı?",
+              document.querySelector("#natal .bg-slate-700") ? "Evet" : "Hayır"
+            );
+            document.querySelectorAll(".tab-content").forEach((tab) => {
+              const tabId = tab.id;
+              const elements = tab.querySelectorAll("*").length;
+              console.log(
+                `Sekme "${tabId}" içerik kontrolü: ${elements} element var`
+              );
+            });
+          }, 500);
+
+          setupAIGenerationButton();
+          setupCopyAllDataButton();
+          setupShowAllDataButton();
+        } catch (pageLoadError) {
+          // DOMContentLoaded içindeki ana try bloğu için catch
+          console.error(
+            "Sayfa yüklenirken genel bir hata oluştu:",
+            pageLoadError
+          );
+          // Kullanıcıya bir hata mesajı göstermek iyi bir pratik olabilir.
+          // Örneğin: document.body.innerHTML = "Sayfa yüklenemedi. Lütfen daha sonra tekrar deneyin.";
+        }
+      }); // DOMContentLoaded sonu
+
+      // Tab'ları başlat - geliştirilmiş versiyon
+      function initializeTabs() {
+        const tabButtons = document.querySelectorAll(".tab-btn");
+        const tabContents = document.querySelectorAll(".tab-content");
+
+        console.log(
+          "Tab'lar başlatılıyor:",
+          tabButtons.length,
+          "buton,",
+          tabContents.length,
+          "içerik"
+        );
+
+        if (tabButtons.length === 0) {
+          console.warn(
+            "Hiç tab butonu (.tab-btn) bulunamadı. Sekme sistemi çalışmayabilir."
+          );
+        }
+
+        // 1. Sekme butonu tıklama olaylarını ayarla
+        tabButtons.forEach((button) => {
+          button.addEventListener("click", (e) => {
+            e.preventDefault();
+            const tabId = button.getAttribute("data-tab");
+            console.log("Sekme tıklaması:", tabId);
+
+            // Tüm butonların aktif stilini kaldır ve varsayılan stil ata
+            tabButtons.forEach((btn) => {
+              btn.classList.remove(
+                "active",
+                "text-blue-400",
+                "border-blue-400",
+                "bg-slate-800"
+              );
+              btn.classList.add(
+                "text-slate-400",
+                "border-transparent",
+                "hover:text-slate-200",
+                "hover:border-slate-500"
+              );
+            });
+            // Tüm içerikleri gizle
+            tabContents.forEach((content) => {
+              content.classList.remove("active");
+              content.classList.add("hidden");
+            });
+
+            // Tıklanan butonu aktif yap ve stilini ayarla
+            button.classList.add(
+              "active",
+              "text-blue-400",
+              "border-blue-400",
+              "bg-slate-800"
+            );
+            button.classList.remove(
+              "text-slate-400",
+              "border-transparent",
+              "hover:text-slate-200",
+              "hover:border-slate-500"
+            );
+
+            // İlgili içeriği göster
+            const tabContent = document.getElementById(tabId);
+            if (tabContent) {
+              tabContent.classList.add("active");
+              tabContent.classList.remove("hidden");
+              tabContent.classList.add("fade-in");
+              setTimeout(() => {
+                tabContent.classList.remove("fade-in");
+              }, 300);
+
+              // URL hash'i güncelle
+              if (history.pushState) {
+                history.pushState(null, null, "#" + tabId);
+              } else {
+                window.location.hash = "#" + tabId;
+              }
+              console.log(`Sekme içeriği "${tabId}" aktifleştirildi.`);
+            } else {
+              console.error(`"${tabId}" ID'li sekme içeriği bulunamadı!`);
+            }
+          });
+        });
+
+        // 2. Başlangıçta aktif olacak sekmeyi belirle ve ayarla
+        tabContents.forEach((content) => {
+          content.classList.remove("active");
+          content.classList.add("hidden");
+        });
+        tabButtons.forEach((btn) => {
+          btn.classList.remove(
+            "active",
+            "text-blue-400",
+            "border-blue-400",
+            "bg-slate-800"
+          );
+          btn.classList.add(
+            "text-slate-400",
+            "border-transparent",
+            "hover:text-slate-200",
+            "hover:border-slate-500"
+          );
+        });
+
+        let activeTabId = window.location.hash
+          ? window.location.hash.substring(1)
+          : null;
+        let initialTabActivated = false;
+
+        if (activeTabId) {
+          const targetButton = document.querySelector(
+            `.tab-btn[data-tab="${activeTabId}"]`
+          );
+          const targetContent = document.getElementById(activeTabId);
+          if (targetButton && targetContent) {
+            targetButton.classList.add(
+              "active",
+              "text-blue-400",
+              "border-blue-400",
+              "bg-slate-800"
+            );
+            targetButton.classList.remove(
+              "text-slate-400",
+              "border-transparent",
+              "hover:text-slate-200",
+              "hover:border-slate-500"
+            );
+            targetContent.classList.add("active");
+            targetContent.classList.remove("hidden");
+            initialTabActivated = true;
+            console.log(
+              `Başlangıç sekmesi URL hash'inden ayarlandı: #${activeTabId}`
+            );
+          } else {
+            console.warn(
+              `URL hash (#${activeTabId}) için geçerli sekme veya içerik bulunamadı. İlk sekmeye geçiliyor.`
+            );
+            activeTabId = null;
+          }
+        }
+
+        if (!initialTabActivated && tabButtons.length > 0) {
+          const firstButton = tabButtons[0];
+          activeTabId = firstButton.getAttribute("data-tab");
+          const firstContent = document.getElementById(activeTabId);
+
+          firstButton.classList.add(
+            "active",
+            "text-blue-400",
+            "border-blue-400",
+            "bg-slate-800"
+          );
+          firstButton.classList.remove(
+            "text-slate-400",
+            "border-transparent",
+            "hover:text-slate-200",
+            "hover:border-slate-500"
+          );
+          if (firstContent) {
+            firstContent.classList.add("active");
+            firstContent.classList.remove("hidden");
+          }
+          console.log(
+            `Başlangıç sekmesi ilk sekmeye ayarlandı: ${activeTabId}`
+          );
+        } else if (!initialTabActivated && tabContents.length > 0) {
+          tabContents[0].classList.add("active");
+          tabContents[0].classList.remove("hidden");
+          console.log(
+            `Başlangıç içeriği (buton yok) ilk içeriğe ayarlandı: ${tabContents[0].id}`
+          );
+        }
+
+        if (typeof setupShowAllButtons === "function") {
+          setupShowAllButtons();
+        }
+      }
+
+      // Veri yüklendikten sonra sekmeleri aktifleştirme fonksiyonu - genişletilmiş versiyon
+      function activateTabs() {
+        const tabButtons = document.querySelectorAll(".tab-btn");
+        const tabContents = document.querySelectorAll(".tab-content");
+
+        console.log("Sekmeler aktifleştiriliyor...");
+
+        document.querySelectorAll(".tab-content").forEach((tab) => {
+          const tabId = tab.id;
+          const elements = tab.querySelectorAll("*").length;
+          console.log(
+            `Sekme "${tabId}" içerik kontrolü: ${elements} element var`
+          );
+
+          const charts = tab.querySelectorAll(".chart-planet").length;
+          const aspects = tab.querySelectorAll(".aspect-line").length;
+          console.log(
+            `Sekme "${tabId}" içerik kontrolü: ${elements} element, ${charts} gezegen, ${aspects} açı var`
+          );
+
+          const dataCards = tab.querySelectorAll(".bg-slate-800");
+          if (
+            charts === 0 &&
+            aspects === 0 &&
+            tabId !== "ai" &&
+            tabId !== "other"
+          ) {
+            dataCards.forEach((card) => {
+              if (
+                !card.classList.contains("dummy-data-marker") &&
+                !card.querySelector(".text-center.py-4.text-slate-400")
+              ) {
+                card.classList.add("dummy-data-marker");
+              }
+            });
+          }
+        });
+
+        console.log("Sekmeler aktifleştirildi");
+      }
+
+      // Eski `loadFromLocalStorage`, `loadFromBackend` ve `fillTabContents` fonksiyonları
+      // `loadAndProcessAstroData` ve `displayAllData` (ve alt display fonksiyonları)
+      // tarafından devralındığı için artık gereksizdir.
+      // Bu fonksiyonlar bir sonraki adımda temizlenebilir veya yorum satırı yapılabilir.
+      // Şimdilik yerlerinde bırakıyorum.
+
+      /*
+              function loadFromLocalStorage() { ... eski içerik ... }
+              function loadFromBackend() { ... eski içerik ... }
+              function fillTabContents( data ) { ... eski içerik ... }
+              */
+
+      // Doğum haritası bilgilerini doldur - geliştirilmiş versiyon
+      function fillNatalChartData(data) {
+        console.log(
+          "Doğum haritası verileri dolduruluyor...",
+          data.natal_planet_positions
+            ? "Gezegen pozisyonları var"
+            : "Gezegen pozisyonları yok"
+        );
+
+        try {
+          // Gezegen kartlarını doğrudan DOM üzerinde oluşturalım
+          const natalPositions = data.natal_planet_positions;
+
+          if (natalPositions) {
+            console.log("Gezegenler:", Object.keys(natalPositions));
+
+            // Doğum haritası tekerleği
+            const natalChartWheel =
+              document.getElementById("natal-chart-wheel");
+            if (natalChartWheel) {
+              console.log(
+                "Doğum haritası tekerleği bulundu, gezegenleri yerleştiriyorum"
+              );
+
+              // Önceki gezegenleri temizle
+              const existingPlanets =
+                natalChartWheel.querySelectorAll(".chart-planet");
+              existingPlanets.forEach((planet) => planet.remove());
+
+              // Gezegen renkleri
+              const planetColors = {
+                Sun: "#f59e0b", // Sarı
+                Moon: "#93c5fd", // Mavi
+                Mercury: "#a78bfa", // Mor
+                Venus: "#f472b6", // Pembe
+                Mars: "#ef4444", // Kırmızı
+                Jupiter: "#fb923c", // Turuncu
+                Saturn: "#9ca3af", // Gri
+                Uranus: "#60a5fa", // Açık mavi
+                Neptune: "#c084fc", // Mor
+                Pluto: "#7f1d1d", // Koyu kırmızı
+                Chiron: "#10b981", // Yeşil
+                Lilith: "#6b21a8", // Koyu mor
+              };
+
+              // Gezegen sembolleri
+              const planetSymbols = {
+                Sun: "☉",
+                Moon: "☽",
+                Mercury: "☿",
+                Venus: "♀",
+                Mars: "♂",
+                Jupiter: "♃",
+                Saturn: "♄",
+                Uranus: "♅",
+                Neptune: "♆",
+                Pluto: "♇",
+                Chiron: "⚷",
+                Lilith: "⚸",
+              };
+
+              // Gezegenleri yerleştir
+              if (
+                data.natal_planet_positions_visual &&
+                data.natal_planet_positions_visual.length > 0
+              ) {
+                // Görsel yerleşim verisi varsa onu kullan
+                data.natal_planet_positions_visual.forEach((planet) => {
+                  const planetElement = document.createElement("div");
+                  planetElement.className = "chart-planet";
+                  planetElement.style.top = `${planet.y}%`;
+                  planetElement.style.left = `${planet.x}%`;
+                  planetElement.style.backgroundColor =
+                    planet.color || planetColors[planet.name] || "#f59e0b";
+                  planetElement.textContent =
+                    planetSymbols[planet.name] || planet.name.charAt(0);
+
+                  // Gezegen adını tooltip olarak ekle
+                  planetElement.title =
+                    planet.name +
+                    (natalPositions[planet.name]
+                      ? ` (${natalPositions[planet.name].sign} ${natalPositions[
+                          planet.name
+                        ].degree.toFixed(1)}°)`
+                      : "");
+
+                  // chart-house elementi varsa ona ekle, yoksa doğrudan tekere ekle
+                  const chartHouse =
+                    natalChartWheel.querySelector(".chart-house");
+                  if (chartHouse) {
+                    chartHouse.appendChild(planetElement);
+                  } else {
+                    natalChartWheel.appendChild(planetElement);
+                  }
+
+                  console.log(
+                    `Gezegen eklendi: ${planet.name} (${planet.x}, ${planet.y})`
+                  );
+                });
+              } else {
+                // Görsel yerleşim verisi yoksa basit bir yöntemle yerleştir
+                console.log(
+                  "Görsel yerleşim verisi bulunamadı, basit dairesel yerleşim kullanılıyor"
+                );
+
+                // Tüm gezegenleri bir listeye alalım
+                const planetList = [];
+
+                // Standart gezegenler
+                const standardPlanets = [
+                  "Sun",
+                  "Moon",
+                  "Mercury",
+                  "Venus",
+                  "Mars",
+                  "Jupiter",
+                  "Saturn",
+                  "Uranus",
+                  "Neptune",
+                  "Pluto",
+                ];
+
+                // Diğer göksel cisimler
+                const otherBodies = [
+                  "Chiron",
+                  "Lilith",
+                  "NorthNode",
+                  "SouthNode",
+                  "Pallas",
+                  "Juno",
+                  "Vesta",
+                  "Ceres",
+                ];
+
+                // Önce standart gezegenleri ekle
+                standardPlanets.forEach((planet) => {
+                  if (natalPositions[planet]) {
+                    planetList.push(planet);
+                  }
+                });
+
+                // Sonra diğer göksel cisimleri ekle
+                otherBodies.forEach((body) => {
+                  if (natalPositions[body]) {
+                    planetList.push(body);
+                  }
+                });
+
+                // Özel noktaları kontrol et (farklı bir veri yapısında olabilirler)
+                if (data.natal_summary) {
+                  if (
+                    data.natal_summary.chiron &&
+                    !planetList.includes("Chiron")
+                  ) {
+                    natalPositions["Chiron"] = data.natal_summary.chiron;
+                    planetList.push("Chiron");
+                  }
+
+                  if (
+                    data.natal_summary.lilith &&
+                    !planetList.includes("Lilith")
+                  ) {
+                    natalPositions["Lilith"] = data.natal_summary.lilith;
+                    planetList.push("Lilith");
+                  }
+                }
+
+                // Dairesel yerleşim için açılar ve pozisyonları hesapla
+                for (let i = 0; i < planetList.length; i++) {
+                  const planetName = planetList[i];
+                  const angle = (i / planetList.length) * 2 * Math.PI;
+                  const distance = 40; // Merkezden % uzaklık
+                  const x = 50 + Math.cos(angle) * distance;
+                  const y = 50 + Math.sin(angle) * distance;
+
+                  const planetElement = document.createElement("div");
+                  planetElement.className = "chart-planet";
+                  planetElement.style.top = `${y}%`;
+                  planetElement.style.left = `${x}%`;
+                  planetElement.style.backgroundColor =
+                    planetColors[planetName] || "#f59e0b";
+                  planetElement.textContent =
+                    planetSymbols[planetName] || planetName.charAt(0);
+
+                  // Gezegen adını tooltip olarak ekle
+                  planetElement.title =
+                    planetName +
+                    (natalPositions[planetName]
+                      ? ` (${natalPositions[planetName].sign} ${natalPositions[
+                          planetName
+                        ].degree.toFixed(1)}°)`
+                      : "");
+
+                  // chart-house elementi varsa ona ekle, yoksa doğrudan tekere ekle
+                  const chartHouse =
+                    natalChartWheel.querySelector(".chart-house");
+                  if (chartHouse) {
+                    chartHouse.appendChild(planetElement);
+                  } else {
+                    natalChartWheel.appendChild(planetElement);
+                  }
+
+                  console.log(`Gezegen eklendi: ${planetName} (${x}, ${y})`);
+                }
+              }
+            } else {
+              console.warn(
+                "Doğum haritası tekerleği bulunamadı (natal-chart-wheel)"
+              );
+            }
+
+            // Gezegen listesi
+            const planetList = document.querySelector("#natal .space-y-4");
+            if (planetList) {
+              // Mevcut içeriği koruyarak yeni gezegenleri ekleyelim
+              const existingPlanetElements = Array.from(
+                planetList.querySelectorAll(".flex.items-center")
+              );
+              const existingPlanets = existingPlanetElements.map((elem) => {
+                const nameText =
+                  elem.querySelector("p.font-medium")?.textContent || "";
+                // "Güneş ..." veya "Mars ..." gibi metinden gezegen adını çıkar
+                const planetName = nameText.split(" ")[0];
+                return {
+                  elem,
+                  nameText,
+                  planetName,
+                  englishName: translatePlanetNameToEnglish(planetName),
+                };
+              });
+
+              console.log(
+                "Mevcut gezegenler:",
+                existingPlanets.map((p) => p.planetName).join(", ")
+              );
+
+              // Eklenecek gezegenleri belirle
+              const keyPlanets = [
+                "Sun",
+                "Moon",
+                "Mercury",
+                "Venus",
+                "Mars",
+                "Jupiter",
+                "Saturn",
+              ];
+
+              keyPlanets.forEach((planetName) => {
+                const planetData = natalPositions[planetName];
+                if (planetData) {
+                  // Bu gezegen zaten listede var mı kontrol et
+                  const existingPlanet = existingPlanets.find(
+                    (p) => p.englishName === planetName
+                  );
+
+                  if (!existingPlanet) {
+                    // Element yoksa ekle
+                    const planetContainer = document.createElement("div");
+                    planetContainer.className = "flex items-center";
+
+                    let iconColor = "#f59e0b";
+                    let iconClass = "sun";
+                    let turkishName = translatePlanetNameToTurkish(planetName);
+
+                    if (planetName === "Moon") {
+                      iconColor = "#93c5fd";
+                      iconClass = "moon";
+                    } else if (planetName === "Mercury") {
+                      iconColor = "#a78bfa";
+                      iconClass = "bolt";
+                    } else if (planetName === "Venus") {
+                      iconColor = "#f472b6";
+                      iconClass = "heart";
+                    } else if (planetName === "Mars") {
+                      iconColor = "#ef4444";
+                      iconClass = "fire";
+                    } else if (planetName === "Jupiter") {
+                      iconColor = "#fb923c";
+                      iconClass = "star";
+                    } else if (planetName === "Saturn") {
+                      iconColor = "#9ca3af";
+                      iconClass = "ring";
+                    }
+
+                    // Burç adı varsa son ekini belirle
+                    const sign = planetData.sign || "";
+                    let suffix = "de";
+
+                    if (
+                      ["Koç", "İkizler", "Yengeç", "Aslan", "Oğlak"].includes(
+                        sign
+                      )
+                    ) {
+                      suffix = "de";
+                    } else if (
+                      [
+                        "Boğa",
+                        "Başak",
+                        "Terazi",
+                        "Akrep",
+                        "Balık",
+                        "Kova",
+                        "Yay",
+                      ].includes(sign)
+                    ) {
+                      suffix = "da";
+                    }
+
+                    planetContainer.innerHTML = `
+                                      <div class="planet-icon" style="background-color: ${iconColor};">
+                                          <i class="fas fa-${iconClass}"></i>
+                                      </div>
+                                      <div>
+                                          <p class="font-medium">${turkishName} ${
+                      planetData.sign || ""
+                    }'${suffix}</p>
+                                          <p class="text-sm text-slate-400">
+                                              ${
+                                                planetData.house
+                                                  ? `${planetData.house}. Evde`
+                                                  : ""
+                                              }
+                                              ${
+                                                planetData.degree
+                                                  ? `${planetData.degree.toFixed(
+                                                      2
+                                                    )}°`
+                                                  : ""
+                                              }
+                                          </p>
+                                      </div>
+                                  `;
+
+                    planetList.appendChild(planetContainer);
+                    console.log(`Gezegen listesine eklendi: ${turkishName}`);
+                  } else {
+                    console.log(
+                      `Gezegen zaten listede mevcut: ${existingPlanet.planetName}`
+                    );
+                  }
+                }
+              });
+            }
+
+            // Açıları oluştur
+            createAspects(data);
+          }
+
+          console.log("Doğum haritası bilgileri dolduruldu.");
+        } catch (error) {
+          console.error("Doğum haritası bilgilerini doldururken hata:", error);
+        }
+      }
+
+      // Gezegen adlarını İngilizce'ye çevir
+      function translatePlanetNameToEnglish(turkishName) {
+        const translations = {
+          Güneş: "Sun",
+          Ay: "Moon",
+          Merkür: "Mercury",
+          Venüs: "Venus",
+          Mars: "Mars",
+          Jüpiter: "Jupiter",
+          Satürn: "Saturn",
+          Uranüs: "Uranus",
+          Neptün: "Neptune",
+          Plüton: "Pluto",
+          Şiron: "Chiron",
+          Lilith: "Lilith",
+          "Kuzey Düğüm": "NorthNode",
+          "Güney Düğüm": "SouthNode",
+        };
+
+        return translations[turkishName] || turkishName;
+      }
+
+      // Gezegen adlarını Türkçe'ye çevir
+      function translatePlanetNameToTurkish(englishName) {
+        const translations = {
+          Sun: "Güneş",
+          Moon: "Ay",
+          Mercury: "Merkür",
+          Venus: "Venüs",
+          Mars: "Mars",
+          Jupiter: "Jüpiter",
+          Saturn: "Satürn",
+          Uranus: "Uranüs",
+          Neptune: "Neptün",
+          Pluto: "Plüton",
+          Chiron: "Şiron",
+          Lilith: "Lilith",
+          NorthNode: "Kuzey Düğüm",
+          SouthNode: "Güney Düğüm",
+        };
+
+        return translations[englishName] || englishName;
+      }
+
+      // Eski fillTransitData fonksiyonu displayTransitData tarafından devralındığı için yorumlandı.
+
+      function fillTransitData(data) {
+        console.log(
+          "Transit bilgileri dolduruluyor...",
+          data.transit_planet_positions
+            ? "Transit pozisyonları var"
+            : "Transit pozisyonları yok"
+        );
+
+        try {
+          const transitPositions = data.transit_planet_positions || {};
+          console.log(
+            "Transit gezegen sayısı:",
+            Object.keys(transitPositions).length
+          );
+
+          if (Object.keys(transitPositions).length > 0) {
+            // Transit kartları bölümünü bul
+            const transitCardsContainer = document.querySelector(
+              "#transit .grid.grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-3.gap-6"
+            );
+
+            if (transitCardsContainer) {
+              // Mevcut kartları temizle
+              transitCardsContainer.innerHTML = "";
+
+              // Hangi gezegenleri göstereceğimizi tanımla
+              const majorPlanets = [
+                "Jupiter",
+                "Saturn",
+                "Uranus",
+                "Neptune",
+                "Pluto",
+                "Mars",
+                "Venus",
+              ];
+              const shownPlanets = [];
+
+              // Öncelikle büyük gezegenleri göster
+              majorPlanets.forEach((planetName) => {
+                if (transitPositions[planetName]) {
+                  shownPlanets.push(planetName);
+                  addTransitPlanetCard(
+                    transitCardsContainer,
+                    planetName,
+                    transitPositions[planetName],
+                    data
+                  );
+                }
+              });
+
+              // Diğer gezegenleri göster (en fazla toplam 6 gezegen)
+              for (const planetName in transitPositions) {
+                if (
+                  !shownPlanets.includes(planetName) &&
+                  shownPlanets.length < 6
+                ) {
+                  shownPlanets.push(planetName);
+                  addTransitPlanetCard(
+                    transitCardsContainer,
+                    planetName,
+                    transitPositions[planetName],
+                    data
+                  );
+                }
+              }
+
+              console.log(
+                `${shownPlanets.length} transit gezegen kartı oluşturuldu`
+              );
+            } else {
+              console.warn("Transit kartları konteyneri bulunamadı");
+            }
+
+            // Transit açılarını göster
+            const transitAspectsContainer = document.querySelector(
+              "#transit .bg-slate-800.rounded-lg.p-6.glow:nth-child(2) .space-y-3"
+            );
+            if (
+              transitAspectsContainer &&
+              data.transit_to_natal_aspects &&
+              data.transit_to_natal_aspects.length > 0
+            ) {
+              // İçeriği temizle ve 'Transit Açıları' başlığını ekle
+              transitAspectsContainer.innerHTML =
+                '<h4 class="text-lg font-semibold mb-3">Transit Açılar</h4>';
+
+              // Açıları ekle (maksimum 5 açı)
+              const maxAspects = Math.min(
+                data.transit_to_natal_aspects.length,
+                5
+              );
+
+              for (let i = 0; i < maxAspects; i++) {
+                const aspect = data.transit_to_natal_aspects[i];
+
+                let aspectColorClass = "";
+                if (aspect.aspect_type === "trine")
+                  aspectColorClass = "text-green-400";
+                else if (aspect.aspect_type === "square")
+                  aspectColorClass = "text-red-400";
+                else if (aspect.aspect_type === "conjunction")
+                  aspectColorClass = "text-yellow-400";
+                else if (aspect.aspect_type === "opposition")
+                  aspectColorClass = "text-red-400";
+                else if (aspect.aspect_type === "sextile")
+                  aspectColorClass = "text-blue-400";
+                else aspectColorClass = "text-purple-400";
+
+                // Gezegen sembolleri için
+                const planetSymbols = {
+                  Sun: "☉",
+                  Moon: "☽",
+                  Mercury: "☿",
+                  Venus: "♀",
+                  Mars: "♂",
+                  Jupiter: "♃",
+                  Saturn: "♄",
+                  Uranus: "♅",
+                  Neptune: "♆",
+                  Pluto: "♇",
+                };
+
+                // Açı sembolleri için
+                const aspectSymbols = {
+                  conjunction: "☌",
+                  opposition: "☍",
+                  trine: "△",
+                  square: "□",
+                  sextile: "⚹",
+                  quincunx: "⚻",
+                  semisextile: "⚺",
+                };
+
+                const aspectElement = document.createElement("div");
+                aspectElement.className = `aspect-line ${aspectColorClass}`;
+                aspectElement.innerHTML = `
+                                      <p class="font-medium">
+                                          Transit ${
+                                            planetSymbols[
+                                              aspect.transit_body
+                                            ] || ""
+                                          } ${aspect.transit_body}
+                                          ${
+                                            aspectSymbols[aspect.aspect_type] ||
+                                            ""
+                                          }
+                                          Natal ${
+                                            planetSymbols[aspect.natal_body] ||
+                                            ""
+                                          } ${aspect.natal_body}
+                                      </p>
+                                      <p class="text-sm text-slate-400">
+                                          ${
+                                            aspect.exact_date
+                                              ? `${aspect.exact_date}'te tam`
+                                              : "Yaklaşıyor"
+                                          }
+                                      </p>
+                                  `;
+
+                transitAspectsContainer.appendChild(aspectElement);
+              }
+
+              // Daha fazla açı varsa "Daha fazla göster" butonu ekle
+              if (data.transit_to_natal_aspects.length > 5) {
+                const moreButton = document.createElement("div");
+                moreButton.className = "text-center mt-3";
+                moreButton.innerHTML = `
+                                      <button class="text-sm text-blue-400 hover:text-blue-300">
+                                          Tüm transit açıları göster <i class="fas fa-chevron-down ml-1"></i>
+                                      </button>
+                                  `;
+                transitAspectsContainer.appendChild(moreButton);
+              }
+            }
+          }
+
+          console.log("Transit bilgileri dolduruldu.");
+        } catch (error) {
+          console.error("Transit bilgilerini doldururken hata:", error);
+        }
+      }
+
+      // Transit gezegen kartı ekle
+      function addTransitPlanetCard(container, planetName, planetData, data) {
+        // Icon ve renk belirle
+        let iconClass = "planet";
+        let colorClass = "text-blue-400";
+
+        if (planetName === "Jupiter") {
+          iconClass = "expand";
+          colorClass = "text-yellow-400";
+        } else if (planetName === "Saturn") {
+          iconClass = "tasks";
+          colorClass = "text-gray-400";
+        } else if (planetName === "Uranus") {
+          iconClass = "bolt";
+          colorClass = "text-blue-400";
+        } else if (planetName === "Neptune") {
+          iconClass = "water";
+          colorClass = "text-purple-400";
+        } else if (planetName === "Pluto") {
+          iconClass = "arrows-alt";
+          colorClass = "text-red-400";
+        } else if (planetName === "Mars") {
+          iconClass = "fire";
+          colorClass = "text-red-500";
+        } else if (planetName === "Venus") {
+          iconClass = "heart";
+          colorClass = "text-pink-400";
+        } else if (planetName === "Mercury") {
+          iconClass = "bolt";
+          colorClass = "text-purple-400";
+        } else if (planetName === "Sun") {
+          iconClass = "sun";
+          colorClass = "text-yellow-400";
+        } else if (planetName === "Moon") {
+          iconClass = "moon";
+          colorClass = "text-blue-300";
+        }
+
+        // Burcun son ekini belirle
+        const sign = planetData.sign || "";
+        let suffix = "te";
+
+        if (["Koç", "İkizler", "Yengeç", "Aslan", "Oğlak"].includes(sign)) {
+          suffix = "de";
+        } else if (
+          ["Boğa", "Başak", "Terazi", "Akrep", "Balık", "Kova", "Yay"].includes(
+            sign
+          )
+        ) {
+          suffix = "da";
+        }
+
+        // Transit açıları tespit et
+        const aspects = [];
+
+        if (data.transit_to_natal_aspects) {
+          data.transit_to_natal_aspects.forEach((aspect) => {
+            if (aspect.transit_body === planetName) {
+              aspects.push(aspect);
+            }
+          });
+        }
+
+        // Dinamik açıklama metinleri
+        let description = "";
+        if (planetName === "Jupiter") {
+          description =
+            "Bu transit ilişkilerinizde ve ortaklıklarınızda genişleme getiriyor. Faydalı işbirlikleri için fırsatlar çıkabilir.";
+        } else if (planetName === "Saturn") {
+          description =
+            "Kariyer ve kamusal yaşamınızınını yeniden yapılandırma zamanı. Sorumluluklar artabilir.";
+        } else if (planetName === "Uranus") {
+          description =
+            "Ani ve beklenmedik değişimler yaşayabilirsiniz. Özgürlüğünüz ve özgünlüğünüz vurgulanıyor.";
+        } else if (planetName === "Neptune") {
+          description =
+            "Hayal gücü ve sezgileriniz güçleniyor. Spiritüel deneyimler için uygun zaman.";
+        } else if (planetName === "Pluto") {
+          description =
+            "Derin dönüşümler yaşayabilirsiniz. Sosyal çevreniz ve uzun vadeli hedefleriniz değişiyor.";
+        } else if (planetName === "Mars") {
+          description =
+            "Enerji ve inisiyatif almanın zamanı. Hedeflerinize ulaşmak için harekete geçebilirsiniz.";
+        } else if (planetName === "Venus") {
+          description =
+            "İlişkiler, uyum ve güzellik odaklı bir dönem. Finansal konularda şans yanınızda.";
+        } else if (planetName === "Mercury") {
+          description =
+            "İletişim, öğrenme ve kısa yolculuklar için uygun bir zaman. Fikirlerinizi ifade etmek kolaylaşıyor.";
+        } else if (planetName === "Sun") {
+          description =
+            "Kişiliğiniz ve benliğiniz ön plana çıkıyor. Farkındalık ve yaratıcılık zamanı.";
+        } else if (planetName === "Moon") {
+          description =
+            "Duygusal dalgalanmalar yaşayabilirsiniz. İçsel ihtiyaçlarınıza ve ailenize daha fazla odaklanıyorsunuz.";
+        }
+
+        // Kart elementini oluştur
+        const card = document.createElement("div");
+        card.className = "bg-slate-800 rounded-lg p-6 glow";
+        card.innerHTML = `
+                      <h3 class="text-lg font-semibold mb-4 flex items-center">
+                          <i class="fas fa-${iconClass} mr-2 ${colorClass}"></i>
+                          ${planetName} ${sign}'${suffix}
+                      </h3>
+                      <div class="space-y-3">
+                          <p class="text-sm">
+                              <span class="font-medium">Güncel Pozisyon:</span> ${
+                                planetData.house
+                                  ? `${planetData.house}. Ev`
+                                  : "Hesaplanmadı"
+                              }<br>
+                              <span class="font-medium">Derece:</span> ${
+                                planetData.degree
+                                  ? planetData.degree.toFixed(2)
+                                  : "0"
+                              }°
+                          </p>
+                          <p class="text-sm text-slate-300">${description}</p>
+
+                          ${
+                            aspects.length > 0
+                              ? aspects
+                                  .map((aspect) => {
+                                    let aspectClass = "";
+                                    if (aspect.aspect_type === "trine")
+                                      aspectClass = "text-green-400";
+                                    else if (aspect.aspect_type === "square")
+                                      aspectClass = "text-red-400";
+                                    else if (
+                                      aspect.aspect_type === "conjunction"
+                                    )
+                                      aspectClass = "text-yellow-400";
+                                    else if (
+                                      aspect.aspect_type === "opposition"
+                                    )
+                                      aspectClass = "text-red-400";
+                                    else if (aspect.aspect_type === "sextile")
+                                      aspectClass = "text-blue-400";
+
+                                    return `
+                                  <div class="aspect-line ${aspectClass} mt-2">
+                                      <p class="font-medium">Doğum ${
+                                        aspect.natal_body
+                                      } ile ${aspect.aspect_type}</p>
+                                      <p class="text-sm text-slate-400">${
+                                        aspect.exact_date
+                                          ? `${aspect.exact_date}'te tam`
+                                          : "Yaklaşıyor"
+                                      }</p>
+                                  </div>
+                              `;
+                                  })
+                                  .join("")
+                              : '<p class="text-sm text-slate-400 italic">Bu gezegenin önemli transit açısı yok</p>'
+                          }
+                      </div>
+                  `;
+
+        container.appendChild(card);
+        return card;
+      }
+
+      // Diğer verileri doldur
+      function fillOtherData(data) {
+        console.log("Diğer veriler dolduruluyor...");
+
+        try {
+          // Tüm veriler sekmesindeki içeriği doldur
+          const dataSize = new Blob([JSON.stringify(data)]).size;
+          const dataSizeKB = (dataSize / 1024).toFixed(2);
+          const dataSizeEl = document.querySelector("#other .text-slate-200");
+          if (dataSizeEl) {
+            dataSizeEl.textContent = `${dataSizeKB} KB (${
+              Object.keys(data).length
+            } ana kategori)`;
+            console.log("Veri boyutu güncellendi:", dataSizeKB, "KB");
+          } else {
+            console.error("Veri boyutu elementi bulunamadı");
+          }
+
+          // Veri kategorilerini listele
+          const dataCategoriesEl = document.querySelectorAll(
+            "#other .text-slate-200"
+          )[1];
+          if (dataCategoriesEl) {
+            const categories = Object.keys(data).join(", ");
+            dataCategoriesEl.textContent = categories;
+            console.log("Veri kategorileri güncellendi:", categories);
+          } else {
+            console.error("Veri kategorileri elementi bulunamadı");
+          }
+
+          // JSON verileri göster
+
+          const allDataContentEl = document.getElementById("all-data-content");
+          if (allDataContentEl) {
+            allDataContentEl.textContent = JSON.stringify(data, null, 2);
+            console.log("JSON verisi güncellendi");
+          } else {
+            console.error("JSON içerik elementi bulunamadı");
+          }
+
+          console.log("Diğer veriler dolduruldu.");
+        } catch (error) {
+          console.error("Diğer verileri doldururken hata:", error);
+        }
+      }
+
+      // Hata göster
+      function showError(message) {
+        console.error("HATA:", message);
+        alert(`Hata: ${message}`);
+
+        const errorDiv = document.createElement("div");
+        errorDiv.className = "bg-red-500 text-white p-4 rounded-lg mb-6";
+        errorDiv.innerHTML = `
+                      <i class="fas fa-exclamation-triangle mr-2"></i>
+                      <span>${message}</span>
+                  `;
+
+        const container = document.querySelector(".container");
+        if (container) {
+          container.insertBefore(errorDiv, container.firstChild);
+        }
+      }
+
+      function getPlanetSymbol(name) {
+        const symbols = {
+          Sun: "☉",
+          Moon: "☽",
+          Mercury: "☿",
+          Venus: "♀",
+          Mars: "♂",
+          Jupiter: "♃",
+          Saturn: "♄",
+          Uranus: "♅",
+          Neptune: "♆",
+          Pluto: "♇",
+          Chiron: "⚷",
+          True_Node: "☊",
+          "North Node": "☊",
+          "South Node": "☋",
+          Mean_Lilith: "⚸",
+          Ascendant: "ASC",
+          MC: "MC",
+        };
+        return symbols[name] || name.substring(0, 2);
+      }
+
+      // --- Gelişmiş Natal Harita Çizim Motoru (SVG) ---
+      function drawNatalChart(containerId, data) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const width = container.offsetWidth || 600;
+        const height = width;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = (width / 2) * 0.9;
+
+        // Koordinat sistemini ayarla: ASC solda (270 derece konumunda, çünkü 0° UP)
+        // Eğer 0° UP ise, sol taraf 270 derecedir.
+        const ascDegree = getNestedValue(data, "natal_ascendant.degree", 0);
+        const rotationOffset = 270 - ascDegree;
+
+        const svg = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "svg"
+        );
+        svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+        svg.setAttribute("width", "100%");
+        svg.setAttribute("height", "100%");
+        svg.style.borderRadius = "50%";
+
+        // 1. Burçlar Kuşağı (Dış Ring) - Saat yönünün tersine çeviriyoruz
+        const signs = [
+          "Koç",
+          "Boğa",
+          "İkizler",
+          "Yengeç",
+          "Aslan",
+          "Başak",
+          "Terazi",
+          "Akrep",
+          "Yay",
+          "Oğlak",
+          "Kova",
+          "Balık",
+        ];
+        const signColors = [
+          "#EF4444",
+          "#F59E0B",
+          "#10B981",
+          "#3B82F6",
+          "#EF4444",
+          "#F59E0B",
+          "#10B981",
+          "#3B82F6",
+          "#EF4444",
+          "#F59E0B",
+          "#10B981",
+          "#3B82F6",
+        ];
+
+        for (let i = 0; i < 12; i++) {
+          // Saat yönünün tersi için açıları - ile çarpabiliriz veya sırayı ters çevirebiliriz.
+          // Basitlik için mevcut yapıyı koruyalım ama yönü netleştirelim.
+          const startAngle = i * 30 + rotationOffset;
+          const endAngle = (i + 1) * 30 + rotationOffset;
+
+          const path = createArcPath(
+            centerX,
+            centerY,
+            radius * 0.85,
+            radius,
+            startAngle,
+            endAngle
+          );
+          const arc = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path"
+          );
+          arc.setAttribute("d", path);
+          arc.setAttribute("fill", "rgba(15, 23, 42, 0.9)");
+          arc.setAttribute("stroke", "#334155");
+          arc.setAttribute("stroke-width", "1");
+          svg.appendChild(arc);
+
+          const midAngle = (startAngle + endAngle) / 2;
+          const textPos = polarToCartesian(
+            centerX,
+            centerY,
+            radius * 0.92,
+            midAngle
+          );
+          const text = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "text"
+          );
+          text.setAttribute("x", textPos.x);
+          text.setAttribute("y", textPos.y);
+          text.setAttribute("fill", signColors[i]);
+          text.setAttribute("font-size", "14");
+          text.setAttribute("font-weight", "bold");
+          text.setAttribute("text-anchor", "middle");
+          text.setAttribute("dominant-baseline", "middle");
+          text.textContent = signs[i].substring(0, 1);
+          svg.appendChild(text);
+        }
+
+        // 2. Ev Çizgileri
+        const houses = getNestedValue(data, "natal_houses.house_cusps", {});
+        Object.entries(houses).forEach(([num, degree]) => {
+          const angle = parseFloat(degree) + rotationOffset;
+          const start = polarToCartesian(centerX, centerY, radius * 0.3, angle);
+          const end = polarToCartesian(centerX, centerY, radius * 0.85, angle);
+
+          const line = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "line"
+          );
+          line.setAttribute("x1", start.x);
+          line.setAttribute("y1", start.y);
+          line.setAttribute("x2", end.x);
+          line.setAttribute("y2", end.y);
+          line.setAttribute(
+            "stroke",
+            num === "1" || num === "10" || num === "4" || num === "7"
+              ? "#64748b"
+              : "#334155"
+          );
+          line.setAttribute(
+            "stroke-width",
+            num === "1" || num === "10" ? "2" : "1"
+          );
+          svg.appendChild(line);
+
+          const nextCusp =
+            houses[(parseInt(num) % 12) + 1] || parseFloat(houses[1]) + 360;
+          const midAngle =
+            (parseFloat(degree) + parseFloat(nextCusp)) / 2 + rotationOffset;
+          const pos = polarToCartesian(
+            centerX,
+            centerY,
+            radius * 0.35,
+            midAngle
+          );
+          const t = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "text"
+          );
+          t.setAttribute("x", pos.x);
+          t.setAttribute("y", pos.y);
+          t.setAttribute("fill", "#475569");
+          t.setAttribute("font-size", "10");
+          t.setAttribute("text-anchor", "middle");
+          t.textContent = num;
+          svg.appendChild(t);
+        });
+
+        // 3. Açı Çizgileri
+        const aspects = getNestedValue(data, "natal_aspects", []);
+        aspects.forEach((asp) => {
+          const p1 = getNestedValue(
+            data,
+            `natal_planet_positions.${asp.planet1}.degree`
+          );
+          const p2 = getNestedValue(
+            data,
+            `natal_planet_positions.${asp.planet2}.degree`
+          );
+
+          if (p1 !== null && p2 !== null) {
+            const a1 = parseFloat(p1) + rotationOffset;
+            const a2 = parseFloat(p2) + rotationOffset;
+            const start = polarToCartesian(centerX, centerY, radius * 0.3, a1);
+            const end = polarToCartesian(centerX, centerY, radius * 0.3, a2);
+
+            const line = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "line"
+            );
+            line.setAttribute("x1", start.x);
+            line.setAttribute("y1", start.y);
+            line.setAttribute("x2", end.x);
+            line.setAttribute("y2", end.y);
+
+            let color = "rgba(148, 163, 184, 0.1)";
+            if (asp.aspect_type === "Trine") color = "rgba(34, 197, 94, 0.3)";
+            else if (asp.aspect_type === "Square")
+              color = "rgba(239, 68, 68, 0.3)";
+            else if (asp.aspect_type === "Opposition")
+              color = "rgba(239, 68, 68, 0.5)";
+            else if (asp.aspect_type === "Sextile")
+              color = "rgba(59, 130, 246, 0.3)";
+
+            line.setAttribute("stroke", color);
+            line.setAttribute("stroke-width", "0.5");
+            svg.appendChild(line);
+          }
+        });
+
+        // 4. Gezegenler (Overlap Detection ile)
+        const planets = Object.entries(
+          getNestedValue(data, "natal_planet_positions", {})
+        )
+          .map(([name, info]) => ({
+            name,
+            ...info,
+            angle: parseFloat(info.degree) + rotationOffset,
+          }))
+          .sort((a, b) => a.angle - b.angle);
+
+        const planetNodes = [];
+        const minDistance = 8; // Gezegen dairesi yarıçapı civarında bir değer
+
+        planets.forEach((p, i) => {
+          let currentRadius = radius * 0.7;
+
+          // Çok yakın gezegenleri dışarı/içeri kaydır
+          for (const existing of planetNodes) {
+            const angleDiff = Math.abs(p.angle - existing.angle) % 360;
+            const normalizedDiff =
+              angleDiff > 180 ? 360 - angleDiff : angleDiff;
+
+            if (normalizedDiff < minDistance) {
+              currentRadius += 25; // Çakışma varsa dışarı kaydır
+            }
+          }
+
+          const pos = polarToCartesian(
+            centerX,
+            centerY,
+            currentRadius,
+            p.angle
+          );
+          planetNodes.push({ ...p, x: pos.x, y: pos.y, r: currentRadius });
+
+          const group = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "g"
+          );
+          group.setAttribute(
+            "class",
+            "transition-all duration-300 transform hover:scale-110"
+          );
+
+          const circle = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "circle"
+          );
+          circle.setAttribute("cx", pos.x);
+          circle.setAttribute("cy", pos.y);
+          circle.setAttribute("r", "12");
+          circle.setAttribute("fill", "#0f172a");
+          circle.setAttribute("stroke", "#3b82f6");
+          circle.setAttribute("stroke-width", "1.5");
+          circle.setAttribute(
+            "filter",
+            "drop-shadow(0 0 5px rgba(59, 130, 246, 0.5))"
+          );
+          group.appendChild(circle);
+
+          const symbol = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "text"
+          );
+          symbol.setAttribute("x", pos.x);
+          symbol.setAttribute("y", pos.y);
+          symbol.setAttribute("fill", "#f8fafc");
+          symbol.setAttribute("font-size", "14");
+          symbol.setAttribute("text-anchor", "middle");
+          symbol.setAttribute("dominant-baseline", "middle");
+          symbol.textContent = getPlanetSymbol(p.name);
+          group.appendChild(symbol);
+
+          svg.appendChild(group);
+        });
+
+        container.innerHTML = "";
+        container.appendChild(svg);
+
+        // Bilgi panelini güncelle
+        const ascDegEl = document.getElementById("asc-degree");
+        const mcDegEl = document.getElementById("mc-degree");
+        if (ascDegEl)
+          ascDegEl.textContent = `${getNestedValue(
+            data,
+            "natal_ascendant.sign",
+            ""
+          )} ${getDegreeInSign(ascDegree)}°`;
+        if (mcDegEl)
+          mcDegEl.textContent = `${getNestedValue(
+            data,
+            "natal_midheaven.sign",
+            ""
+          )} ${getDegreeInSign(
+            getNestedValue(data, "natal_midheaven.degree", 0)
+          )}°`;
+      }
+
+      function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+        const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+        return {
+          x: centerX + radius * Math.cos(angleInRadians),
+          y: centerY + radius * Math.sin(angleInRadians),
+        };
+      }
+
+      function createArcPath(
+        x,
+        y,
+        innerRadius,
+        outerRadius,
+        startAngle,
+        endAngle
+      ) {
+        const startInner = polarToCartesian(x, y, innerRadius, endAngle);
+        const endInner = polarToCartesian(x, y, innerRadius, startAngle);
+        const startOuter = polarToCartesian(x, y, outerRadius, startAngle);
+        const endOuter = polarToCartesian(x, y, outerRadius, endAngle);
+
+        const arcSweep = endAngle - startAngle <= 180 ? "0" : "1";
+
+        return [
+          "M",
+          startOuter.x,
+          startOuter.y,
+          "A",
+          outerRadius,
+          outerRadius,
+          0,
+          arcSweep,
+          1,
+          endOuter.x,
+          endOuter.y,
+          "L",
+          startInner.x,
+          startInner.y,
+          "A",
+          innerRadius,
+          innerRadius,
+          0,
+          arcSweep,
+          0,
+          endInner.x,
+          endInner.y,
+          "L",
+          startOuter.x,
+          startOuter.y,
+          "Z",
+        ].join(" ");
+      }
+
+      function formatAIResponse(text) {
+        if (!text) return "";
+        // Yıldızları (bold) temizle ve strong yap
+        let formatted = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+        // Paragraflara böl (çift satır başı)
+        let paragraphs = formatted.split(/\n\s*\n/);
+
+        return paragraphs
+          .map((p) => {
+            p = p.trim();
+            if (!p) return "";
+
+            // Liste kontrolü
+            if (p.includes("\n- ") || p.startsWith("- ")) {
+              const lines = p.split("\n");
+              let listHtml = '<ul class="list-disc mb-4 ml-4">';
+              lines.forEach((line) => {
+                if (line.trim().startsWith("- ")) {
+                  listHtml += `<li>${line.trim().substring(2)}</li>`;
+                } else {
+                  listHtml += `<li>${line.trim()}</li>`;
+                }
+              });
+              listHtml += "</ul>";
+              return listHtml;
+            }
+
+            // Normal paragraf, ancak içindeki tekil satır başlarını <br> yap
+            return `<p>${p.replace(/\n/g, "<br>")}</p>`;
+          })
+          .join("");
+      }
+
+      function setupShowAllButtons() {
+        document.querySelectorAll(".show-all-btn").forEach((button) => {
+          button.addEventListener("click", function () {
+            const targetId = this.getAttribute("data-target");
+            const target = document.getElementById(targetId);
+            if (target) {
+              const isHidden = target.classList.contains("hidden");
+              if (isHidden) {
+                target.classList.remove("hidden");
+                this.innerHTML = `<i class="fas fa-chevron-up mr-2"></i>Daha Az Göster`;
+              } else {
+                target.classList.add("hidden");
+                this.innerHTML = `<i class="fas fa-chevron-down mr-2"></i>Tümünü Göster`;
+              }
+            }
+          });
+        });
+      }
+      function setupAIGenerationButton() {
+        const generateButton = document.getElementById("generate-ai-analysis");
+        if (generateButton) {
+          generateButton.addEventListener("click", function () {
+            const aiResponseContainer = document.getElementById(
+              "ai-response-container"
+            );
+            const aiResponseContent = document.getElementById(
+              "ai-response-content"
+            );
+            const selectElement = document.getElementById("ai-analysis-type");
+            const selectedType = selectElement ? selectElement.value : "daily";
+            // const generateButton = document.getElementById( 'generate-ai-analysis' ); // Zaten üstte tanımlı
+
+            if (aiResponseContainer)
+              aiResponseContainer.classList.remove("hidden");
+            if (aiResponseContent)
+              aiResponseContent.innerHTML = `<p class="text-slate-400 italic">Yapay zeka analizi oluşturuluyor...</p>`;
+            if (generateButton) {
+              generateButton.disabled = true;
+              generateButton.textContent = "Oluşturuluyor...";
+            }
+
+            // astroData'nın varlığını kontrol et
+            if (!astroData) {
+              console.error(
+                "astroData global değişkeni tanımlı değil veya boş. AI analizi yapılamıyor."
+              );
+              if (aiResponseContent)
+                aiResponseContent.innerHTML = `<p class="text-red-400">Hata: Analiz için astroloji verisi bulunamadı. Lütfen sayfayı yenileyin veya tekrar hesaplama yapın.</p>`;
+              if (generateButton) {
+                generateButton.disabled = false;
+                generateButton.textContent = "Analizi Oluştur";
+              }
+              return;
+            }
+
+            // Backend'e istek gönder
+            fetch("/api/get_ai_interpretation", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                interpretation_type: selectedType,
+                astro_data: astroData, // Global astroData'yı gönder
+                user_name: astroData.user_name || "Danışan", // Kullanıcı adını da gönder
+              }),
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                if (data.error) {
+                  console.error("AI yorumu hatası:", data.error);
+                  if (aiResponseContent)
+                    aiResponseContent.innerHTML = `<p class="text-red-400">Hata: ${data.error}</p>`;
+                } else if (data.interpretation) {
+                  const titleMap = {
+                    daily: "Günlük Yorumunuz",
+                    natal: "Doğum Haritası Yorumunuz",
+                    birth_chart: "Doğum Haritası Yorumunuz", // Backend'den 'birth_chart' gelebilir
+                    transit: "Transit Harita Yorumunuz",
+                    detailed: "Detaylı Analiz ve Yorumunuz",
+                  };
+                  const displayTitle =
+                    titleMap[selectedType] || "Yapay Zeka Yorumu";
+
+                  if (aiResponseContent) {
+                    const formattedContent = formatAIResponse(
+                      data.interpretation
+                    );
+                    currentInterpretationText = data.interpretation; // Global değişkeni güncelle
+
+                    aiResponseContent.innerHTML = `
+                        <div class="ai-text-content">
+                            <div class="flex justify-between items-center mb-4 border-b border-purple-500/30 pb-2">
+                                <h4 class="font-bold text-lg text-purple-300">${displayTitle}</h4>
+                                <button onclick="openAIResponseInModal()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition-all flex items-center gap-2">
+                                    <i class="fas fa-expand-alt"></i> Tam Ekran & Sesli
+                                </button>
+                            </div>
+                            ${formattedContent}
+                        </div>
+                    `;
+                    // Ses kontrollerini göster
+                    const voiceControls =
+                      document.getElementById("voice-controls");
+                    if (voiceControls) voiceControls.classList.remove("hidden");
+                  }
+                } else {
+                  console.warn("AI yorumu beklenmedik formatta:", data);
+                  if (aiResponseContent)
+                    aiResponseContent.innerHTML = `<p class="text-orange-400">Yorum alınamadı veya beklenmedik bir yanıt geldi.</p>`;
+                }
+              })
+              .catch((error) => {
+                console.error("API çağrısı sırasında hata:", error);
+                if (aiResponseContent)
+                  aiResponseContent.innerHTML = `<p class="text-red-400">API bağlantı hatası: ${error.message}</p>`;
+              })
+              .finally(() => {
+                if (generateButton) {
+                  generateButton.disabled = false;
+                  generateButton.textContent = "Analizi Oluştur";
+                }
+              });
+
+            // Sayfayı yorum bölümüne kaydır
+            if (aiResponseContainer) {
+              aiResponseContainer.scrollIntoView({ behavior: "smooth" });
+            }
+          });
+        }
+
+        // Sesli okuma fonksiyonları
+        setupVoiceControls();
+      }
+
+      // Ses kontrolleri
+      function setupVoiceControls() {
+        const readAloudBtn = document.getElementById("read-aloud");
+        const voiceControls = document.getElementById("voice-controls");
+        const playPauseBtn = document.getElementById("play-pause");
+        const stopVoiceBtn = document.getElementById("stop-voice");
+        const copyBtn = document.getElementById("tab-copy-btn");
+        const playingControls = document.getElementById("playing-controls");
+
+        if (!readAloudBtn || !voiceControls || !playPauseBtn || !stopVoiceBtn)
+          return;
+
+        let speech = null;
+        let isPaused = false;
+
+        // Kopyalama İşlevi
+        if (copyBtn) {
+          copyBtn.addEventListener("click", () => {
+            const content = document.getElementById("ai-response-content");
+            if (!content) return;
+            const text = content.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+              const original = copyBtn.innerHTML;
+              copyBtn.innerHTML = '<i class="fas fa-check"></i> Kopyalandı';
+              setTimeout(() => {
+                copyBtn.innerHTML = original;
+              }, 2000);
+            });
+          });
+        }
+
+        readAloudBtn.addEventListener("click", function () {
+          const aiResponseContent = document.getElementById(
+            "ai-response-content"
+          );
+
+          if (aiResponseContent) {
+            const textToRead = aiResponseContent.innerText;
+
+            if (speech) {
+              window.speechSynthesis.cancel();
+            }
+
+            speech = new SpeechSynthesisUtterance();
+            speech.text = textToRead;
+            speech.lang = "tr-TR";
+            speech.rate = 1;
+
+            if (playingControls) playingControls.classList.remove("hidden");
+
+            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            isPaused = false;
+
+            window.speechSynthesis.speak(speech);
+
+            speech.onend = function () {
+              if (playingControls) playingControls.classList.add("hidden");
+            };
+          }
+        });
+
+        // Oynat/Duraklat butonu
+        playPauseBtn.addEventListener("click", function () {
+          if (speech) {
+            if (isPaused) {
+              window.speechSynthesis.resume();
+              playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+              isPaused = false;
+            } else {
+              window.speechSynthesis.pause();
+              playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+              isPaused = true;
+            }
+          }
+        });
+
+        // Durdur butonu
+        stopVoiceBtn.addEventListener("click", function () {
+          if (speech) {
+            window.speechSynthesis.cancel();
+            if (playingControls) playingControls.classList.add("hidden");
+          }
+        });
+      }
+
+      function openAIResponseInModal() {
+        if (!currentInterpretationText) return;
+
+        const modalBody = document.getElementById("ai-modal-body");
+        const modalTitle = document.getElementById("ai-modal-title");
+        const selectElement = document.getElementById("ai-analysis-type");
+        const selectedType = selectElement ? selectElement.value : "daily";
+
+        const titleMap = {
+          daily: "Günlük Yorum",
+          natal: "Doğum Haritası Analizi",
+          transit: "Transit Yorumu",
+          detailed: "Detaylı Analiz",
+        };
+
+        modalTitle.innerText =
+          (titleMap[selectedType] || "AI Analizi") + " - Tam Ekran";
+        modalBody.innerHTML = `<div class="ai-text-content">${formatAIResponse(
+          currentInterpretationText
+        )}</div>`;
+
+        openAIModal();
+      }
+
+      // Kopyalama butonu
+      function setupCopyAllDataButton() {
+        const copyAllDataBtn = document.getElementById("copyAllDataBtn");
+        if (copyAllDataBtn) {
+          copyAllDataBtn.addEventListener("click", function () {
+            try {
+              // JSON verisini al
+              const jsonData =
+                document.getElementById("all-data-content").textContent;
+
+              navigator.clipboard
+                .writeText(jsonData)
+                .then(() => {
+                  const originalText = copyAllDataBtn.innerHTML;
+                  copyAllDataBtn.innerHTML = `
+                                          <i class="fas fa-check-circle mr-2"></i>
+                                          Kopyalandı!
+                                      `;
+                  setTimeout(() => {
+                    copyAllDataBtn.innerHTML = originalText;
+                  }, 3000);
+                })
+                .catch((err) => {
+                  console.error("Kopyalama hatası:", err);
+                  alert("Veriler kopyalanırken hata oluştu: " + err.message);
+                });
+            } catch (error) {
+              console.error("JSON kopyalama hatası:", error);
+              alert("Veriler kopyalanırken hata oluştu: " + error.message);
+            }
+          });
+        }
+      }
+
+      // Gezegen adlarını Türkçe'ye çevir
+      function translatePlanetNameToTurkish(englishName) {
+        const translations = {
+          Sun: "Güneş",
+          Moon: "Ay",
+          Mercury: "Merkür",
+          Venus: "Venüs",
+          Mars: "Mars",
+          Jupiter: "Jüpiter",
+          Saturn: "Satürn",
+          Uranus: "Uranüs",
+          Neptune: "Neptün",
+          Pluto: "Plüton",
+          Chiron: "Şiron",
+          Lilith: "Lilith",
+          NorthNode: "Kuzey Düğüm",
+          SouthNode: "Güney Düğüm",
+        };
+
+        return translations[englishName] || englishName;
+      }
+
+      // Açıları oluştur
+      function createAspects(data) {
+        if (!data.aspects || data.aspects.length === 0) {
+          console.log("Açı bilgisi bulunamadı, örnek açılar oluşturulacak");
+
+          // Haritada gösterilen açılar bölümünü bul
+          const aspectsContainer = document.querySelector("#natal-aspects");
+          if (!aspectsContainer) {
+            console.warn("Açılar konteyneri bulunamadı");
+            return;
+          }
+
+          // Gezegen pozisyonları varsa ve en az 2 gezegen içeriyorsa örnek açılar oluştur
+          const natalPositions = data.natal_planet_positions;
+          if (natalPositions && Object.keys(natalPositions).length >= 2) {
+            console.log(
+              "Gezegen pozisyonlarından otomatik açılar oluşturuluyor"
+            );
+
+            // Önce mevcut içeriği koru
+            const existingContent = aspectsContainer.innerHTML;
+
+            // Örnekleri ekle, ancak zaten gerçek veri varsa ekleme
+            if (
+              !existingContent.includes("aspect-line") ||
+              existingContent.includes("Açı bilgileri henüz hesaplanmamış")
+            ) {
+              // Temel gezegenler
+              const planets = Object.keys(natalPositions);
+
+              // Rastgele açı türleri
+              const aspectTypes = [
+                "conjunction",
+                "opposition",
+                "trine",
+                "square",
+                "sextile",
+              ];
+
+              // En çok 5 açı oluştur
+              const maxAspects = Math.min(
+                5,
+                (planets.length * (planets.length - 1)) / 2
+              );
+
+              let aspectsHtml = "";
+              let aspectsAdded = 0;
+
+              for (
+                let i = 0;
+                i < planets.length && aspectsAdded < maxAspects;
+                i++
+              ) {
+                for (
+                  let j = i + 1;
+                  j < planets.length && aspectsAdded < maxAspects;
+                  j++
+                ) {
+                  // Rastgele bir açı türü seç
+                  const aspectType =
+                    aspectTypes[Math.floor(Math.random() * aspectTypes.length)];
+
+                  // Gezegen adlarını Türkçe'ye çevir
+                  const planet1 = translatePlanetNameToTurkish(planets[i]);
+                  const planet2 = translatePlanetNameToTurkish(planets[j]);
+
+                  // Gezegen sembolleri
+                  const planetSymbols = {
+                    Güneş: "☉",
+                    Ay: "☽",
+                    Merkür: "☿",
+                    Venüs: "♀",
+                    Mars: "♂",
+                    Jüpiter: "♃",
+                    Satürn: "♄",
+                    Uranüs: "♅",
+                    Neptün: "♆",
+                    Plüton: "♇",
+                    Şiron: "⚷",
+                    Lilith: "⚸",
+                  };
+
+                  // Açı sembolleri
+                  const aspectSymbols = {
+                    conjunction: "☌",
+                    opposition: "☍",
+                    trine: "△",
+                    square: "□",
+                    sextile: "⚹",
+                    quincunx: "⚻",
+                    semisextile: "⚺",
+                  };
+
+                  // Açı adları
+                  const aspectNames = {
+                    conjunction: "kavuşum",
+                    opposition: "karşıt",
+                    trine: "üçgen",
+                    square: "kare",
+                    sextile: "altmışlık",
+                    quincunx: "yüzellilk",
+                    semisextile: "otuzluk",
+                  };
+
+                  // Açı açısı ve orb değeri
+                  const angle =
+                    aspectType === "conjunction"
+                      ? 0
+                      : aspectType === "opposition"
+                      ? 180
+                      : aspectType === "trine"
+                      ? 120
+                      : aspectType === "square"
+                      ? 90
+                      : aspectType === "sextile"
+                      ? 60
+                      : aspectType === "quincunx"
+                      ? 150
+                      : 30;
+
+                  const orb = (Math.random() * 5).toFixed(2);
+
+                  // Açı rengi
+                  let aspectColorClass = "";
+                  if (aspectType === "conjunction")
+                    aspectColorClass = "text-yellow-400";
+                  else if (aspectType === "opposition")
+                    aspectColorClass = "text-red-400";
+                  else if (aspectType === "trine")
+                    aspectColorClass = "text-green-400";
+                  else if (aspectType === "square")
+                    aspectColorClass = "text-red-400";
+                  else if (aspectType === "sextile")
+                    aspectColorClass = "text-blue-400";
+                  else aspectColorClass = "text-purple-400";
+
+                  // Açı açıklaması
+                  let aspectDescription = "";
+                  if (aspectType === "conjunction")
+                    aspectDescription = "Güçlü birleşim, enerji kaynaşması";
+                  else if (aspectType === "opposition")
+                    aspectDescription = "Gerginlik ve farkındalık fırsatı";
+                  else if (aspectType === "trine")
+                    aspectDescription = "Doğal uyum ve akış";
+                  else if (aspectType === "square")
+                    aspectDescription = "Zorluk ve gelişim fırsatı";
+                  else if (aspectType === "sextile")
+                    aspectDescription = "Fırsatlar ve faydalı etkileşim";
+                  else aspectDescription = "Özel bir etki alanı";
+
+                  aspectsHtml += `
+                                          <div class="aspect-line ${aspectColorClass}">
+                                              <p class="font-medium">${planet1} ${
+                    planetSymbols[planet1] || ""
+                  } ${aspectNames[aspectType]} ${
+                    aspectSymbols[aspectType] || ""
+                  } ${planet2} ${planetSymbols[planet2] || ""}</p>
+                                              <p class="text-sm text-slate-400">${angle}° (orb ${orb}°)</p>
+                                              <p class="text-sm text-slate-300">${aspectDescription}</p>
+                                          </div>
+                                      `;
+
+                  aspectsAdded++;
+                }
+              }
+
+              // Eğer içerik önceden veri yok bilgisini içeriyorsa, yeni açıları ekle
+              if (
+                existingContent.includes("Açı bilgileri henüz hesaplanmamış")
+              ) {
+                aspectsContainer.innerHTML = aspectsHtml;
+
+                // Daha fazla göster butonu ekle
+                aspectsContainer.innerHTML += `
+                                      <div class="text-center mt-3">
+                                          <button class="text-sm text-purple-400 hover:text-purple-300">
+                                              Tüm açıları göster <i class="fas fa-chevron-down ml-1"></i>
+                                          </button>
+                                      </div>
+                                  `;
+
+                console.log(`${aspectsAdded} örnek açı oluşturuldu`);
+              }
+            }
+          }
+        }
+      }
+
+      // Sayfa yüklendikten sonra sekmeleri başlat ve aktifleştir
+      document.addEventListener("DOMContentLoaded", () => {
+        initializeTabs();
+        activateTabs();
+      });
+
+      // Daha fazla göster fonksiyonları - JSON verisinden dinamik olarak oluştur
+      function setupShowMoreAspects() {
+        // Natal Açılar için "Tümünü Göster"
+        const natalBtn = document.getElementById("show-more-natal-aspects");
+        const natalTable = document.getElementById("natal-aspects-table");
+        if (natalBtn && natalTable && astroData && astroData.natal_aspects) {
+          natalBtn.addEventListener("click", function () {
+            this.style.display = "none";
+            const additionalAspects = astroData.natal_aspects.slice(8);
+            additionalAspects.forEach((aspect) => {
+              const row = document.createElement("tr");
+              row.className =
+                "border-b border-slate-600 hover:bg-slate-800 transition";
+
+              const type = (aspect.aspect_type || "").toLowerCase();
+              let badgeClass = "bg-purple-900 text-purple-200";
+              if (type === "trine") badgeClass = "bg-green-900 text-green-300";
+              else if (["square", "opposition"].includes(type))
+                badgeClass = "bg-red-900 text-red-300";
+              else if (type === "conjunction")
+                badgeClass = "bg-yellow-900 text-yellow-300";
+
+              row.innerHTML = `
+                                  <td class='py-2 px-3 font-semibold text-blue-300'>${
+                                    aspect.planet1 || ""
+                                  }</td>
+                                  <td class='py-2 px-3'><span class='px-2 py-1 rounded-full font-semibold ${badgeClass}'>${
+                aspect.aspect_type || ""
+              }</span></td>
+                                  <td class='py-2 px-3 font-semibold text-blue-300'>${
+                                    aspect.planet2 || ""
+                                  }</td>
+                                  <td class='py-2 px-3 text-slate-400'>${(
+                                    aspect.orb || 0
+                                  ).toFixed(2)}° ${
+                aspect.orb < 1
+                  ? "<span class='ml-1 text-yellow-400 font-bold'>Yakın!</span>"
+                  : ""
+              }</td>
+                              `;
+              natalTable.appendChild(row);
+            });
+          });
+        }
+
+        // Transit Açılar için "Tümünü Göster"
+        const transitBtn = document.getElementById("show-more-transit-aspects");
+        const transitTable = document.getElementById("transit-aspects-table");
+        if (
+          transitBtn &&
+          transitTable &&
+          astroData &&
+          astroData.transit_to_natal_aspects
+        ) {
+          transitBtn.addEventListener("click", function () {
+            this.style.display = "none";
+            const additionalAspects =
+              astroData.transit_to_natal_aspects.slice(8);
+            additionalAspects.forEach((aspect) => {
+              const row = document.createElement("tr");
+              row.className =
+                "border-b border-slate-600 hover:bg-slate-800 transition";
+
+              const type = (aspect.aspect_type || "").toLowerCase();
+              let badgeClass = "bg-purple-900 text-purple-200";
+              if (type === "trine") badgeClass = "bg-green-900 text-green-300";
+              else if (["square", "opposition"].includes(type))
+                badgeClass = "bg-red-900 text-red-300";
+              else if (type === "conjunction")
+                badgeClass = "bg-yellow-900 text-yellow-300";
+
+              row.innerHTML = `
+                                  <td class='py-2 px-3 font-semibold text-orange-300'>${
+                                    aspect.transit_body || ""
+                                  }</td>
+                                  <td class='py-2 px-3'><span class='px-2 py-1 rounded-full font-semibold ${badgeClass}'>${
+                aspect.aspect_type || ""
+              }</span></td>
+                                  <td class='py-2 px-3 font-semibold text-blue-300'>${
+                                    aspect.natal_body || ""
+                                  }</td>
+                                  <td class='py-2 px-3 text-slate-400'>${(
+                                    aspect.orb || 0
+                                  ).toFixed(2)}°</td>
+                              `;
+              transitTable.appendChild(row);
+            });
+          });
+        }
+      }
+
+      // --- AI MODAL FONKSİYONLARI ---
+      function closeAIModal() {
+        const modal = document.getElementById("ai-modal");
+        const container = document.getElementById("ai-modal-container");
+        container.classList.add("scale-95");
+        modal.classList.add("hidden");
+        stopModalSpeech();
+      }
+
+      function openAIModal() {
+        const modal = document.getElementById("ai-modal");
+        const container = document.getElementById("ai-modal-container");
+        modal.classList.remove("hidden");
+        setTimeout(() => {
+          container.classList.remove("scale-95");
+        }, 10);
+      }
+
+      async function interpretTab(tabId) {
+        const topicNames = {
+          birth_chart: "Genel Karakter ve Yaşam Yolu",
+          career: "Kariyer, İş ve Başarı",
+          relationship: "Aşk, İlişkiler ve Evlilik",
+          finance: "Finans, Varlık ve Şans",
+          health: "Sağlık ve Psikolojik Durum",
+          karma: "Karma ve Ruhsal Görevler",
+          timing: "Zamanlama ve Öngörüler",
+        };
+
+        const modalBody = document.getElementById("ai-modal-body");
+        const modalTitle = document.getElementById("ai-modal-title");
+
+        modalTitle.innerText =
+          (topicNames[tabId] || "Astroloji") + " - AI Analizi";
+        modalBody.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-12">
+                <div class="relative w-16 h-16 mb-6">
+                    <div class="absolute inset-0 rounded-full border-4 border-purple-500/20 border-t-purple-500 animate-spin"></div>
+                    <i class="fas fa-brain absolute inset-0 flex items-center justify-center text-2xl text-purple-400 animate-pulse"></i>
+                </div>
+                <p class="text-slate-400 font-medium tracking-wide">Yıldız haritası derinlemesine analiz ediliyor...</p>
+                <p class="text-xs text-slate-500 mt-2 italic">Bu işlem 10-15 saniye sürebilir.</p>
+            </div>
+        `;
+
+        openAIModal();
+
+        try {
+          const response = await fetch("/api/get_ai_interpretation", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              interpretation_type: tabId,
+              astro_data: astroData,
+              user_name: astroData.user_name || "Erkan",
+            }),
+          });
+          const result = await response.json();
+
+          if (result.success) {
+            currentInterpretationText = result.interpretation;
+            const formatted = formatAIResponse(result.interpretation);
+            modalBody.innerHTML = `<div class="ai-text-content">${formatted}</div>`;
+          } else {
+            modalBody.innerHTML = `
+                    <div class="p-4 bg-red-900/20 border border-red-900/40 rounded-xl text-red-400">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> 
+                        Hata: ${result.error || "Yorum alınamadı."}
+                    </div>
+                `;
+          }
+        } catch (error) {
+          console.error("AI Error:", error);
+          modalBody.innerHTML = `<div class="text-red-400">Sunucu ile bağlantı kurulamadı. Lütfen daha sonra tekrar deneyin.</div>`;
+        }
+      }
+
+      function setupAIModalListeners() {
+        const copyBtn = document.getElementById("modal-copy");
+        const readBtn = document.getElementById("modal-read-aloud");
+        const stopBtn = document.getElementById("modal-stop-voice");
+
+        if (copyBtn) {
+          copyBtn.addEventListener("click", () => {
+            if (!currentInterpretationText) return;
+            navigator.clipboard
+              .writeText(currentInterpretationText)
+              .then(() => {
+                const originalHtml = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> Kopyalandı';
+                copyBtn.classList.add("bg-green-600/20", "text-green-400");
+                setTimeout(() => {
+                  copyBtn.innerHTML = originalHtml;
+                  copyBtn.classList.remove("bg-green-600/20", "text-green-400");
+                }, 2000);
+              });
+          });
+        }
+
+        if (readBtn) {
+          readBtn.addEventListener("click", () => {
+            startModalSpeech();
+          });
+        }
+
+        if (stopBtn) {
+          stopBtn.addEventListener("click", () => {
+            stopModalSpeech();
+          });
+        }
+      }
+
+      function startModalSpeech() {
+        if (!currentInterpretationText) return;
+
+        stopModalSpeech(); // Varsa temizle
+
+        modalUtterance = new SpeechSynthesisUtterance(
+          currentInterpretationText
+        );
+        modalUtterance.lang = "tr-TR";
+        modalUtterance.rate = 1.0;
+
+        const stopBtn = document.getElementById("modal-stop-voice");
+        const readBtn = document.getElementById("modal-read-aloud");
+
+        modalUtterance.onstart = () => {
+          stopBtn.classList.remove("hidden");
+          readBtn.classList.add("opacity-50", "pointer-events-none");
+        };
+
+        modalUtterance.onend = () => {
+          stopBtn.classList.add("hidden");
+          readBtn.classList.remove("opacity-50", "pointer-events-none");
+        };
+
+        modalSpeechSynthesis.speak(modalUtterance);
+      }
+
+      function stopModalSpeech() {
+        if (modalSpeechSynthesis) {
+          modalSpeechSynthesis.cancel();
+          const stopBtn = document.getElementById("modal-stop-voice");
+          const readBtn = document.getElementById("modal-read-aloud");
+          if (stopBtn) stopBtn.classList.add("hidden");
+          if (readBtn)
+            readBtn.classList.remove("opacity-50", "pointer-events-none");
+        }
+      }
+    </script>
+  </body>
+</html>
