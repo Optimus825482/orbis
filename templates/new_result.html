@@ -1481,6 +1481,28 @@ endif %} {% endmacro %}
       let modalSpeechSynthesis = window.speechSynthesis;
       let modalUtterance = null;
 
+      // Verileri JSON bloklarından yükle ve localStorage'a kaydet
+      try {
+        const astroDataEl = document.getElementById("astro-data-json");
+        if (astroDataEl) {
+          astroData = JSON.parse(astroDataEl.textContent);
+          if (astroData) {
+            localStorage.setItem(
+              "last_astro_result",
+              JSON.stringify(astroData)
+            );
+            console.log("Astro verisi localStorage'a kaydedildi.");
+          }
+        }
+
+        const symbolsEl = document.getElementById("planet-symbols-json");
+        if (symbolsEl) {
+          planetSymbols = JSON.parse(symbolsEl.textContent);
+        }
+      } catch (e) {
+        console.error("JSON parse hatası:", e);
+      }
+
       const aspectSymbols = {
         Conjunction: "☌",
         Opposition: "☍",
@@ -3965,7 +3987,7 @@ endif %} {% endmacro %}
           } else {
             modalBody.innerHTML = `
                     <div class="p-4 bg-red-900/20 border border-red-900/40 rounded-xl text-red-400">
-                        <i class="fas fa-exclamation-triangle mr-2"></i> 
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
                         Hata: ${result.error || "Yorum alınamadı."}
                     </div>
                 `;
