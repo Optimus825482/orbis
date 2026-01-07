@@ -52,3 +52,4 @@ gevent==23.9.1
 
 # Environment & Config
 python-dotenv==1.0.0
+serverless-wsgi==3.0.2

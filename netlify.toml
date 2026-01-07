@@ -1,0 +1,14 @@
+[build]
+  command = "pip install -r requirements.txt"
+  functions = "functions"
+
+# Flask uygulamasını Netlify Functions üzerinden çalıştırmak için yönlendirme
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/app"
+  status = 200
+
+[functions]
+  external_node_modules = []
+  node_bundler = "esbuild"
+  included_files = ["ephe/**", "templates/**", "static/**", "instance/**", "*.py", ".env"]
