@@ -51,6 +51,7 @@ Thumbs.db
 .vscode/
 
 # Project specific
+ephe/
 sessions/
 aa.json
 sonuclar.md
