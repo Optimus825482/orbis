@@ -242,7 +242,7 @@ def get_deepseek_interpretation(astro_data, interpretation_type, user_name="Değ
         }
         
         payload = {
-            "model": "deepseek-reasoner",
+            "model": "deepseek-chat",
             "messages": [
                 {"role": "system", "content": "Sen dünyanın en iyi astroloğusun. Teknik terim kullanmadan, sade ve anlaşılır bir dille yorum yaparsın."},
                 {"role": "user", "content": prompt}
@@ -250,7 +250,7 @@ def get_deepseek_interpretation(astro_data, interpretation_type, user_name="Değ
             "temperature": 0.7
         }
 
-        response = requests.post("https://api.deepseek.com/v1/chat/completions", json=payload, headers=headers, timeout=60)
+        response = requests.post("https://api.deepseek.com/chat/completions", json=payload, headers=headers, timeout=60)
         if response.status_code == 200:
             content = response.json()["choices"][0]["message"]["content"]
             return {"success": True, "interpretation": content.strip()}
@@ -319,9 +319,20 @@ def get_hyperbolic_interpretation(
 def get_ai_interpretation_engine(
     astro_data, interpretation_type, user_name="Değerli Danışanım"
 ):
-    """Ana Yorum Motoru: Gemini [BİRİNCİL] -> OpenRouter -> DeepSeek-Reasoner (R1)."""
+    """Ana Yorum Motoru: DeepSeek [BİRİNCİL] -> Gemini -> OpenRouter."""
     
-    # --- 1. Gemini API Dene ---
+    # --- 1. DeepSeek (Doğrudan) Dene ---
+    if DEEPSEEK_API_KEY:
+        try:
+            logging.info("DeepSeek-V3 (Chat) ile yorum oluşturuluyor...")
+            ds_result = get_deepseek_interpretation(astro_data, interpretation_type, user_name)
+            if ds_result.get("success"):
+                ds_result["interpretation"] += "\n\n--- [DeepSeek-V3]"
+                return ds_result
+        except Exception as e:
+            logging.warning(f"DeepSeek başarısız: {e}")
+
+    # --- 2. Gemini API Dene ---
     if gemini_model:
         try:
             logging.info("Gemini ile yorum oluşturuluyor...")
@@ -335,7 +346,7 @@ def get_ai_interpretation_engine(
         except Exception as e:
             logging.warning(f"Gemini başarısız: {e}")
 
-    # --- 2. OpenRouter Dene ---
+    # --- 3. OpenRouter Dene ---
     if OPENROUTER_API_KEY:
         try:
             logging.info("OpenRouter ile yorum oluşturuluyor...")
@@ -353,16 +364,5 @@ def get_ai_interpretation_engine(
                 return {"success": True, "interpretation": interpretation}
         except Exception as e:
             logging.error(f"OpenRouter başarısız: {e}")
-
-    # --- 3. DeepSeek (Doğrudan) Dene ---
-    if DEEPSEEK_API_KEY:
-        try:
-            logging.info("DeepSeek-Reasoner ile yorum oluşturuluyor...")
-            ds_result = get_deepseek_interpretation(astro_data, interpretation_type, user_name)
-            if ds_result.get("success"):
-                ds_result["interpretation"] += "\n\n--- [DeepSeek-Reasoner (R1)]"
-                return ds_result
-        except Exception as e:
-            logging.warning(f"DeepSeek başarısız: {e}")
 
     return {"success": False, "error": "Tüm LLM servisleri başarısız oldu."}
