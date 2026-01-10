@@ -143,26 +143,62 @@ endblock %} {% block head %} {{ super() }}
               class="block text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-2 font-bold ml-1"
               >Doğum Tarihi</label
             >
-            <input
-              type="date"
-              name="birth_date"
-              id="birth_date"
-              required
-              class="w-full px-5 py-4 bg-white/5 border border-white/10 text-sm text-white focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all rounded-2xl outline-none hover:bg-white/10"
-            />
+            <div class="relative">
+              <input
+                type="text"
+                name="birth_date"
+                id="birth_date"
+                required
+                placeholder="GG/AA/YYYY"
+                inputmode="numeric"
+                maxlength="10"
+                class="w-full px-5 py-4 pr-12 bg-white/5 border border-white/10 text-sm text-white focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all rounded-2xl outline-none hover:bg-white/10"
+              />
+              <button
+                type="button"
+                onclick="openDatePicker('birth_date')"
+                class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-primary transition-colors"
+              >
+                <span class="material-icons-round text-xl">calendar_month</span>
+              </button>
+              <input
+                type="date"
+                id="birth_date_picker"
+                class="absolute opacity-0 w-0 h-0"
+                onchange="setDateFromPicker('birth_date')"
+              />
+            </div>
           </div>
           <div class="group relative">
             <label
               class="block text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-2 font-bold ml-1"
               >Doğum Saati</label
             >
-            <input
-              type="time"
-              name="birth_time"
-              id="birth_time"
-              required
-              class="w-full px-5 py-4 bg-white/5 border border-white/10 text-sm text-white focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all rounded-2xl outline-none hover:bg-white/10"
-            />
+            <div class="relative">
+              <input
+                type="text"
+                name="birth_time"
+                id="birth_time"
+                required
+                placeholder="SS:DD"
+                inputmode="numeric"
+                maxlength="5"
+                class="w-full px-5 py-4 pr-12 bg-white/5 border border-white/10 text-sm text-white focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all rounded-2xl outline-none hover:bg-white/10"
+              />
+              <button
+                type="button"
+                onclick="openTimePicker('birth_time')"
+                class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-primary transition-colors"
+              >
+                <span class="material-icons-round text-xl">schedule</span>
+              </button>
+              <input
+                type="time"
+                id="birth_time_picker"
+                class="absolute opacity-0 w-0 h-0"
+                onchange="setTimeFromPicker('birth_time')"
+              />
+            </div>
           </div>
         </div>
 
@@ -223,24 +259,60 @@ endblock %} {% block head %} {{ super() }}
               class="block text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-2 font-bold ml-1"
               >Transit Tarihi</label
             >
-            <input
-              type="date"
-              id="transit_date"
-              name="transit_date"
-              class="w-full px-5 py-4 bg-white/5 border border-white/10 text-sm text-white focus:ring-1 focus:ring-accent/50 focus:border-accent/50 transition-all rounded-2xl outline-none hover:bg-white/10"
-            />
+            <div class="relative">
+              <input
+                type="text"
+                name="transit_date"
+                id="transit_date"
+                placeholder="GG/AA/YYYY"
+                inputmode="numeric"
+                maxlength="10"
+                class="w-full px-5 py-4 pr-12 bg-white/5 border border-white/10 text-sm text-white focus:ring-1 focus:ring-accent/50 focus:border-accent/50 transition-all rounded-2xl outline-none hover:bg-white/10"
+              />
+              <button
+                type="button"
+                onclick="openDatePicker('transit_date')"
+                class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-accent transition-colors"
+              >
+                <span class="material-icons-round text-xl">calendar_month</span>
+              </button>
+              <input
+                type="date"
+                id="transit_date_picker"
+                class="absolute opacity-0 w-0 h-0"
+                onchange="setDateFromPicker('transit_date')"
+              />
+            </div>
           </div>
           <div class="group relative">
             <label
               class="block text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-2 font-bold ml-1"
               >Transit Saati</label
             >
-            <input
-              type="time"
-              id="transit_time"
-              name="transit_time"
-              class="w-full px-5 py-4 bg-white/5 border border-white/10 text-sm text-white focus:ring-1 focus:ring-accent/50 focus:border-accent/50 transition-all rounded-2xl outline-none hover:bg-white/10"
-            />
+            <div class="relative">
+              <input
+                type="text"
+                name="transit_time"
+                id="transit_time"
+                placeholder="SS:DD"
+                inputmode="numeric"
+                maxlength="5"
+                class="w-full px-5 py-4 pr-12 bg-white/5 border border-white/10 text-sm text-white focus:ring-1 focus:ring-accent/50 focus:border-accent/50 transition-all rounded-2xl outline-none hover:bg-white/10"
+              />
+              <button
+                type="button"
+                onclick="openTimePicker('transit_time')"
+                class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-accent transition-colors"
+              >
+                <span class="material-icons-round text-xl">schedule</span>
+              </button>
+              <input
+                type="time"
+                id="transit_time_picker"
+                class="absolute opacity-0 w-0 h-0"
+                onchange="setTimeFromPicker('transit_time')"
+              />
+            </div>
           </div>
         </div>
 
@@ -383,7 +455,98 @@ endblock %} {% block head %} {{ super() }}
     "Kaderin desenleri eşleştiriliyor...",
   ];
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DATE/TIME PICKER & AUTO-FORMAT FUNCTIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function openDatePicker(fieldId) {
+    const picker = document.getElementById(fieldId + "_picker");
+    picker.showPicker ? picker.showPicker() : picker.click();
+  }
+
+  function openTimePicker(fieldId) {
+    const picker = document.getElementById(fieldId + "_picker");
+    picker.showPicker ? picker.showPicker() : picker.click();
+  }
+
+  function setDateFromPicker(fieldId) {
+    const picker = document.getElementById(fieldId + "_picker");
+    const input = document.getElementById(fieldId);
+    if (picker.value) {
+      const [year, month, day] = picker.value.split("-");
+      input.value = `${day}/${month}/${year}`;
+    }
+  }
+
+  function setTimeFromPicker(fieldId) {
+    const picker = document.getElementById(fieldId + "_picker");
+    const input = document.getElementById(fieldId);
+    if (picker.value) {
+      input.value = picker.value;
+    }
+  }
+
+  // Auto-format date input (GG/AA/YYYY)
+  function autoFormatDate(input) {
+    let value = input.value.replace(/\D/g, ""); // Sadece rakamlar
+    let formatted = "";
+
+    if (value.length > 0) {
+      formatted = value.substring(0, 2);
+    }
+    if (value.length > 2) {
+      formatted += "/" + value.substring(2, 4);
+    }
+    if (value.length > 4) {
+      formatted += "/" + value.substring(4, 8);
+    }
+
+    input.value = formatted;
+  }
+
+  // Auto-format time input (SS:DD)
+  function autoFormatTime(input) {
+    let value = input.value.replace(/\D/g, ""); // Sadece rakamlar
+    let formatted = "";
+
+    if (value.length > 0) {
+      formatted = value.substring(0, 2);
+    }
+    if (value.length > 2) {
+      formatted += ":" + value.substring(2, 4);
+    }
+
+    input.value = formatted;
+  }
+
+  // Convert display format (GG/AA/YYYY) to backend format (YYYY-MM-DD)
+  function convertDateForBackend(displayDate) {
+    if (!displayDate || displayDate.length !== 10) return "";
+    const parts = displayDate.split("/");
+    if (parts.length !== 3) return "";
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
+    // Auto-format event listeners
+    ["birth_date", "transit_date"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("input", function () {
+          autoFormatDate(this);
+        });
+      }
+    });
+
+    ["birth_time", "transit_time"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("input", function () {
+          autoFormatTime(this);
+        });
+      }
+    });
+
     // Load saved data
     const savedData = localStorage.getItem("astro_user_data");
     if (savedData) {
@@ -411,25 +574,42 @@ endblock %} {% block head %} {{ super() }}
     orbisForm.addEventListener("submit", function (e) {
       e.preventDefault(); // Önce formu durdur
 
+      // Convert date format before submit
+      const birthDateEl = document.getElementById("birth_date");
+      const transitDateEl = document.getElementById("transit_date");
+
+      // Store original display values
+      const birthDateDisplay = birthDateEl.value;
+      const transitDateDisplay = transitDateEl.value;
+
+      // Convert to backend format
+      birthDateEl.value = convertDateForBackend(birthDateDisplay);
+      if (transitDateDisplay) {
+        transitDateEl.value = convertDateForBackend(transitDateDisplay);
+      }
+
       // Reklam kontrolü yap
       if (window.OrbisBridge) {
         window.OrbisBridge.requestAnalysis(
           // Başarılı - reklam izlendi veya premium
           function () {
-            submitForm();
+            submitForm(birthDateDisplay);
           },
           // İptal edildi
           function () {
             console.log("[ORBIS] Analiz iptal edildi");
+            // Restore display format
+            birthDateEl.value = birthDateDisplay;
+            transitDateEl.value = transitDateDisplay;
           }
         );
       } else {
         // Bridge yoksa direkt submit
-        submitForm();
+        submitForm(birthDateDisplay);
       }
     });
 
-    function submitForm() {
+    function submitForm(birthDateDisplay) {
       $("#loadingOverlay").removeClass("hidden").addClass("flex");
       let msgIdx = 0;
       const msgInterval = setInterval(() => {
@@ -441,7 +621,7 @@ endblock %} {% block head %} {{ super() }}
 
       const formData = {
         name: document.getElementById("name").value,
-        birth_date: document.getElementById("birth_date").value,
+        birth_date: birthDateDisplay, // Save display format
         birth_time: document.getElementById("birth_time").value,
         birth_place_suggestion:
           document.getElementById("suggestionInput").value,

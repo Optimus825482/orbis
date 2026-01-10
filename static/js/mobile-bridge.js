@@ -97,6 +97,9 @@ const OrbisBridge = {
       this.state.isNative = true;
       console.log("[ORBIS] Native platform tespit edildi");
       this.initAdMob();
+
+      // İlk kurulumda bildirim izni iste
+      this.requestNotificationPermission();
     } else {
       console.log("[ORBIS] Web platform - reklamlar devre dışı");
     }
@@ -148,6 +151,108 @@ const OrbisBridge = {
       this.saveState();
       console.log("[ORBIS] Günlük sayaçlar sıfırlandı");
     }
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // BİLDİRİM İZNİ
+  // ═══════════════════════════════════════════════════════════════
+
+  async requestNotificationPermission() {
+    // Daha önce sorulmuş mu kontrol et
+    const alreadyAsked = localStorage.getItem("orbis_notification_asked");
+    if (alreadyAsked) {
+      console.log("[ORBIS] Bildirim izni daha önce soruldu");
+      return;
+    }
+
+    // 2 saniye bekle (uygulama açılsın)
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Güzel bir modal göster
+    this.showNotificationPermissionModal();
+  },
+
+  showNotificationPermissionModal() {
+    // Modal HTML oluştur
+    const modalHTML = `
+      <div id="notification-permission-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+        <div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 w-full max-w-sm border border-white/10 shadow-2xl animate-fade-in">
+          <div class="text-center mb-6">
+            <div class="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span class="material-icons-round text-4xl text-primary">notifications_active</span>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">Bildirimleri Aç</h3>
+            <p class="text-sm text-slate-400 leading-relaxed">
+              Günlük burç yorumları, önemli transit geçişleri ve kişisel kozmik uyarılar için bildirimleri açın.
+            </p>
+          </div>
+          
+          <div class="space-y-3 mb-6">
+            <div class="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+              <span class="material-icons-round text-accent">wb_sunny</span>
+              <span class="text-xs text-slate-300">Günlük burç yorumları</span>
+            </div>
+            <div class="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+              <span class="material-icons-round text-yellow-400">stars</span>
+              <span class="text-xs text-slate-300">Önemli transit geçişleri</span>
+            </div>
+            <div class="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
+              <span class="material-icons-round text-pink-400">favorite</span>
+              <span class="text-xs text-slate-300">Kişisel kozmik uyarılar</span>
+            </div>
+          </div>
+          
+          <div class="space-y-2">
+            <button onclick="OrbisBridge.acceptNotifications()" class="w-full py-4 bg-primary hover:bg-primary/90 text-white font-bold rounded-2xl transition-all active:scale-95">
+              Bildirimleri Aç
+            </button>
+            <button onclick="OrbisBridge.declineNotifications()" class="w-full py-3 text-slate-400 hover:text-white text-sm transition-colors">
+              Şimdi Değil
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Modal'ı body'e ekle
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
+  },
+
+  async acceptNotifications() {
+    // Modal'ı kapat
+    document.getElementById("notification-permission-modal")?.remove();
+    localStorage.setItem("orbis_notification_asked", "true");
+
+    try {
+      // Capacitor PushNotifications varsa kullan
+      if (
+        typeof Capacitor !== "undefined" &&
+        Capacitor.Plugins.PushNotifications
+      ) {
+        const { PushNotifications } = Capacitor.Plugins;
+
+        const result = await PushNotifications.requestPermissions();
+        console.log("[ORBIS] Push permission result:", result);
+
+        if (result.receive === "granted") {
+          await PushNotifications.register();
+          console.log("[ORBIS] Push notifications registered");
+        }
+      } else if ("Notification" in window) {
+        // Web Notification API fallback
+        const permission = await Notification.requestPermission();
+        console.log("[ORBIS] Web notification permission:", permission);
+      }
+    } catch (error) {
+      console.error("[ORBIS] Notification permission error:", error);
+    }
+  },
+
+  declineNotifications() {
+    // Modal'ı kapat
+    document.getElementById("notification-permission-modal")?.remove();
+    localStorage.setItem("orbis_notification_asked", "true");
+    console.log("[ORBIS] Bildirimler reddedildi");
   },
 
   // ═══════════════════════════════════════════════════════════════
