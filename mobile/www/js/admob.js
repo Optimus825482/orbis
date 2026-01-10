@@ -1,0 +1,283 @@
+/**
+ * ORBIS AdMob Integration
+ * Banner, Interstitial ve Rewarded Ad yönetimi
+ */
+
+const OrbisAds = {
+  // Test Ad Unit IDs - Google'ın resmi test ID'leri
+  // Production'da kendi ID'lerinizi kullanın
+  AD_UNITS: {
+    BANNER: "ca-app-pub-3940256099942544/6300978111", // Test Banner
+    INTERSTITIAL: "ca-app-pub-3940256099942544/1033173712", // Test Interstitial
+    REWARDED: "ca-app-pub-3940256099942544/5224354917", // Test Rewarded
+  },
+
+  // Production Ad Unit IDs (sonra kullanılacak)
+  // BANNER: "ca-app-pub-244409390178357/5860659669",
+  // INTERSTITIAL: "ca-app-pub-244409390178357/8840184408",
+  // REWARDED: "ca-app-pub-244409390178357/4900939398",
+
+  // App ID
+  APP_ID: "ca-app-pub-3940256099942544~3347511713", // Test App ID
+
+  // State
+  isInitialized: false,
+  interstitialLoaded: false,
+  rewardedLoaded: false,
+  interstitialShowCount: 0,
+
+  /**
+   * AdMob'u başlat
+   */
+  async initialize() {
+    if (this.isInitialized) return;
+
+    try {
+      // Capacitor AdMob plugin kontrolü
+      if (typeof Capacitor === "undefined" || !Capacitor.Plugins.AdMob) {
+        console.log("[AdMob] Plugin not available - running in browser?");
+        return;
+      }
+
+      const { AdMob } = Capacitor.Plugins;
+
+      // AdMob'u initialize et
+      await AdMob.initialize({
+        initializeForTesting: true, // Production'da false yapın
+        testingDevices: ["YOUR_TEST_DEVICE_ID"],
+        // requestTrackingAuthorization: true, // iOS için
+      });
+
+      this.isInitialized = true;
+      console.log("[AdMob] Initialized successfully");
+
+      // Event listeners
+      this.setupEventListeners();
+
+      // İlk reklamları yükle
+      await this.loadInterstitial();
+      await this.loadRewarded();
+    } catch (error) {
+      console.error("[AdMob] Initialization failed:", error);
+    }
+  },
+
+  /**
+   * Event listener'ları kur
+   */
+  setupEventListeners() {
+    const { AdMob } = Capacitor.Plugins;
+
+    // Interstitial events
+    AdMob.addListener("onInterstitialAdLoaded", () => {
+      console.log("[AdMob] Interstitial loaded");
+      this.interstitialLoaded = true;
+    });
+
+    AdMob.addListener("onInterstitialAdFailedToLoad", (error) => {
+      console.error("[AdMob] Interstitial failed to load:", error);
+      this.interstitialLoaded = false;
+      // 30 saniye sonra tekrar dene
+      setTimeout(() => this.loadInterstitial(), 30000);
+    });
+
+    AdMob.addListener("onInterstitialAdDismissed", () => {
+      console.log("[AdMob] Interstitial dismissed");
+      this.interstitialLoaded = false;
+      this.loadInterstitial(); // Yeni reklam yükle
+    });
+
+    // Rewarded events
+    AdMob.addListener("onRewardedVideoAdLoaded", () => {
+      console.log("[AdMob] Rewarded loaded");
+      this.rewardedLoaded = true;
+    });
+
+    AdMob.addListener("onRewardedVideoAdFailedToLoad", (error) => {
+      console.error("[AdMob] Rewarded failed to load:", error);
+      this.rewardedLoaded = false;
+      setTimeout(() => this.loadRewarded(), 30000);
+    });
+
+    AdMob.addListener("onRewardedVideoAdDismissed", () => {
+      console.log("[AdMob] Rewarded dismissed");
+      this.rewardedLoaded = false;
+      this.loadRewarded();
+    });
+  },
+
+  /**
+   * Banner reklam göster
+   * @param {string} position - 'TOP' veya 'BOTTOM'
+   */
+  async showBanner(position = "BOTTOM") {
+    if (!this.isInitialized) {
+      console.log("[AdMob] Not initialized");
+      return;
+    }
+
+    try {
+      const { AdMob } = Capacitor.Plugins;
+
+      await AdMob.showBanner({
+        adId: this.AD_UNITS.BANNER,
+        adSize: "ADAPTIVE_BANNER",
+        position: position === "TOP" ? "TOP_CENTER" : "BOTTOM_CENTER",
+        margin: 0,
+        isTesting: true, // Production'da false
+      });
+
+      console.log("[AdMob] Banner shown");
+
+      // Banner için padding ekle
+      document.body.style.paddingBottom = position === "BOTTOM" ? "60px" : "0";
+      document.body.style.paddingTop = position === "TOP" ? "60px" : "0";
+    } catch (error) {
+      console.error("[AdMob] Banner error:", error);
+    }
+  },
+
+  /**
+   * Banner reklamı gizle
+   */
+  async hideBanner() {
+    if (!this.isInitialized) return;
+
+    try {
+      const { AdMob } = Capacitor.Plugins;
+      await AdMob.hideBanner();
+      document.body.style.paddingBottom = "0";
+      document.body.style.paddingTop = "0";
+    } catch (error) {
+      console.error("[AdMob] Hide banner error:", error);
+    }
+  },
+
+  /**
+   * Interstitial reklam yükle
+   */
+  async loadInterstitial() {
+    if (!this.isInitialized) return;
+
+    try {
+      const { AdMob } = Capacitor.Plugins;
+
+      await AdMob.prepareInterstitial({
+        adId: this.AD_UNITS.INTERSTITIAL,
+        isTesting: true,
+      });
+    } catch (error) {
+      console.error("[AdMob] Load interstitial error:", error);
+    }
+  },
+
+  /**
+   * Interstitial reklam göster
+   * Her 3 işlemde bir gösterir
+   */
+  async showInterstitial(force = false) {
+    if (!this.isInitialized || !this.interstitialLoaded) {
+      console.log("[AdMob] Interstitial not ready");
+      return false;
+    }
+
+    // Her 3 işlemde bir göster (force değilse)
+    this.interstitialShowCount++;
+    if (!force && this.interstitialShowCount % 3 !== 0) {
+      console.log(
+        "[AdMob] Skipping interstitial, count:",
+        this.interstitialShowCount
+      );
+      return false;
+    }
+
+    try {
+      const { AdMob } = Capacitor.Plugins;
+      await AdMob.showInterstitial();
+      return true;
+    } catch (error) {
+      console.error("[AdMob] Show interstitial error:", error);
+      return false;
+    }
+  },
+
+  /**
+   * Rewarded reklam yükle
+   */
+  async loadRewarded() {
+    if (!this.isInitialized) return;
+
+    try {
+      const { AdMob } = Capacitor.Plugins;
+
+      await AdMob.prepareRewardVideoAd({
+        adId: this.AD_UNITS.REWARDED,
+        isTesting: true,
+      });
+    } catch (error) {
+      console.error("[AdMob] Load rewarded error:", error);
+    }
+  },
+
+  /**
+   * Rewarded reklam göster
+   * @returns {Promise<boolean>} Ödül kazanıldı mı
+   */
+  async showRewarded() {
+    if (!this.isInitialized || !this.rewardedLoaded) {
+      console.log("[AdMob] Rewarded not ready");
+      return false;
+    }
+
+    return new Promise(async (resolve) => {
+      try {
+        const { AdMob } = Capacitor.Plugins;
+
+        // Ödül event'ini dinle
+        const rewardListener = AdMob.addListener(
+          "onRewardedVideoAdReward",
+          (reward) => {
+            console.log("[AdMob] Reward earned:", reward);
+            rewardListener.remove();
+            resolve(true);
+          }
+        );
+
+        // Kapatma event'ini dinle (ödül almadan)
+        const dismissListener = AdMob.addListener(
+          "onRewardedVideoAdDismissed",
+          () => {
+            dismissListener.remove();
+            // Eğer reward gelmemişse false döndür
+            setTimeout(() => resolve(false), 100);
+          }
+        );
+
+        await AdMob.showRewardVideoAd();
+      } catch (error) {
+        console.error("[AdMob] Show rewarded error:", error);
+        resolve(false);
+      }
+    });
+  },
+
+  /**
+   * Rewarded reklam hazır mı?
+   */
+  isRewardedReady() {
+    return this.isInitialized && this.rewardedLoaded;
+  },
+};
+
+// Export for global access
+window.OrbisAds = OrbisAds;
+
+// Auto-initialize when Capacitor is ready
+document.addEventListener("DOMContentLoaded", () => {
+  // AdMob'u başlat
+  if (typeof Capacitor !== "undefined" && Capacitor.isNativePlatform()) {
+    setTimeout(() => {
+      OrbisAds.initialize();
+    }, 2000); // Uygulama yüklendikten 2 saniye sonra
+  }
+});

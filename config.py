@@ -6,8 +6,8 @@ class Config:
     """
     Flask Configuration - Database stripped for client-side purely state.
     """
-    # Flask Secret Key
-    SECRET_KEY = get_env("SECRET_KEY", "dev-secret-key-placeholder")
+    # Secret Key - Required for session and flash messages
+    SECRET_KEY = get_env("SECRET_KEY", os.urandom(24).hex())
     
     # API Keys
     OPENCAGE_API_KEY = get_env_required("OPENCAGE_API_KEY")
@@ -19,7 +19,7 @@ class Config:
     SESSION_TYPE = None # Default Flask cookie session
     SESSION_PERMANENT = True
     PERMANENT_SESSION_LIFETIME = 3600 * 24 * 7 # 1 week
-    SESSION_USE_SIGNER = True
+    SESSION_USE_SIGNER = False  # No signing - client-side state only
     SESSION_COOKIE_SECURE = EnvConfig.get_session_cookie_secure()
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"

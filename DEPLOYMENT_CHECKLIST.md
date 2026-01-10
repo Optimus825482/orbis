@@ -5,10 +5,8 @@
 ### 1. Environment Configuration
 - [ ] `.env` dosyası production için yapılandırıldı
   - [ ] `FLASK_ENV=production`
-  - [ ] `SESSION_TYPE=redis`
   - [ ] `SESSION_COOKIE_SECURE=True`
   - [ ] `DEBUG=False`
-  - [ ] Güçlü `SECRET_KEY` oluşturuldu (`openssl rand -hex 32`)
   - [ ] Tüm API anahtarları yapılandırıldı (OPENCAGE_API_KEY, HYPERBOLIC_API_KEY, GOOGLE_API_KEY, OPENROUTER_API_KEY)
   - [ ] Supabase credentials yapılandırıldı (kullanılıyorsa)
 

@@ -1,0 +1,81 @@
+ORBIS - GİZLİLİK POLİTİKASI
+============================
+Son güncelleme: 10 Ocak 2026
+
+1. GİRİŞ
+--------
+ORBIS ("biz", "bizim" veya "uygulama") olarak, kullanıcılarımızın gizliliğine büyük önem veriyoruz. Bu Gizlilik Politikası, ORBIS mobil uygulamasını ve web sitesini kullandığınızda kişisel verilerinizin nasıl toplandığını, kullanıldığını ve korunduğunu açıklamaktadır.
+
+2. TOPLANAN VERİLER
+-------------------
+
+2.1 Kullanıcı Tarafından Sağlanan Veriler:
+- Ad/Takma ad (isteğe bağlı)
+- Doğum tarihi ve saati
+- Doğum yeri (şehir/ülke)
+- Transit analizi için konum bilgisi
+
+2.2 Otomatik Toplanan Veriler:
+- Cihaz türü ve işletim sistemi
+- Uygulama kullanım istatistikleri
+- Çökme raporları (anonim)
+- IP adresi (anonim hale getirilmiş)
+
+2.3 Reklam Verileri (AdMob):
+- Reklam tanımlayıcısı (GAID/IDFA)
+- Reklam etkileşim verileri
+- Genel konum (ülke/bölge düzeyinde)
+
+3. VERİLERİN KULLANIM AMAÇLARI
+------------------------------
+- Astrolojik hesaplamalar ve doğum haritası oluşturma
+- Kişiselleştirilmiş AI yorumları sunma
+- Uygulama performansını iyileştirme
+- Reklam gösterimi (ücretsiz sürüm)
+- Teknik sorunları tespit ve çözme
+
+4. VERİ PAYLAŞIMI
+-----------------
+Kişisel verilerinizi üçüncü taraflarla SATMIYORUZ. Ancak aşağıdaki durumlarda veri paylaşımı yapılabilir:
+
+- Google AdMob: Reklam gösterimi için
+  (https://policies.google.com/privacy)
+- OpenAI / Anthropic: AI yorumları için (anonim veri)
+- Yasal Zorunluluklar: Mahkeme kararı veya yasal zorunluluk halinde
+
+5. VERİ GÜVENLİĞİ
+-----------------
+Verilerinizi korumak için endüstri standardı güvenlik önlemleri uyguluyoruz:
+- SSL/TLS Şifreleme
+- Şifreli Depolama
+- Erişim Kontrolü
+- Düzenli Güvenlik Güncellemeleri
+
+6. KULLANICI HAKLARI (KVKK/GDPR)
+--------------------------------
+6698 sayılı Kişisel Verilerin Korunması Kanunu ve GDPR kapsamında aşağıdaki haklara sahipsiniz:
+- Verilerinizin işlenip işlenmediğini öğrenme
+- İşlenen verileriniz hakkında bilgi talep etme
+- Verilerinizin düzeltilmesini isteme
+- Verilerinizin silinmesini talep etme
+- Veri taşınabilirliği hakkı
+- İşlemeye itiraz etme hakkı
+
+7. ÇOCUKLARIN GİZLİLİĞİ
+-----------------------
+ORBIS, 13 yaşın altındaki çocuklara yönelik değildir. Bilerek 13 yaşın altındaki bireylerden kişisel veri toplamıyoruz.
+
+8. POLİTİKA DEĞİŞİKLİKLERİ
+--------------------------
+Bu Gizlilik Politikası'nı zaman zaman güncelleyebiliriz. Önemli değişiklikler olduğunda uygulama içi bildirim veya e-posta yoluyla sizi bilgilendireceğiz.
+
+9. İLETİŞİM
+-----------
+Gizlilik politikamız veya kişisel verileriniz hakkında sorularınız için:
+
+ORBIS - Veri Sorumlusu
+E-posta: privacy@orbis.app
+Web: https://orbis.app
+
+---
+© 2026 ORBIS - Tüm hakları saklıdır.

@@ -1,260 +1,777 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}Astro AI - Kozmik Rehber{% endblock %}</title>
-
-    <!-- Tailwind CSS -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="theme-color" content="#151022" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="ORBIS" />
     <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/tailwind.output.css') }}"
+      rel="manifest"
+      href="{{ url_for('static', filename='manifest.json') }}"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="{{ url_for('static', filename='all-icons/iOS/Icon-180.png') }}"
     />
 
-    <!-- Custom CSS -->
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/custom.css') }}"
-    />
+    <title>{% block title %}ORBIS - Kaderin Geometrisi{% endblock %}</title>
 
-    <!-- Font -->
+    <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600&family=Cinzel:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons+Round|Material+Icons+Outlined"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0"
+    />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#5b2bee",
+              accent: "#38bdf8",
+              "background-light": "#f6f6f8",
+              "background-dark": "#151022",
+              "surface-light": "#ffffff",
+              "surface-dark": "#1e293b",
+              "border-light": "#cbd5e1",
+              "border-dark": "#334155",
+            },
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+              display: ["Spline Sans", "sans-serif"],
+              body: ["Inter", "sans-serif"],
+              mono: ["Space Grotesk", "monospace"],
+              serif: ["Cinzel", "serif"],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "2rem",
+              xl: "3rem",
+              full: "9999px",
+            },
+            animation: {
+              "spin-slow": "spin 40s linear infinite",
+              "spin-reverse-slow": "spin 35s linear infinite reverse",
+              "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+              breathe: "breathe 6s ease-in-out infinite",
+              dash: "dash 20s linear infinite",
+              wave: "wave 1.2s ease-in-out infinite",
+            },
+            keyframes: {
+              breathe: {
+                "0%, 100%": { transform: "scale(1)", opacity: "0.8" },
+                "50%": { transform: "scale(1.05)", opacity: "0.4" },
+              },
+              dash: {
+                "0%": { strokeDashoffset: "1000" },
+                "100%": { strokeDashoffset: "0" },
+              },
+              wave: {
+                "0%, 100%": { height: "4px", opacity: "0.5" },
+                "50%": { height: "16px", opacity: "1" },
+              },
+            },
+          },
+        },
+      };
+    </script>
+
     <style>
       body {
-        font-family: "Inter", sans-serif;
+        min-height: 100dvh;
+      }
+      .hairline-border {
+        border-width: 0.5px;
+      }
+      .bg-grid-pattern {
+        background-size: 40px 40px;
+        background-image: linear-gradient(
+            to right,
+            rgba(148, 163, 184, 0.1) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            to bottom,
+            rgba(148, 163, 184, 0.1) 1px,
+            transparent 1px
+          );
+      }
+      .thin-lines {
+        background-image: linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0.03) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.03) 1px,
+            transparent 1px
+          );
+        background-size: 40px 40px;
+      }
+      .glass-panel {
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 20px);
+      }
+      .geometric-overlay {
+        background-image: radial-gradient(
+            circle at center,
+            transparent 0%,
+            transparent 60%,
+            rgba(56, 189, 248, 0.03) 100%
+          ),
+          linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        background-size: 100% 100%, 60px 60px, 60px 60px;
+      }
+      .mask-image-gradient {
+        -webkit-mask-image: linear-gradient(
+          to bottom,
+          transparent 0%,
+          black 5%,
+          black 95%,
+          transparent 100%
+        );
+        mask-image: linear-gradient(
+          to bottom,
+          transparent 0%,
+          black 5%,
+          black 95%,
+          transparent 100%
+        );
+      }
+
+      /* Transition fix for standalone mode */
+      body {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        user-select: none;
+      }
+
+      input,
+      textarea,
+      [contenteditable] {
+        user-select: text;
       }
     </style>
 
     <!-- Core Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- Alpine.js -->
     <script
       src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
       defer
     ></script>
 
+    <!-- Firebase SDK (CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+
     {% block head %}{% endblock %}
   </head>
-
   <body
-    class="bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white min-h-screen flex flex-col"
+    class="bg-background-dark text-slate-100 overflow-x-hidden selection:bg-primary/30"
   >
-    <!-- Navbar -->
-    <nav
-      class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 shadow-sm"
+    <!-- Background Elements -->
+    <div class="fixed inset-0 pointer-events-none z-0 thin-lines">
+      <div
+        class="absolute left-1/2 top-0 bottom-0 w-[1px] bg-white opacity-[0.05]"
+      ></div>
+      <div
+        class="absolute top-1/2 left-0 right-0 h-[1px] bg-white opacity-[0.05]"
+      ></div>
+    </div>
+
+    <!-- Background Elements (Video removed as per request) -->
+
+    <!-- PWA Installation Prompt -->
+    <div
+      id="install-prompt"
+      class="fixed top-4 left-4 right-4 bg-gradient-to-r from-primary to-violet-600 text-white p-4 rounded-2xl shadow-2xl z-[100] transform -translate-y-[200%] transition-transform duration-500 ease-out"
+      style="display: none"
     >
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <div class="flex">
-            <div class="flex-shrink-0 flex items-center">
-              <a href="{{ url_for('main.index') }}" class="flex items-center">
-                <svg
-                  class="h-8 w-8 text-indigo-600 dark:text-indigo-400"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-                    fill="currentColor"
-                  />
-                </svg>
-                <span
-                  class="ml-2 text-xl font-bold text-indigo-700 dark:text-indigo-400"
-                  >ASTRO</span
-                >
-                <span
-                  class="text-xl font-light text-gray-700 dark:text-gray-300"
-                  >AI</span
-                >
-              </a>
-            </div>
-            <div class="hidden sm:ml-6 sm:flex sm:space-x-4 items-center">
-              <!-- Desktop Navigation Links -->
-              <a
-                href="{{ url_for('main.index') }}"
-                class="px-3 py-2 rounded-md text-sm font-medium {% if request.endpoint == 'main.index' %}text-indigo-600 dark:text-indigo-400{% else %}text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400{% endif %}"
-                >Ana Sayfa</a
-              >
-              <a
-                href="{{ url_for('main.dashboard') }}"
-                class="px-3 py-2 rounded-md text-sm font-medium {% if request.endpoint == 'main.dashboard' %}text-indigo-600 dark:text-indigo-400{% else %}text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400{% endif %}"
-                >Dashboard</a
-              >
-            </div>
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 flex-1">
+          <div
+            class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"
+          >
+            <span class="material-icons-round text-xl">install_mobile</span>
           </div>
-          <div class="flex items-center space-x-4">
-            <!-- Dark Mode Toggle -->
-            <button
-              id="darkModeToggle"
-              class="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none"
+          <div class="flex-1">
+            <span class="text-sm font-bold block">ORBIS'i Yükle</span>
+            <span class="text-[10px] opacity-80"
+              >Ana ekrana ekle, daha hızlı eriş</span
             >
-              <!-- Sun Icon (Light Mode) -->
-              <svg
-                id="lightIcon"
-                class="h-5 w-5 hidden dark:block"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-                ></path>
-              </svg>
-              <!-- Moon Icon (Dark Mode) -->
-              <svg
-                id="darkIcon"
-                class="h-5 w-5 block dark:hidden"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-                ></path>
-              </svg>
-            </button>
           </div>
         </div>
+        <div class="flex items-center gap-2">
+          <button
+            id="install-btn"
+            class="bg-white text-primary px-4 py-2 rounded-xl text-xs font-bold uppercase hover:bg-white/90 transition-colors"
+          >
+            Yükle
+          </button>
+          <button
+            id="install-dismiss"
+            class="w-8 h-8 flex items-center justify-center text-white/60 hover:text-white transition-colors"
+          >
+            <span class="material-icons-round text-lg">close</span>
+          </button>
+        </div>
       </div>
-      <!-- Mobile menu -->
-      <div class="sm:hidden" id="mobileMenu">
-        <div class="pt-2 pb-3 space-y-1">
+    </div>
+
+    <!-- iOS Install Guide (Safari) -->
+    <div
+      id="ios-install-guide"
+      class="fixed bottom-24 left-4 right-4 bg-gradient-to-r from-slate-800 to-slate-700 text-white p-4 rounded-2xl shadow-2xl z-[100] transform translate-y-[200%] transition-transform duration-500 ease-out"
+      style="display: none"
+    >
+      <div class="flex items-start gap-3">
+        <div
+          class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0"
+        >
+          <span class="material-icons-round text-xl">ios_share</span>
+        </div>
+        <div class="flex-1">
+          <span class="text-sm font-bold block mb-1"
+            >ORBIS'i Ana Ekrana Ekle</span
+          >
+          <p class="text-[10px] opacity-80 leading-relaxed">
+            Safari menüsünden
+            <span class="inline-flex items-center"
+              ><span class="material-icons-round text-xs mx-1"
+                >ios_share</span
+              ></span
+            >
+            simgesine, ardından <strong>"Ana Ekrana Ekle"</strong> seçeneğine
+            dokun.
+          </p>
+        </div>
+        <button
+          id="ios-dismiss"
+          class="w-8 h-8 flex items-center justify-center text-white/60 hover:text-white transition-colors flex-shrink-0"
+        >
+          <span class="material-icons-round text-lg">close</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content Outer Box -->
+    <div class="relative z-10 flex flex-col min-h-screen">
+      <!-- Navbar (Desktop Only) -->
+      <header
+        class="hidden md:flex items-center justify-between px-8 py-6 sticky top-0 bg-background-dark/80 backdrop-blur-md z-40 border-b border-white/5"
+      >
+        <a
+          href="{{ url_for('main.index') }}"
+          class="flex items-center gap-2 group"
+        >
+          <span
+            class="material-symbols-outlined text-primary text-3xl group-hover:scale-110 transition-transform"
+            >all_inclusive</span
+          >
+          <span
+            class="font-display font-medium text-2xl tracking-[0.2em] text-white"
+            >ORBIS</span
+          >
+        </a>
+        <nav class="flex items-center gap-8">
           <a
             href="{{ url_for('main.index') }}"
-            class="block px-3 py-2 rounded-md text-base font-medium {% if request.endpoint == 'main.index' %}text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-slate-700{% else %}text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700{% endif %}"
+            class="text-xs uppercase tracking-widest font-semibold hover:text-primary transition-colors"
             >Ana Sayfa</a
           >
           <a
             href="{{ url_for('main.dashboard') }}"
-            class="block px-3 py-2 rounded-md text-base font-medium {% if request.endpoint == 'main.dashboard' %}text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-slate-700{% else %}text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700{% endif %}"
+            class="text-xs uppercase tracking-widest font-semibold hover:text-primary transition-colors"
             >Dashboard</a
           >
-        </div>
-      </div>
-    </nav>
 
-    <!-- Flash Messages -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-      {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %}
-      <div class="flash-messages">
-        {% for category, message in messages %}
-        <div
-          class="{% if category == 'error' %}alert-error{% elif category == 'warning' %}alert-warning{% elif category == 'success' %}alert-success{% else %}alert-info{% endif %} mb-4 flex items-center"
-        >
-          {% if category == 'error' %}
-          <svg
-            class="h-5 w-5 mr-2"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
-          </svg>
-          {% elif category == 'warning' %}
-          <svg
-            class="h-5 w-5 mr-2"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-            ></path>
-          </svg>
-          {% elif category == 'success' %}
-          <svg
-            class="h-5 w-5 mr-2"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
-          </svg>
-          {% else %}
-          <svg
-            class="h-5 w-5 mr-2"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
-          </svg>
-          {% endif %} {{ message }}
-        </div>
-        {% endfor %}
-      </div>
-      {% endif %} {% endwith %}
-    </div>
+          <!-- Auth UI -->
+          <div class="flex items-center gap-3">
+            <!-- Login Button -->
+            <button
+              id="login-btn"
+              onclick="OrbisFirebase.signInWithGoogle()"
+              class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs uppercase tracking-widest font-semibold transition-all"
+            >
+              <span class="material-icons-round text-lg">login</span>
+              Giriş Yap
+            </button>
 
-    <!-- Main Content -->
-    <main class="flex-grow">{% block content %}{% endblock %}</main>
-
-    <!-- Footer -->
-    <footer
-      class="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-gray-700 py-4 mt-8"
-    >
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex flex-col md:flex-row justify-between items-center">
-          <p class="text-sm text-gray-500 dark:text-gray-400">
-            &copy; 2023 Astro AI. Tüm hakları saklıdır.
-          </p>
-          <div class="flex space-x-4 mt-3 md:mt-0">
-            <a
-              href="#"
-              class="text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-              >Gizlilik Politikası</a
-            >
-            <a
-              href="#"
-              class="text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-              >Kullanım Şartları</a
-            >
-            <a
-              href="#"
-              class="text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-              >İletişim</a
-            >
+            <!-- User Info (Hidden by default) -->
+            <div id="user-info" class="hidden items-center gap-3">
+              <img
+                id="user-avatar"
+                src=""
+                alt="Avatar"
+                class="w-8 h-8 rounded-full border-2 border-primary"
+              />
+              <span
+                id="user-name"
+                class="text-xs font-medium max-w-[100px] truncate"
+              ></span>
+              <button
+                onclick="OrbisFirebase.signOut()"
+                class="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                title="Çıkış Yap"
+              >
+                <span class="material-icons-round text-lg text-slate-400"
+                  >logout</span
+                >
+              </button>
+            </div>
           </div>
+        </nav>
+      </header>
+
+      <!-- Main Block Content -->
+      <main class="flex-grow flex flex-col">
+        {% block content %}{% endblock %}
+      </main>
+
+      <!-- PWA Bottom Navigation (Mobile Only) -->
+      <nav
+        class="fixed bottom-0 left-0 w-full bg-background-dark/95 backdrop-blur-xl border-t border-white/5 pb-safe z-50 md:hidden"
+      >
+        <div class="flex justify-around items-center h-20 px-4">
+          <a
+            href="{{ url_for('main.dashboard') }}"
+            class="flex flex-col items-center justify-center w-20 transition-all active:scale-95 {% if request.endpoint == 'main.dashboard' %}text-primary{% else %}text-slate-500{% endif %}"
+          >
+            <span class="material-icons-round text-2xl">explore</span>
+            <span class="text-[9px] uppercase tracking-tighter font-bold mt-1"
+              >Haritam</span
+            >
+            {% if request.endpoint == 'main.dashboard' %}
+            <div class="w-1 h-1 bg-primary rounded-full mt-1"></div>
+            {% endif %}
+          </a>
+
+          <a
+            href="{{ url_for('main.index') }}"
+            class="flex flex-col items-center justify-center w-20 transition-all active:scale-95 {% if request.endpoint == 'main.index' %}text-primary{% else %}text-slate-500{% endif %}"
+          >
+            <span class="material-icons-round text-3xl">home</span>
+            <span class="text-[9px] uppercase tracking-tighter font-bold mt-1"
+              >Ana Sayfa</span
+            >
+            {% if request.endpoint == 'main.index' %}
+            <div class="w-1 h-1 bg-primary rounded-full mt-1"></div>
+            {% endif %}
+          </a>
+
+          <a
+            href="{{ url_for('main.show_results') }}"
+            class="flex flex-col items-center justify-center w-20 transition-all active:scale-95 {% if request.endpoint == 'main.show_results' %}text-primary{% else %}text-slate-500{% endif %}"
+          >
+            <span class="material-icons-round text-2xl">auto_awesome</span>
+            <span class="text-[9px] uppercase tracking-tighter font-bold mt-1"
+              >Analizler</span
+            >
+            {% if request.endpoint == 'main.show_results' %}
+            <div class="w-1 h-1 bg-primary rounded-full mt-1"></div>
+            {% endif %}
+          </a>
+
+          <!-- Mobile Profile/Login Button -->
+          <button
+            id="mobile-profile-btn"
+            onclick="toggleMobileAuth()"
+            class="flex flex-col items-center justify-center w-20 transition-all active:scale-95 text-slate-500"
+          >
+            <span id="mobile-profile-icon" class="material-icons-round text-2xl"
+              >person</span
+            >
+            <img
+              id="mobile-avatar"
+              src=""
+              alt=""
+              class="w-6 h-6 rounded-full border border-primary hidden"
+            />
+            <span class="text-[9px] uppercase tracking-tighter font-bold mt-1"
+              >Profil</span
+            >
+          </button>
+        </div>
+      </nav>
+
+      <!-- Mobile Auth Modal -->
+      <div
+        id="mobile-auth-modal"
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] hidden items-center justify-center p-4"
+      >
+        <div
+          class="bg-slate-900 rounded-2xl p-6 w-full max-w-sm border border-white/10"
+        >
+          <!-- Not Logged In -->
+          <div id="auth-login-view">
+            <div class="text-center mb-6">
+              <span class="material-icons-round text-5xl text-primary mb-3"
+                >account_circle</span
+              >
+              <h3 class="text-lg font-bold">ORBIS'e Giriş Yap</h3>
+              <p class="text-xs text-slate-400 mt-2">
+                Premium ve kredileriniz tüm cihazlarınızda senkronize olsun
+              </p>
+            </div>
+
+            <button
+              onclick="OrbisFirebase.signInWithGoogle(); closeMobileAuth();"
+              class="w-full flex items-center justify-center gap-3 bg-white text-slate-900 py-3 px-4 rounded-xl font-semibold hover:bg-slate-100 transition-colors"
+            >
+              <svg class="w-5 h-5" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
+              </svg>
+              Google ile Giriş Yap
+            </button>
+          </div>
+
+          <!-- Logged In -->
+          <div id="auth-profile-view" class="hidden">
+            <div class="text-center mb-6">
+              <img
+                id="modal-user-avatar"
+                src=""
+                alt="Avatar"
+                class="w-16 h-16 rounded-full border-2 border-primary mx-auto mb-3"
+              />
+              <h3 id="modal-user-name" class="text-lg font-bold"></h3>
+              <p id="modal-user-email" class="text-xs text-slate-400"></p>
+            </div>
+
+            <!-- Status -->
+            <div class="bg-slate-800 rounded-xl p-4 mb-4">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-xs text-slate-400">Durum</span>
+                <span
+                  id="modal-premium-badge"
+                  class="text-xs font-bold text-primary"
+                  >Ücretsiz</span
+                >
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-xs text-slate-400">Kredi</span>
+                <span id="modal-credits" class="text-xs font-bold">0</span>
+              </div>
+            </div>
+
+            <button
+              onclick="OrbisFirebase.signOut(); closeMobileAuth();"
+              class="w-full flex items-center justify-center gap-2 bg-red-500/20 text-red-400 py-3 px-4 rounded-xl font-semibold hover:bg-red-500/30 transition-colors"
+            >
+              <span class="material-icons-round text-lg">logout</span>
+              Çıkış Yap
+            </button>
+          </div>
+
+          <!-- Close Button -->
+          <button
+            onclick="closeMobileAuth()"
+            class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white transition-colors"
+          >
+            <span class="material-icons-round">close</span>
+          </button>
         </div>
       </div>
-    </footer>
+    </div>
 
     <!-- Core JavaScript -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+    <!-- Mobile Bridge (Capacitor + AdMob) -->
+    <script src="{{ url_for('static', filename='js/mobile-bridge.js') }}"></script>
+
+    <!-- Firebase Config -->
+    <script src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>
+
+    <!-- Firebase Init -->
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        // Firebase'i başlat
+        if (window.OrbisFirebase) {
+          await OrbisFirebase.init();
+          console.log("[ORBIS] Firebase initialized");
+        }
+      });
+
+      // Mobile Auth Modal Functions
+      function toggleMobileAuth() {
+        const modal = document.getElementById("mobile-auth-modal");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+        updateMobileAuthView();
+      }
+
+      function closeMobileAuth() {
+        const modal = document.getElementById("mobile-auth-modal");
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      }
+
+      function updateMobileAuthView() {
+        const loginView = document.getElementById("auth-login-view");
+        const profileView = document.getElementById("auth-profile-view");
+
+        if (window.OrbisFirebase && OrbisFirebase.isLoggedIn()) {
+          const user = OrbisFirebase.getCurrentUser();
+          const userData = OrbisFirebase.getUserData();
+
+          loginView.classList.add("hidden");
+          profileView.classList.remove("hidden");
+
+          // Update profile info
+          document.getElementById("modal-user-avatar").src =
+            user.photoURL || "";
+          document.getElementById("modal-user-name").textContent =
+            user.displayName || "Kullanıcı";
+          document.getElementById("modal-user-email").textContent =
+            user.email || "";
+
+          // Update status
+          const isPremium = userData?.isPremium || false;
+          const credits = userData?.credits || 0;
+          document.getElementById("modal-premium-badge").textContent = isPremium
+            ? "💎 Premium"
+            : "Ücretsiz";
+          document.getElementById("modal-premium-badge").className = isPremium
+            ? "text-xs font-bold text-yellow-400"
+            : "text-xs font-bold text-slate-400";
+          document.getElementById("modal-credits").textContent = credits;
+
+          // Update mobile nav icon
+          document
+            .getElementById("mobile-profile-icon")
+            .classList.add("hidden");
+          document.getElementById("mobile-avatar").src = user.photoURL || "";
+          document.getElementById("mobile-avatar").classList.remove("hidden");
+        } else {
+          loginView.classList.remove("hidden");
+          profileView.classList.add("hidden");
+
+          // Reset mobile nav icon
+          document
+            .getElementById("mobile-profile-icon")
+            .classList.remove("hidden");
+          document.getElementById("mobile-avatar").classList.add("hidden");
+        }
+      }
+
+      // Close modal on backdrop click
+      document.addEventListener("click", (e) => {
+        const modal = document.getElementById("mobile-auth-modal");
+        if (e.target === modal) {
+          closeMobileAuth();
+        }
+      });
+    </script>
+
+    <!-- PWA Service Worker Registration & Install Prompt -->
+    <script>
+      // Service Worker Registration
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js", { scope: "/" })
+            .then((reg) => {
+              console.log("[PWA] Service Worker registered:", reg.scope);
+            })
+            .catch((err) => {
+              console.log("[PWA] Service Worker registration failed:", err);
+            });
+        });
+      }
+
+      // PWA Install Prompt Logic
+      let deferredPrompt = null;
+      const installPrompt = document.getElementById("install-prompt");
+      const installBtn = document.getElementById("install-btn");
+      const installDismiss = document.getElementById("install-dismiss");
+      const iosGuide = document.getElementById("ios-install-guide");
+      const iosDismiss = document.getElementById("ios-dismiss");
+
+      // Check if already installed or dismissed
+      const isStandalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone;
+      const isDismissed = localStorage.getItem("pwa-install-dismissed");
+      const dismissedTime = parseInt(
+        localStorage.getItem("pwa-install-dismissed-time") || "0"
+      );
+      const oneWeek = 7 * 24 * 60 * 60 * 1000;
+
+      // Show prompt if not dismissed within a week
+      const shouldShowPrompt =
+        !isDismissed || Date.now() - dismissedTime > oneWeek;
+
+      // Detect iOS Safari
+      const isIOS =
+        /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isSafari = /^((?!chrome|android).)*safari/i.test(
+        navigator.userAgent
+      );
+
+      // For Chrome/Edge/Android - beforeinstallprompt event
+      window.addEventListener("beforeinstallprompt", (e) => {
+        console.log("[PWA] beforeinstallprompt fired");
+        e.preventDefault();
+        deferredPrompt = e;
+
+        if (!isStandalone && shouldShowPrompt) {
+          showInstallPrompt();
+        }
+      });
+
+      function showInstallPrompt() {
+        if (installPrompt) {
+          installPrompt.style.display = "block";
+          setTimeout(() => {
+            installPrompt.style.transform = "translateY(0)";
+          }, 100);
+        }
+      }
+
+      function hideInstallPrompt() {
+        if (installPrompt) {
+          installPrompt.style.transform = "translateY(-200%)";
+          setTimeout(() => {
+            installPrompt.style.display = "none";
+          }, 500);
+        }
+      }
+
+      function showIOSGuide() {
+        if (iosGuide) {
+          iosGuide.style.display = "block";
+          setTimeout(() => {
+            iosGuide.style.transform = "translateY(0)";
+          }, 100);
+        }
+      }
+
+      function hideIOSGuide() {
+        if (iosGuide) {
+          iosGuide.style.transform = "translateY(200%)";
+          setTimeout(() => {
+            iosGuide.style.display = "none";
+          }, 500);
+        }
+      }
+
+      // Install button click
+      if (installBtn) {
+        installBtn.addEventListener("click", async () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log("[PWA] User choice:", outcome);
+            if (outcome === "accepted") {
+              hideInstallPrompt();
+            }
+            deferredPrompt = null;
+          }
+        });
+      }
+
+      // Dismiss button click
+      if (installDismiss) {
+        installDismiss.addEventListener("click", () => {
+          hideInstallPrompt();
+          localStorage.setItem("pwa-install-dismissed", "true");
+          localStorage.setItem(
+            "pwa-install-dismissed-time",
+            Date.now().toString()
+          );
+        });
+      }
+
+      // iOS dismiss
+      if (iosDismiss) {
+        iosDismiss.addEventListener("click", () => {
+          hideIOSGuide();
+          localStorage.setItem("pwa-install-dismissed", "true");
+          localStorage.setItem(
+            "pwa-install-dismissed-time",
+            Date.now().toString()
+          );
+        });
+      }
+
+      // Show iOS guide for Safari users
+      if (isIOS && isSafari && !isStandalone && shouldShowPrompt) {
+        setTimeout(() => {
+          showIOSGuide();
+        }, 3000);
+      }
+
+      // Listen for successful install
+      window.addEventListener("appinstalled", () => {
+        console.log("[PWA] App installed successfully");
+        hideInstallPrompt();
+        deferredPrompt = null;
+      });
+
+      // Smooth fade in animation for hero elements
+      $(document).ready(function () {
+        $(".animate-fade-in").css("opacity", "0").animate(
+          {
+            opacity: 1,
+          },
+          1200
+        );
+      });
+    </script>
 
     {% block scripts %}{% endblock %}
   </body>

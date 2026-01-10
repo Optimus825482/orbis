@@ -34,7 +34,6 @@ class EnvConfig:
     
     # Required environment variables (no defaults allowed)
     REQUIRED_VARS: List[str] = [
-        "SECRET_KEY",
         "OPENCAGE_API_KEY",
         # Add other production-critical variables as needed
     ]

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ORBIS String Resources
+    Kopyala: android/app/src/main/res/values/strings.xml
+-->
+<resources>
+    <string name="app_name">ORBIS</string>
+    <string name="title_activity_main">ORBIS</string>
+    <string name="package_name">com.orbis.astrology</string>
+    <string name="custom_url_scheme">orbis</string>
+    
+    <!-- AdMob Test IDs (Production'da değiştirin) -->
+    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+    <string name="admob_banner_id">ca-app-pub-3940256099942544/6300978111</string>
+    <string name="admob_interstitial_id">ca-app-pub-3940256099942544/1033173712</string>
+    <string name="admob_rewarded_id">ca-app-pub-3940256099942544/5224354917</string>
+</resources>

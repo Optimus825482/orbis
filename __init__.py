@@ -21,8 +21,23 @@ def create_app(test_config=None):
         app.config.from_mapping(test_config)
     
     # Blueprintleri kaydet
-    import routes
-    app.register_blueprint(routes.bp)
+    from routes import bp, legal_bp
+    app.register_blueprint(bp)
+    app.register_blueprint(legal_bp)
+    
+    # Push Notification routes
+    try:
+        from routes.push_routes import push_bp
+        app.register_blueprint(push_bp)
+    except ImportError as e:
+        logging.warning(f"Push routes yüklenemedi: {e}")
+    
+    # Admin Dashboard routes
+    try:
+        from routes.admin import admin_bp
+        app.register_blueprint(admin_bp)
+    except ImportError as e:
+        logging.warning(f"Admin routes yüklenemedi: {e}")
     
     # Filtreleri ekle
     import utils

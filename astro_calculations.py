@@ -4,36 +4,109 @@ Astrolojik hesaplamalar için Swisseph kütüphanesini kullanan modül.
 Tecrübeli bir yazılım mühendisi ve astroloji uzmanı tarafından gözden
 geçirilmiş ve güncellenmiştir.
 """
-import os # os modülünü ekle
+import os
 import math
-from flask import jsonify, Blueprint, render_template, current_app
-import swisseph as swe
-from datetime import datetime, timedelta, date, time
 import logging
-from decimal import Decimal, ROUND_DOWN
 import json
+from datetime import datetime, timedelta, date, time
+from decimal import Decimal, ROUND_DOWN
+from pathlib import Path
+from typing import Dict, List, Optional, Any, Tuple, Union, TypedDict, BinaryIO
+
+import requests
+import swisseph as swe
+from flask import jsonify, Blueprint, render_template, current_app
+from exceptions import (
+    AstroError,
+    CalculationError,
+    ValidationError,
+    InvalidDateError,
+    InvalidTimeError,
+    InvalidCoordinatesError,
+    HouseCalculationError,
+    EphemerisError
+)
+
+class ImportantAngles(TypedDict):
+    ascendant: float
+    mc: float
+    armc: float
+    vertex: float
+
+class HouseData(TypedDict):
+    house_cusps: Dict[str, float]
+    important_angles: ImportantAngles
+    house_system: str
+    error: Optional[str]
+
+class PlanetPosition(TypedDict):
+    degree: float
+    sign: str
+    retrograde: bool
+    house: int
+    speed: float
+    latitude: float
+    distance: float
+    degree_in_sign: float
+    decan: int
+    error: Optional[str]
 
 astro = Blueprint('astro', __name__, template_folder='templates')
 
-def julday_to_datetime(jd_ut):
-    """Julian günü datetime objesine çevirir."""
+RESET = "\033[0m"
+BOLD = "\033[1m"
+
+COLOR_LIST = [
+    "\033[93m",  # sarı
+    "\033[92m",  # yeşil
+    "\033[96m",  # cyan
+    "\033[95m",  # mor
+    "\033[94m",  # mavi
+]
+
+def julday_to_datetime(jd_ut: float, timezone_offset: float = 3.0) -> Optional[datetime]:
+    """
+    Julian günü datetime objesine çevirir.
+
+    Args:
+        jd_ut: Julian günü (UT)
+        timezone_offset: Yerel saate dönüştürmek için eklenecek saat (default UTC+3)
+
+    Returns:
+        Optional[datetime]: Yerel datetime objesi veya hata durumunda None
+    """
     try:
-        # Julian günü UT'den yerel zamana çevir (GMT+3 için)
-        jd_local = jd_ut + 3.0/24.0  # 3 saat ekle (UTC+3)
-        
+        # Julian günü UT'den yerel zamana çevir
+        jd_local = jd_ut + timezone_offset / 24.0
+
         # Decimal kullanarak hassas hesaplama yap
         day_frac = Decimal(str(jd_local % 1))
         hour = int((day_frac * 24).quantize(Decimal('1.'), rounding=ROUND_DOWN))
         minute = int(((day_frac * 24 - hour) * 60).quantize(Decimal('1.'), rounding=ROUND_DOWN))
         second = int(((day_frac * 24 * 60 - hour * 60 - minute) * 60).quantize(Decimal('1.'), rounding=ROUND_DOWN))
-        
+
         # swe.revjul fonksiyonu ile tarihi al (yıl, ay, gün)
         year, month, day, _ = swe.revjul(jd_local)
-        
+
         return datetime(year, month, day, hour, minute, second)
     except Exception as e:
         logger.error(f"julday_to_datetime fonksiyonunda hata: {str(e)}", exc_info=True)
         return None
+
+def get_julian_day(dt: datetime, timezone_offset: float = 3.0) -> float:
+    """
+    Verilen datetime ve timezone offset için Julian Day (UT) hesaplar.
+
+    Args:
+        dt: Datetime objesi
+        timezone_offset: UTC'ye ulaşmak için çıkarılacak saat (default 3.0)
+
+    Returns:
+        float: Julian Day (UT)
+    """
+    utc_dt = dt - timedelta(hours=timezone_offset)
+    return swe.julday(utc_dt.year, utc_dt.month, utc_dt.day,
+                       utc_dt.hour + utc_dt.minute/60.0 + utc_dt.second/3600.0)
 
 # Logging ayarları
 # Daha detaylı log için level=logging.DEBUG yapabilirsiniz.
@@ -127,145 +200,134 @@ def get_decan(degree_in_sign):
     return int(degree_in_sign // 10) + 1
 
 
-def get_house_number(longitude, house_cusps):
-    """Bir boylamın (longitude) hangi evde olduğunu belirler.
-    House cusps dict'i { '1': degree, '2': degree, ... '12': degree } formatında olmalıdır."""
-    lon = longitude % 360
-    if lon < 0: lon += 360
+def get_house_number(longitude: float, house_cusps: Dict[str, float]) -> int:
+    """
+    Bir boylamın (longitude) hangi evde olduğunu belirler.
 
-    # Ev cusp derecelerini al ve 0-360 arasına normalize et
-    # house_cusps dictionary'sinin string key'lere sahip olduğu varsayılır.
+    Args:
+        longitude: Boylam (0-360)
+        house_cusps: Ev cusp'ları { '1': degree, ... '12': degree }
+
+    Returns:
+        int: Ev numarası (1-12)
+    """
+    lon = longitude % 360
+
     try:
         cusps = [float(house_cusps[str(i + 1)]) % 360 for i in range(12)]
     except (KeyError, ValueError, TypeError):
-        logger.error("Geçersiz ev cusp verisi formatı, ev numarası belirlenemiyor.")
-        return 0 # Hata durumunda 0 döndür
+        return 1 # Fallback to 1st house if data is missing
 
-    # Ev 1'den başlayarak kontrol et
     for i in range(12):
-        # Mevcut evin başlagıç cuspu (i+1. ev = i. indexteki cusp)
         current_cusp = cusps[i]
-        # Sonraki evin başlagıç cuspu (i+2. ev = (i+1). indexteki cusp, 12'den sonra 1'e döner)
         next_cusp = cusps[(i + 1) % 12]
 
-        # Normal durum (cusplar art arda)
         if current_cusp < next_cusp:
             if current_cusp <= lon < next_cusp:
                 return i + 1
-        # Wrap-around durumu (örn. 12. ev 270 derece Başak'tan başlar, 1. ev 15 derece Akrep'e gider)
-        else: # next_cusp < current_cusp (0/360 sınırını geçti)
+        else: # Wrap-around durumu
             if lon >= current_cusp or lon < next_cusp:
                  return i + 1
 
-    # Bu noktaya gelinmemeli, ancak fallback olarak House 1 döndürebiliriz
-    # Eğer boylam tam olarak son cusp üzerindeyse son eve ait olmalı.
-    # Yukarıdaki >= kullanımı bu durumu ele alır.
-    # Eğer hala bulunamadıysa, cusplarda bir sorun olabilir veya boylam çok hassas bir noktada.
-    # logger.warning(f"Boylam ({lon:.2f}) için ev belirlenemedi, varsayılan 1. ev atanıyor. Cusps: {cusps}")
-    return 1 # Fallback
+    return 1
 
+def calculate_houses(
+    dt_object: datetime,
+    latitude: float,
+    longitude: float,
+    house_system: Union[bytes, str] = b"P",
+    jd_ut: Optional[float] = None,
+    timezone_offset: float = 3.0
+) -> HouseData:
+    """
+    Doğum tarihi, saati ve konuma göre evleri hesaplar.
 
-# Evlerin hesaplanması
-def calculate_houses(dt_object, latitude, longitude, house_system=b"P"):
-    """Doğum tarihi, saati ve konuma göre evleri hesaplar.
-    dt_object: datetime objesi (Yerel saat)
-    latitude: float
-    longitude: float
-    house_system: bytes (örn. b"P" Placidus, b"R" Regiomontanus, vb.)
+    Args:
+        dt_object: Datetime objesi
+        latitude: Enlem
+        longitude: Boylam
+        house_system: Ev sistemi kodu (örn. b"P" Placidus)
+        jd_ut: Önceden hesaplanmış Julian Day (opsiyonel)
+        timezone_offset: Zaman dilimi farkı
+
+    Returns:
+        HouseData: Ev verilerini içeren TypedDict
     """
     try:
-        if isinstance(dt_object, datetime):
-            # Swisseph UT Julian günü bekler.
-            # Giriş dt_object'in yerel saat olduğunu varsayalım ve UTC'ye dönüştürelim.
-            # Türkiye için sabit GMT+3 farkı varsayımı:
-            dt_utc = dt_object - timedelta(hours=3) # UTC+3 Local -> UTC
-            
-            # datetime'ı bileşenlere ayır ve saat/dakika/saniyeyi ondalık saate çevir
-            hour_decimal = dt_utc.hour + (dt_utc.minute / 60.0) + (dt_utc.second / 3600.0)
-            
-            # Julian günü hesapla
-            jd_ut = swe.julday(dt_utc.year, dt_utc.month, dt_utc.day, hour_decimal)
-        else:
-            raise TypeError("dt_object must be a datetime.datetime object")
+        # Eğer jd_ut verilmemişse hesapla
+        if jd_ut is None:
+            jd_ut = get_julian_day(dt_object, timezone_offset)
 
-        # houses_ex daha detaylı bilgi verir (asc, mc, vs.)
-        # (cusps, ascmc) = swe.houses(jd_ut, float(latitude), float(longitude), house_system)
-        (cusps, ascmc) = swe.houses_ex(jd_ut, float(latitude), float(longitude), house_system)
+        # Byte formatına çevir
+        h_sys = house_system if isinstance(house_system, bytes) else house_system.encode('utf-8')
 
+        # houses_ex daha detaylı bilgi verir
+        cusps, ascmc = swe.houses_ex(jd_ut, float(latitude), float(longitude), h_sys)
 
-        # Ev tepelerini ve önemli noktaları al
-        # houses_ex'in cusps sonucu 0-11 indexleri 1-12. ev cusplarıdır
-        # ascmc sonucu indexleri: 0=Asc, 1=MC, 2=ARMC (Aries Point), 3=Vertex
-        # Cuspları 0-360 arasına normalize edelim (swe genellikle bunu yapar ama emin olalım)
-        house_cusps_list = [c % 360 for c in list(cusps)[:12]] # Sadece ilk 12 cusp
-
-        # Ev pozisyonlarını dictionary'ye dönüştür (anahtarlar string olmalı)
+        house_cusps_list = [c % 360 for c in list(cusps)[:12]]
         house_cusps = {str(i + 1): round(house_cusps_list[i], 2) for i in range(12)}
 
-
-        # Yükselen (Ascendant), MC, Vertex gibi noktaları ekle
-        # ascmc listesinden gelen değerleri de 0-360 arasına normalize edelim
-        ascmc_list = [a % 360 for a in list(ascmc)[:4]] # Sadece ilk 4 (Asc, MC, ARMC, Vertex)
-
-        important_angles = {
+        ascmc_list = [a % 360 for a in list(ascmc)[:4]]
+        important_angles: ImportantAngles = {
             "ascendant": round(ascmc_list[0], 2),
             "mc": round(ascmc_list[1], 2),
             "armc": round(ascmc_list[2], 2),
             "vertex": round(ascmc_list[3], 2),
         }
 
-        logger.debug(f"Hesaplanan evler (cusps): {house_cusps}")
-        logger.debug(f"Hesaplanan önemli açılar: {important_angles}")
-
-        result = {
-            "house_cusps": house_cusps, # 1-12 ev başlangıçları
-            "important_angles": important_angles, # Asc, MC, ARMC, Vertex
-            "house_system": house_system.decode('utf-8') if isinstance(house_system, bytes) else str(house_system),
+        return {
+            "house_cusps": house_cusps,
+            "important_angles": important_angles,
+            "house_system": h_sys.decode('utf-8'),
+            "error": None
         }
 
-        return result
-
     except Exception as e:
-        logger.error(f"calculate_houses fonksiyonunda hata: {str(e)}", exc_info=True)
-        # Hata durumunda boş veya tanımlı bir yapı döndür
-        return {"house_cusps": {str(i+1): 0.0 for i in range(12)}, "important_angles": {"ascendant": 0.0, "mc": 0.0, "armc": 0.0, "vertex": 0.0}, "house_system": house_system.decode('utf-8') if isinstance(house_system, bytes) else str(house_system), "error": str(e)}
+        logger.error(f"calculate_houses hatası: {str(e)}")
+        return {
+            "house_cusps": {str(i+1): 0.0 for i in range(12)},
+            "important_angles": {"ascendant": 0.0, "mc": 0.0, "armc": 0.0, "vertex": 0.0},
+            "house_system": "P",
+            "error": str(e)
+        }
 
+def calculate_celestial_positions(
+    dt_object: datetime,
+    house_cusps: Dict[str, float],
+    celestial_bodies_ids: Dict[str, int],
+    jd_ut: Optional[float] = None,
+    timezone_offset: float = 3.0
+) -> Dict[str, PlanetPosition]:
+    """
+    Gezegen pozisyonlarını hesaplar.
 
-# Gezegen pozisyonları (derece, burç, retrograd, hız ve ev bilgileri)
-def calculate_celestial_positions(dt_object, house_cusps, celestial_bodies_ids):
-    """Belirli bir datetime objesi, ev cuspları ve göksel cisim ID'leri listesi için pozisyonları hesaplar.
-    dt_object: datetime objesi (Yerel saat)
-    house_cusps: calculate_houses'dan dönen house_cusps dict'i
-    celestial_bodies_ids: { "İsim": swe.ID } formatında dict.
+    Args:
+        dt_object: Datetime objesi
+        house_cusps: Ev cusp'ları
+        celestial_bodies_ids: Gezegen ID'leri
+        jd_ut: Önceden hesaplanmış Julian Day (opsiyonel)
+        timezone_offset: Zaman dilimi farkı
+
+    Returns:
+        Dict[str, PlanetPosition]: Gezegen verileri
     """
     try:
-        dt_utc = dt_object - timedelta(hours=3) # UTC+3 Local -> UTC
-        
-        # datetime'ı bileşenlere ayır ve saat/dakika/saniyeyi ondalık saate çevir
-        hour_decimal = dt_utc.hour + (dt_utc.minute / 60.0) + (dt_utc.second / 3600.0)
-        
-        # Julian günü hesapla
-        jd_ut = swe.julday(dt_utc.year, dt_utc.month, dt_utc.day, hour_decimal)
+        if jd_ut is None:
+            jd_ut = get_julian_day(dt_object, timezone_offset)
 
         positions = {}
         for name, planet_id in celestial_bodies_ids.items():
             try:
-                # Vulkanus (id 17) swisseph default kurulumda olmayabilir, atla
-                if planet_id == 17: # swe.VULKANUS
-                     # logger.debug("Vulkanus hesaplanması atlandı (ID 17 genellikle standart efemerislerde bulunmaz).")
-                     continue
+                if planet_id == 17: # Vulkanus skip
+                    continue
 
-                # swe.calc_ut UT Julian günü bekler
-                # pozisyon [lon, lat, dist, speed in lon, speed in lat, speed in dist]
-                # FLG_SWIEPH varsayılan bayraklar için iyi bir başlangıçtır.
                 pos_result = swe.calc_ut(jd_ut, planet_id, swe.FLG_SWIEPH)
 
-                # Hata kontrolü
-                if not pos_result or not pos_result[0]:
-                     # logger.debug(f"{name} pozisyonu hesaplanamadı veya hata oluştu: {pos_result[1] if pos_result else 'Unknown error'}")
+                if not pos_result:
                      positions[name] = {
                         "degree": 0.0, "sign": "Bilinmiyor", "retrograde": False,
-                        "house": 0, "speed": 0.0, "latitude": 0.0, "distance": 0.0, "error": pos_result[1] if pos_result else "Unknown error"
+                        "house": 0, "speed": 0.0, "latitude": 0.0, "distance": 0.0,
+                        "degree_in_sign": 0.0, "decan": 1, "error": "Hesaplama hatası"
                      }
                      continue
 
@@ -273,15 +335,15 @@ def calculate_celestial_positions(dt_object, house_cusps, celestial_bodies_ids):
                 lon = pos[0]
                 lat = pos[1]
                 dist = pos[2]
-                speed = pos[3] # Hız boylamda (longitude)
+                speed = pos[3]
 
                 is_retrograde = speed < 0
 
-                # Ev belirleme (calculate_houses'dan gelen house_cusps dict'i kullanılır)
-                house_num = get_house_number(lon, house_cusps) # house_cusps boşsa veya hatalıysa 0 dönebilir
+                # Ev belirleme
+                house_num = get_house_number(lon, house_cusps)
 
                 positions[name] = {
-                    "degree": round(lon % 360, 2), # Dereceyi 0-360 arasına normalize et
+                    "degree": round(lon % 360, 4),
                     "sign": get_zodiac_sign(lon),
                     "retrograde": is_retrograde,
                     "house": house_num,
@@ -289,27 +351,32 @@ def calculate_celestial_positions(dt_object, house_cusps, celestial_bodies_ids):
                     "latitude": round(lat, 4),
                     "distance": round(dist, 4),
                     "degree_in_sign": round(get_degree_in_sign(lon), 2),
-                    "decan": get_decan(get_degree_in_sign(lon))
+                    "decan": get_decan(get_degree_in_sign(lon)),
+                    "error": None
                 }
 
-            except Exception as e:
-                logger.error(f"{name} hesaplanırken hata: {str(e)}", exc_info=True)
+            except Exception as inner_e:
+                logger.error(f"{name} hesaplanırken hata: {str(inner_e)}")
                 positions[name] = {
                     "degree": 0.0, "sign": "Bilinmiyor", "retrograde": False,
-                    "house": 0, "speed": 0.0, "latitude": 0.0, "distance": 0.0, "error": str(e)
+                    "house": 0, "speed": 0.0, "latitude": 0.0, "distance": 0.0,
+                    "degree_in_sign": 0.0, "decan": 1, "error": str(inner_e)
                 }
 
         return positions
 
     except Exception as e:
-        logger.error(
-            f"calculate_celestial_positions fonksiyonunda hata: {str(e)}", exc_info=True
-        )
-        return {} # Hata durumunda boş sözlük döndür
+        logger.error(f"calculate_celestial_positions hatası: {str(e)}")
+        return {}
 
 
-# Natal Gezegen Pozisyonları (calculate_celestial_positions kullanılır)
-def calculate_natal_planet_positions(birth_dt, natal_house_cusps):
+# Natal Gezegen Pozisyonları
+def calculate_natal_planet_positions(
+    birth_dt: datetime,
+    natal_house_cusps: Dict[str, float],
+    jd_ut: Optional[float] = None,
+    timezone_offset: float = 3.0
+) -> Dict[str, PlanetPosition]:
     """Natal gezegen pozisyonlarını hesaplar."""
     planet_ids = {
         "Sun": swe.SUN, "Moon": swe.MOON, "Mercury": swe.MERCURY,
@@ -318,27 +385,27 @@ def calculate_natal_planet_positions(birth_dt, natal_house_cusps):
         "Pluto": swe.PLUTO,
     }
     logger.info("Natal gezegen pozisyonları hesaplanıyor...")
-    positions = calculate_celestial_positions(birth_dt, natal_house_cusps, planet_ids)
-    logger.info(f"Natal gezegen pozisyonları hesaplandı ({len(positions)} adet).")
-    return positions
+    return calculate_celestial_positions(birth_dt, natal_house_cusps, planet_ids, jd_ut, timezone_offset)
 
-# Natal Ekstra Noktalar Pozisyonları (calculate_celestial_positions kullanılır)
-def calculate_natal_additional_points(birth_dt, natal_house_cusps):
-    """Natal ekstra noktaların (asteroidler, düğümler, lilith, uranian vb.) pozisyonlarını hesaplar."""
+# Natal Ekstra Noktalar Pozisyonları
+def calculate_natal_additional_points(
+    birth_dt: datetime,
+    natal_house_cusps: Dict[str, float],
+    jd_ut: Optional[float] = None,
+    timezone_offset: float = 3.0
+) -> Dict[str, PlanetPosition]:
+    """Natal ekstra noktaların pozisyonlarını hesaplar."""
     point_ids = {
         "Chiron": swe.CHIRON, "Ceres": swe.CERES, "Pallas": swe.PALLAS,
         "Juno": swe.JUNO, "Vesta": swe.VESTA,
         "Mean_Node": swe.MEAN_NODE, "True_Node": swe.TRUE_NODE,
         "Mean_Lilith": swe.MEAN_APOG, "True_Lilith": swe.OSCU_APOG,
-        # Uranian/Hamburg planets (bazıları standar efemeriste olmayabilir)
         "Cupido": swe.CUPIDO, "Hades": swe.HADES, "Zeus": swe.ZEUS,
         "Kronos": swe.KRONOS, "Apollon": swe.APOLLON, "Admetos": swe.ADMETOS,
         "Vulkanus": swe.VULKANUS, "Poseidon": swe.POSEIDON,
     }
     logger.info("Natal ekstra noktalar pozisyonları hesaplanıyor...")
-    positions = calculate_celestial_positions(birth_dt, natal_house_cusps, point_ids)
-    logger.info(f"Natal ekstra noktalar pozisyonları hesaplandı ({len(positions)} adet).")
-    return positions
+    return calculate_celestial_positions(birth_dt, natal_house_cusps, point_ids, jd_ut, timezone_offset)
 
 
 # Natal veya transit-natal açı hesaplamaları
@@ -358,10 +425,8 @@ def calculate_aspects(positions1, positions2=None, orb=None):
     try:
         # Varsayılan orb değerleri (daha esnek olabilir veya yapılandırılabilir)
         default_orbs = {
-            "Conjunction": 8.0, "Opposition": 8.0, "Trine": 8.0, "Square": 8.0, "Sextile": 6.0,
-            # Minör açılar için daha küçük orb kullanılabilir
-            "Quincunx": 2.0, "Semisextile": 1.0, "Semisquare": 2.0, "Sesquiquadrate": 2.0,
-        }
+            "Conjunction": 8.0, "Opposition": 8.0, "Trine": 8.0, "Square": 8.0, "Sextile": 6.0
+            }
         orbs_to_use = orb if isinstance(orb, dict) else default_orbs
 
         aspects_list = []
@@ -376,8 +441,7 @@ def calculate_aspects(positions1, positions2=None, orb=None):
 
         # Açı dereceleri
         aspect_degrees = {
-            "Conjunction": 0.0, "Sextile": 60.0, "Square": 90.0, "Trine": 120.0, "Opposition": 180.0,
-            "Quincunx": 150.0, "Semisextile": 30.0, "Semisquare": 45.0, "Sesquiquadrate": 135.0,
+            "Conjunction": 0.0, "Sextile": 60.0, "Square": 90.0, "Trine": 120.0, "Opposition": 180.0
         }
 
         for p1_key in planets1_keys:
@@ -576,115 +640,363 @@ def get_natal_summary(natal_planet_positions, natal_houses_data, birth_dt):
         return ["Yorum oluşturulurken bir hata oluştu."]
 
 
-# Vimshottari Dasa hesaplaması (Basit/Tahmini model, detaylı için Jyotish kütüphanesi gerekir)
-# NOT: Bu implementasyon standart Vimshottari Dasa'nın basitleştirilmiş bir versiyonudur.
-# Doğum anındaki Ay'ın Nakshatra'sına göre Dasa başlangıcını bulur ve bugüne kadar ilerletir.
-# Hassas hesaplamalar için tam bir Jyotish kütüphanesi (örn. Akhila, PJV) gerekebilir.
+# ==========================================
+# VİMSHOTTARİ DASA SİSTEMİ - TAM İMPLEMENTASYON
+# ==========================================
+# 120 yıllık Vedik astroloji döngü sistemi
+# Maha Dasa -> Antardasa (Bhukti) -> Pratyantardasa (3. seviye)
+
+# Nakshatra Verileri (27 Nakshatra)
+NAKSHATRAS = [
+    {"index": 0, "name": "Ashwini", "name_tr": "Aşvini", "lord": "Ketu", "start": 0.0, "end": 13.333333},
+    {"index": 1, "name": "Bharani", "name_tr": "Bharani", "lord": "Venus", "start": 13.333333, "end": 26.666667},
+    {"index": 2, "name": "Krittika", "name_tr": "Krittika", "lord": "Sun", "start": 26.666667, "end": 40.0},
+    {"index": 3, "name": "Rohini", "name_tr": "Rohini", "lord": "Moon", "start": 40.0, "end": 53.333333},
+    {"index": 4, "name": "Mrigashira", "name_tr": "Mrigaşira", "lord": "Mars", "start": 53.333333, "end": 66.666667},
+    {"index": 5, "name": "Ardra", "name_tr": "Ardra", "lord": "Rahu", "start": 66.666667, "end": 80.0},
+    {"index": 6, "name": "Punarvasu", "name_tr": "Punarvasu", "lord": "Jupiter", "start": 80.0, "end": 93.333333},
+    {"index": 7, "name": "Pushya", "name_tr": "Puşya", "lord": "Saturn", "start": 93.333333, "end": 106.666667},
+    {"index": 8, "name": "Ashlesha", "name_tr": "Aşleşa", "lord": "Mercury", "start": 106.666667, "end": 120.0},
+    {"index": 9, "name": "Magha", "name_tr": "Magha", "lord": "Ketu", "start": 120.0, "end": 133.333333},
+    {"index": 10, "name": "Purva Phalguni", "name_tr": "Purva Phalguni", "lord": "Venus", "start": 133.333333, "end": 146.666667},
+    {"index": 11, "name": "Uttara Phalguni", "name_tr": "Uttara Phalguni", "lord": "Sun", "start": 146.666667, "end": 160.0},
+    {"index": 12, "name": "Hasta", "name_tr": "Hasta", "lord": "Moon", "start": 160.0, "end": 173.333333},
+    {"index": 13, "name": "Chitra", "name_tr": "Çitra", "lord": "Mars", "start": 173.333333, "end": 186.666667},
+    {"index": 14, "name": "Swati", "name_tr": "Svati", "lord": "Rahu", "start": 186.666667, "end": 200.0},
+    {"index": 15, "name": "Vishakha", "name_tr": "Vişakha", "lord": "Jupiter", "start": 200.0, "end": 213.333333},
+    {"index": 16, "name": "Anuradha", "name_tr": "Anuradha", "lord": "Saturn", "start": 213.333333, "end": 226.666667},
+    {"index": 17, "name": "Jyeshtha", "name_tr": "Jyeştha", "lord": "Mercury", "start": 226.666667, "end": 240.0},
+    {"index": 18, "name": "Mula", "name_tr": "Mula", "lord": "Ketu", "start": 240.0, "end": 253.333333},
+    {"index": 19, "name": "Purva Ashadha", "name_tr": "Purva Aşadha", "lord": "Venus", "start": 253.333333, "end": 266.666667},
+    {"index": 20, "name": "Uttara Ashadha", "name_tr": "Uttara Aşadha", "lord": "Sun", "start": 266.666667, "end": 280.0},
+    {"index": 21, "name": "Shravana", "name_tr": "Şravana", "lord": "Moon", "start": 280.0, "end": 293.333333},
+    {"index": 22, "name": "Dhanishta", "name_tr": "Dhanişta", "lord": "Mars", "start": 293.333333, "end": 306.666667},
+    {"index": 23, "name": "Shatabhisha", "name_tr": "Şatabhişa", "lord": "Rahu", "start": 306.666667, "end": 320.0},
+    {"index": 24, "name": "Purva Bhadrapada", "name_tr": "Purva Bhadrapada", "lord": "Jupiter", "start": 320.0, "end": 333.333333},
+    {"index": 25, "name": "Uttara Bhadrapada", "name_tr": "Uttara Bhadrapada", "lord": "Saturn", "start": 333.333333, "end": 346.666667},
+    {"index": 26, "name": "Revati", "name_tr": "Revati", "lord": "Mercury", "start": 346.666667, "end": 360.0},
+]
+
+# Dasa Periyotları (Yıl cinsinden) - Toplam 120 yıl
+DASA_YEARS = {
+    "Ketu": 7, "Venus": 20, "Sun": 6, "Moon": 10, "Mars": 7,
+    "Rahu": 18, "Jupiter": 16, "Saturn": 19, "Mercury": 17
+}
+
+# Dasa Sırası (Ketu'dan başlar)
+DASA_ORDER = ["Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"]
+
+# Gezegen Türkçe İsimleri
+PLANET_NAMES_TR = {
+    "Ketu": "Ketu (Güney Ay Düğümü)",
+    "Venus": "Venüs (Şukra)",
+    "Sun": "Güneş (Surya)",
+    "Moon": "Ay (Chandra)",
+    "Mars": "Mars (Mangal)",
+    "Rahu": "Rahu (Kuzey Ay Düğümü)",
+    "Jupiter": "Jüpiter (Guru)",
+    "Saturn": "Satürn (Şani)",
+    "Mercury": "Merkür (Budha)"
+}
+
+# Toplam Dasa döngüsü (yıl)
+TOTAL_DASA_CYCLE = 120.0
+NAKSHATRA_SPAN = 360.0 / 27.0  # ~13.333333 derece
+
+
+def get_nakshatra_info(moon_degree):
+    """Ay'ın derecesine göre Nakshatra bilgisini döndürür."""
+    degree = moon_degree % 360
+    if degree < 0:
+        degree += 360
+    
+    nakshatra_index = int(degree / NAKSHATRA_SPAN)
+    if nakshatra_index > 26:
+        nakshatra_index = 26
+    
+    nakshatra = NAKSHATRAS[nakshatra_index]
+    degree_in_nakshatra = degree - nakshatra["start"]
+    pada = int(degree_in_nakshatra / (NAKSHATRA_SPAN / 4)) + 1  # 4 pada per nakshatra
+    if pada > 4:
+        pada = 4
+    
+    return {
+        "index": nakshatra_index,
+        "name": nakshatra["name"],
+        "name_tr": nakshatra["name_tr"],
+        "lord": nakshatra["lord"],
+        "pada": pada,
+        "degree_in_nakshatra": round(degree_in_nakshatra, 4),
+        "percentage_traversed": round((degree_in_nakshatra / NAKSHATRA_SPAN) * 100, 2)
+    }
+
+
+def calculate_dasa_balance_at_birth(moon_degree):
+    """Doğum anında kalan Dasa süresini hesaplar."""
+    nakshatra_info = get_nakshatra_info(moon_degree)
+    start_lord = nakshatra_info["lord"]
+    
+    # Nakshatra'nın kalan kısmı = Dasa'nın kalan kısmı
+    remaining_in_nakshatra = NAKSHATRA_SPAN - nakshatra_info["degree_in_nakshatra"]
+    balance_ratio = remaining_in_nakshatra / NAKSHATRA_SPAN
+    
+    # Başlangıç Dasa'sının kalan süresi (yıl)
+    balance_years = balance_ratio * DASA_YEARS[start_lord]
+    
+    return {
+        "start_lord": start_lord,
+        "balance_years": balance_years,
+        "balance_days": balance_years * 365.25,
+        "nakshatra_info": nakshatra_info
+    }
+
+
+def get_dasa_sequence_from_lord(start_lord):
+    """Belirli bir lord'dan başlayan Dasa sırasını döndürür."""
+    start_idx = DASA_ORDER.index(start_lord)
+    return DASA_ORDER[start_idx:] + DASA_ORDER[:start_idx]
+
+
+def calculate_sub_period_duration(main_years, sub_lord_years):
+    """Alt periyot süresini hesaplar (gün cinsinden)."""
+    return (main_years * sub_lord_years / TOTAL_DASA_CYCLE) * 365.25
+
+
 def get_vimshottari_dasa(birth_dt, natal_moon_degree):
-    """Vimshottari Dasa periyotlarını hesaplar."""
+    """
+    Kapsamlı Vimshottari Dasa hesaplaması.
+    
+    Hesaplar:
+    - Maha Dasa (Ana Dasa)
+    - Antardasa (Bhukti - Alt Dasa)
+    - Pratyantardasa (3. seviye)
+    - Nakshatra bilgisi
+    - Gelecek 5 yıllık Dasa takvimi
+    
+    Args:
+        birth_dt: Doğum tarihi (datetime)
+        natal_moon_degree: Ay'ın ekliptik derecesi (0-360)
+    
+    Returns:
+        dict: Kapsamlı Dasa bilgileri
+    """
     try:
-        # Dasa Periyotları (Yıl olarak)
-        dasa_years = {
-            "Ketu": 7, "Venus": 20, "Sun": 6, "Moon": 10, "Mars": 7,
-            "Rahu": 18, "Jupiter": 16, "Saturn": 19, "Mercury": 17,
-        }
-        dasa_order = [
-            "Ketu", "Venus", "Sun", "Moon", "Mars",
-            "Rahu", "Jupiter", "Saturn", "Mercury",
-        ] # Ketu'dan başlayan sıra
-
         if natal_moon_degree is None:
-             return {"error": "Ay pozisyonu bulunamadığı için Vimshottari Dasa hesaplanamadı."}
-
-        # Ay'ın hangi Nakshatra'da olduğunu bul (360 derece / 27 Nakshatra = ~13.3333 derece/Nakshatra)
-        # Nakshatra pozisyonu 0'dan başlar (Aswini 0-13.33...)
-        nakshatra_span = 360/27.0
-        nakshatra_degree = natal_moon_degree % 360
-        if nakshatra_degree < 0: nakshatra_degree += 360
-
-        nakshatra_index_at_birth = int(nakshatra_degree / nakshatra_span) # 0-26 arası index
-
-        # Nakshatra Yöneticileri Sırası (Ay'ın konumuna göre Dasa başlangıcı)
-        # Aswini -> Ketu, Bharani -> Venus, Krittika -> Sun ... Revati -> Mercury
-        # Bu sıra 9 gezegen için 3 kere tekrarlanır. Nakshatra indexine göre yönetici:
-        dasa_lords_by_nakshatra_index = [
-            "Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury",
-            "Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury",
-            "Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury",
-        ] # 27 nakshatra için 9 yöneticinin tekrarı
-        start_dasa_lord = dasa_lords_by_nakshatra_index[nakshatra_index_at_birth]
-        start_dasa_index_in_order = dasa_order.index(start_dasa_lord)
-
-        # Doğum anında mevcut Dasa periyodunun ne kadarının geçtiğini hesapla
-        degree_in_nakshatra = nakshatra_degree % nakshatra_span # Ay'ın Nakshatra içindeki derecesi
-        # Nakshatra'nın kalan kısmı, doğum anındaki Dasa'nın kalan periyodunu belirler
-        # Bu, Ay'ın Nakshatra'ya giriş derecesi değil, Nakshatra'nın başlangıcından itibaren geçen derecedir.
-        remaining_degree_in_nakshatra = nakshatra_span - degree_in_nakshatra
-
-        # Kalan Dasa periyodu (doğum anında) = (Nakshatra'nın kalan derecesi / Nakshatra'nın tam derecesi) * O Dasa'nın tam periyodu
-        remaining_dasa_at_birth_years = (remaining_degree_in_nakshatra / nakshatra_span) * dasa_years[start_dasa_lord]
-
-        # Doğum anındaki Dasa'nın bitiş tarihini hesapla
-        start_dasa_end_date = birth_dt + timedelta(days=remaining_dasa_at_birth_years * 365.25)
-
-        current_dasa_lord = start_dasa_lord
-        current_dasa_start_date = birth_dt # Başlangıç tarihi doğum tarihi
-        current_dasa_end_date = start_dasa_end_date
-        dasa_cycle_index = start_dasa_index_in_order # Ana Dasa döngüsündeki index
-
-        # Şu anki tarihe kadar hangi Dasa'ların geçtiğini bul
+            return {"error": "Ay pozisyonu bulunamadığı için Vimshottari Dasa hesaplanamadı."}
+        
         now = datetime.now()
-        while now >= current_dasa_end_date:
-            # Bir sonraki Dasa'ya geç
-            dasa_cycle_index = (dasa_cycle_index + 1) % 9
-            current_dasa_lord = dasa_order[dasa_cycle_index]
-            current_dasa_start_date = current_dasa_end_date # Yeni Dasa, eskisinin bittiği gün başlar
-            current_dasa_duration_years = dasa_years[current_dasa_lord]
-            current_dasa_end_date = current_dasa_start_date + timedelta(days=current_dasa_duration_years * 365.25) # Yeni Dasa'nın bitişi
-
-        # Mevcut Ana Dasa'nın detaylarını bulduk. Şimdi Antardasa (Bhukti) hesapla
-        # Antardasa (Bhukti) döngüsü, Ana Dasa lordunun kendi Antardasası ile başlar
-        # Dasa sırasını Ana Dasa lordu ile başlat
-        bhukti_order = dasa_order[dasa_cycle_index:] + dasa_order[:dasa_cycle_index]
-
-        bhukti_total_years_passed_in_dasa = 0 # Ana Dasa periyodu içinde geçen bhukti süreleri toplamı (yıl)
-        current_bhukti_lord = bhukti_order[0] # Varsayılan olarak ilk bhukti lordu (Ana Dasa lordu)
-        current_bhukti_start_date = current_dasa_start_date # İlk bhukti ana dasa ile başlar
-        current_bhukti_end_date = None # Başlangıçta bilinmiyor
-
-        # Ana Dasa'nın toplam süresi (gün olarak)
-        current_dasa_total_days = (current_dasa_end_date - current_dasa_start_date).days
-
-        for bhukti_lord in bhukti_order:
-            # Antardasa süresi (gün olarak) = (Ana Dasa Süresi (gün) * Antardasa Lordunun Süresi (yıl)) / Toplam Dasa Süresi (120 yıl)
-            bhukti_duration_days = (current_dasa_total_days * dasa_years[bhukti_lord]) / 120.0
-
-            current_bhukti_end_date = current_bhukti_start_date + timedelta(days=bhukti_duration_days)
-
-            if now < current_bhukti_end_date:
-                 current_bhukti_lord = bhukti_lord
-                 break # Bhukti bulundu
-
-            current_bhukti_start_date = current_bhukti_end_date # Sonraki bhukti şimdikinin bittiği yerden başlar
-
-
-        # Kalan süreyi hesapla (gün olarak)
-        remaining_in_current_bhukti_days = (current_bhukti_end_date - now).days if current_bhukti_end_date else 0
-        remaining_in_current_dasa_days = (current_dasa_end_date - now).days if current_dasa_end_date else 0
-
-
+        
+        # 1. Nakshatra ve başlangıç Dasa bilgisi
+        birth_balance = calculate_dasa_balance_at_birth(natal_moon_degree)
+        nakshatra_info = birth_balance["nakshatra_info"]
+        start_lord = birth_balance["start_lord"]
+        balance_days = birth_balance["balance_days"]
+        
+        # 2. Tüm Dasa periyotlarını hesapla (doğumdan itibaren)
+        dasa_sequence = get_dasa_sequence_from_lord(start_lord)
+        all_dasas = []
+        
+        # İlk Dasa (kalan süre ile)
+        first_dasa_end = birth_dt + timedelta(days=balance_days)
+        all_dasas.append({
+            "lord": start_lord,
+            "lord_tr": PLANET_NAMES_TR[start_lord],
+            "start": birth_dt,
+            "end": first_dasa_end,
+            "duration_years": balance_days / 365.25,
+            "is_partial": True
+        })
+        
+        # Sonraki Dasa'lar (tam periyotlar)
+        current_start = first_dasa_end
+        for i in range(1, len(dasa_sequence)):
+            lord = dasa_sequence[i]
+            duration_days = DASA_YEARS[lord] * 365.25
+            dasa_end = current_start + timedelta(days=duration_days)
+            all_dasas.append({
+                "lord": lord,
+                "lord_tr": PLANET_NAMES_TR[lord],
+                "start": current_start,
+                "end": dasa_end,
+                "duration_years": DASA_YEARS[lord],
+                "is_partial": False
+            })
+            current_start = dasa_end
+        
+        # İkinci döngü için devam (120 yıl sonrası)
+        for lord in dasa_sequence:
+            duration_days = DASA_YEARS[lord] * 365.25
+            dasa_end = current_start + timedelta(days=duration_days)
+            all_dasas.append({
+                "lord": lord,
+                "lord_tr": PLANET_NAMES_TR[lord],
+                "start": current_start,
+                "end": dasa_end,
+                "duration_years": DASA_YEARS[lord],
+                "is_partial": False
+            })
+            current_start = dasa_end
+        
+        # 3. Mevcut Maha Dasa'yı bul
+        current_maha_dasa = None
+        current_maha_dasa_index = 0
+        for i, dasa in enumerate(all_dasas):
+            if dasa["start"] <= now < dasa["end"]:
+                current_maha_dasa = dasa
+                current_maha_dasa_index = i
+                break
+        
+        if not current_maha_dasa:
+            return {"error": "Mevcut Dasa periyodu bulunamadı."}
+        
+        # 4. Antardasa (Bhukti) hesapla
+        maha_lord = current_maha_dasa["lord"]
+        maha_start = current_maha_dasa["start"]
+        maha_duration_days = (current_maha_dasa["end"] - maha_start).days
+        
+        bhukti_sequence = get_dasa_sequence_from_lord(maha_lord)
+        all_bhuktis = []
+        bhukti_start = maha_start
+        
+        for bhukti_lord in bhukti_sequence:
+            bhukti_duration_days = calculate_sub_period_duration(
+                maha_duration_days / 365.25, DASA_YEARS[bhukti_lord]
+            )
+            bhukti_end = bhukti_start + timedelta(days=bhukti_duration_days)
+            all_bhuktis.append({
+                "lord": bhukti_lord,
+                "lord_tr": PLANET_NAMES_TR[bhukti_lord],
+                "start": bhukti_start,
+                "end": bhukti_end,
+                "duration_days": bhukti_duration_days
+            })
+            bhukti_start = bhukti_end
+        
+        # Mevcut Bhukti'yi bul
+        current_bhukti = None
+        current_bhukti_index = 0
+        for i, bhukti in enumerate(all_bhuktis):
+            if bhukti["start"] <= now < bhukti["end"]:
+                current_bhukti = bhukti
+                current_bhukti_index = i
+                break
+        
+        # 5. Pratyantardasa (3. seviye) hesapla
+        current_pratyantardasa = None
+        all_pratyantardasas = []
+        
+        if current_bhukti:
+            bhukti_lord = current_bhukti["lord"]
+            bhukti_start = current_bhukti["start"]
+            bhukti_duration_days = current_bhukti["duration_days"]
+            
+            pratyantar_sequence = get_dasa_sequence_from_lord(bhukti_lord)
+            pratyantar_start = bhukti_start
+            
+            for pratyantar_lord in pratyantar_sequence:
+                pratyantar_duration_days = calculate_sub_period_duration(
+                    bhukti_duration_days / 365.25, DASA_YEARS[pratyantar_lord]
+                )
+                pratyantar_end = pratyantar_start + timedelta(days=pratyantar_duration_days)
+                all_pratyantardasas.append({
+                    "lord": pratyantar_lord,
+                    "lord_tr": PLANET_NAMES_TR[pratyantar_lord],
+                    "start": pratyantar_start,
+                    "end": pratyantar_end,
+                    "duration_days": pratyantar_duration_days
+                })
+                pratyantar_start = pratyantar_end
+            
+            # Mevcut Pratyantardasa'yı bul
+            for pratyantar in all_pratyantardasas:
+                if pratyantar["start"] <= now < pratyantar["end"]:
+                    current_pratyantardasa = pratyantar
+                    break
+        
+        # 6. Gelecek 5 yıllık Dasa takvimi
+        future_timeline = []
+        five_years_later = now + timedelta(days=5 * 365.25)
+        
+        for dasa in all_dasas:
+            if dasa["end"] > now and dasa["start"] < five_years_later:
+                future_timeline.append({
+                    "type": "Maha Dasa",
+                    "lord": dasa["lord"],
+                    "lord_tr": PLANET_NAMES_TR[dasa["lord"]],
+                    "start": dasa["start"].strftime("%Y-%m-%d"),
+                    "end": dasa["end"].strftime("%Y-%m-%d")
+                })
+        
+        # Gelecek Bhukti'ler (mevcut Maha Dasa içinde)
+        for bhukti in all_bhuktis:
+            if bhukti["end"] > now and bhukti["start"] < five_years_later:
+                future_timeline.append({
+                    "type": "Antardasa",
+                    "lord": f"{maha_lord}-{bhukti['lord']}",
+                    "lord_tr": f"{PLANET_NAMES_TR[maha_lord]} / {PLANET_NAMES_TR[bhukti['lord']]}",
+                    "start": bhukti["start"].strftime("%Y-%m-%d"),
+                    "end": bhukti["end"].strftime("%Y-%m-%d")
+                })
+        
+        # 7. Kalan süreleri hesapla
+        remaining_in_maha = (current_maha_dasa["end"] - now).days
+        remaining_in_bhukti = (current_bhukti["end"] - now).days if current_bhukti else 0
+        remaining_in_pratyantar = (current_pratyantardasa["end"] - now).days if current_pratyantardasa else 0
+        
+        # 8. Sonuç
         return {
-            "main_dasa_lord": current_dasa_lord,
-            "sub_dasa_lord": current_bhukti_lord,
-            "main_dasa_start_date": current_dasa_start_date.strftime("%Y-%m-%d"),
-            "main_dasa_end_date": current_dasa_end_date.strftime("%Y-%m-%d"),
-            "sub_dasa_start_date": current_bhukti_start_date.strftime("%Y-%m-%d") if current_bhukti_start_date else "N/A",
-            "sub_dasa_end_date": current_bhukti_end_date.strftime("%Y-%m-%d") if current_bhukti_end_date else "N/A",
-            "remaining_days_in_main_dasa": remaining_in_current_dasa_days,
-            "remaining_days_in_sub_dasa": remaining_in_current_bhukti_days,
-            "note": "Bu Vimshottari Dasa hesaplaması basitleştirilmiştir ve hassasiyet için tam bir Jyotish kütüphanesi gerekebilir."
+            # Nakshatra Bilgisi
+            "nakshatra": {
+                "name": nakshatra_info["name"],
+                "name_tr": nakshatra_info["name_tr"],
+                "lord": nakshatra_info["lord"],
+                "pada": nakshatra_info["pada"],
+                "degree": round(nakshatra_info["degree_in_nakshatra"], 2),
+                "percentage": nakshatra_info["percentage_traversed"]
+            },
+            
+            # Mevcut Maha Dasa
+            "main_dasa_lord": current_maha_dasa["lord"],
+            "main_dasa_lord_tr": PLANET_NAMES_TR[current_maha_dasa["lord"]],
+            "main_dasa_start_date": current_maha_dasa["start"].strftime("%Y-%m-%d"),
+            "main_dasa_end_date": current_maha_dasa["end"].strftime("%Y-%m-%d"),
+            "remaining_days_in_main_dasa": remaining_in_maha,
+            "remaining_years_in_main_dasa": round(remaining_in_maha / 365.25, 2),
+            
+            # Mevcut Antardasa (Bhukti)
+            "sub_dasa_lord": current_bhukti["lord"] if current_bhukti else None,
+            "sub_dasa_lord_tr": PLANET_NAMES_TR[current_bhukti["lord"]] if current_bhukti else None,
+            "sub_dasa_start_date": current_bhukti["start"].strftime("%Y-%m-%d") if current_bhukti else None,
+            "sub_dasa_end_date": current_bhukti["end"].strftime("%Y-%m-%d") if current_bhukti else None,
+            "remaining_days_in_sub_dasa": remaining_in_bhukti,
+            
+            # Mevcut Pratyantardasa (3. seviye)
+            "pratyantar_lord": current_pratyantardasa["lord"] if current_pratyantardasa else None,
+            "pratyantar_lord_tr": PLANET_NAMES_TR[current_pratyantardasa["lord"]] if current_pratyantardasa else None,
+            "pratyantar_start_date": current_pratyantardasa["start"].strftime("%Y-%m-%d") if current_pratyantardasa else None,
+            "pratyantar_end_date": current_pratyantardasa["end"].strftime("%Y-%m-%d") if current_pratyantardasa else None,
+            "remaining_days_in_pratyantar": remaining_in_pratyantar,
+            
+            # Mevcut Dasa Dizisi (kısa format)
+            "current_period": f"{current_maha_dasa['lord']}-{current_bhukti['lord'] if current_bhukti else '?'}-{current_pratyantardasa['lord'] if current_pratyantardasa else '?'}",
+            "current_period_tr": f"{PLANET_NAMES_TR[current_maha_dasa['lord']].split(' ')[0]} / {PLANET_NAMES_TR[current_bhukti['lord']].split(' ')[0] if current_bhukti else '?'} / {PLANET_NAMES_TR[current_pratyantardasa['lord']].split(' ')[0] if current_pratyantardasa else '?'}",
+            
+            # Gelecek 5 Yıllık Takvim
+            "future_timeline": future_timeline[:15],  # İlk 15 periyot
+            
+            # Tüm Bhukti'ler (mevcut Maha Dasa için)
+            "all_bhuktis_in_current_dasa": [
+                {
+                    "lord": b["lord"],
+                    "lord_tr": PLANET_NAMES_TR[b["lord"]],
+                    "start": b["start"].strftime("%Y-%m-%d"),
+                    "end": b["end"].strftime("%Y-%m-%d"),
+                    "is_current": b["lord"] == (current_bhukti["lord"] if current_bhukti else None)
+                }
+                for b in all_bhuktis
+            ]
         }
-
+        
     except Exception as e:
         logger.error(f"Vimshottari Dasa hesaplama hatası: {str(e)}", exc_info=True)
         return {"error": f"Vimshottari Dasa hesaplama hatası: {str(e)}"}
@@ -835,6 +1147,7 @@ def get_harmonic_chart(dt_object, harmonic_number, celestial_bodies_positions):
         logger.error(f"get_harmonic_chart ({harmonic_number}) fonksiyonunda hata: {str(e)}", exc_info=True)
         return {}
 
+
 # Derin harmonik analiz (Birden çok harmonik)
 def calculate_deep_harmonic_analysis(birth_dt, natal_celestial_positions):
     """Doğum tarihine göre çeşitli N. harmonik haritaların gezegen pozisyonlarını hesaplar.
@@ -843,24 +1156,34 @@ def calculate_deep_harmonic_analysis(birth_dt, natal_celestial_positions):
     try:
         logger.info("Derin harmonik analiz hesaplanıyor...")
 
-        # Harmonik
-        harmonic_definitions = {
+        # Harmonik sayıları ve anlamları
+        harmonics_to_calculate = {
+            1: {"name": "Rāśi (D1)", "details": "Ana harita, hayatın tamamı"},
+            2: {"name": "Hora (D2)", "details": "Para kazanma şekli, finans akışı"},
+            3: {"name": "Drekkana (D3)", "details": "Cesaret, kardeşler, mücadele gücü"},
+            4: {"name": "Chaturthamsa (D4)", "details": "Mülk, ev, yerleşim, taşınma"},
             7: {"name": "Saptamsa (D7)", "details": "Çocuklar, yaratıcılık, torunlar"},
-            9: {"name": "Navamsa (D9)", "details": "Evlilik, partner, dharma, ruhsal yolculuk"},
+            9: {"name": "Navamsa (D9)", "details": "Evlilik, partner, dharma, ruhsal yolculuk, En kritik varga"},
             10: {"name": "Dasamsa (D10)", "details": "Kariyer, meslek, toplumsal statü"},
             12: {"name": "Dvadasamsa (D12)", "details": "Ebeveynler, geçmiş yaşamlar"},
-            16: {"name": "Shodasamsa (D16)", "details": "Taşıtlar, gayrimenkul, genel mutluluk/üzüntü"},
+            13: {"name": "Trayodashamsa (D13)", "details": "arzuların, tutkuların, bastırılmış dürtülerin ve irade gücünün analiz edildiği bölünmüş haritadır"},
+            16: {"name": "Shodasamsa (D16)", "details": "Taşıtlar, gayrimenkul, genel mutluluk/üzüntü, konfor"},
+            17: {"name": "Saptadashamsa (D17)", "details": "güç, statü, onur, toplumsal saygınlık ve “yüksek konumda durabilme” sorusuna cevap verir."},
+            19: {"name": "Navatara (D19)", "details": "Ruhsal bilinç + ilahi planla senkronizasyon tanrısal düzen bu kişiyi ne kadar kolluyor?” sorusuna cevap verir."},
             20: {"name": "Vimsamsa (D20)", "details": "Ruhsal gelişim, ibadet, inanç"},
+            23: {"name": "Vimsamsa / Trimsamsa-23 (D23)", "details": "Bilgiyi alma, işleme ve aktarma haritası"},
             24: {"name": "Chaturvimsamsa (D24)", "details": "Eğitim, bilgi, öğrenme"},
             27: {"name": "Nakshatramsa (D27) / Bhamsa", "details": "Güç, zayıflık, fiziksel dayanıklılık"},
-            30: {"name": "Trimsamsa (D30)", "details": "Zorluklar, talihsizlikler, hastalıklar"},
-            40: {"name": "Khavedamsa (D40)", "details": "Kişinin iyi ve kötü eylemleri, ruhsal yolculuk"},
-            45: {"name": "Akshavedamsa (D45)", "details": "Genel kader, karakter, ahlak"}
+            30: {"name": "Trimsamsa (D30)", "details": "Zorluklar, talihsizlikler, hastalıklar, Kişinin başına “neden kötü şeyler geliyor?” sorusunun cevabı"},
+            40: {"name": "Khavedamsa (D40)", "details": "Anne soyundan karma"},
+            45: {"name": "Akshavedamsa (D45)", "details": "Baba soyundan karma"},
+            60: {"name": "Shashtiamsa (D60)", "details": "Saf karma, önceki yaşam"},
+            # Diğer Batı harmonikleri eklenebilir (örn. 4, 5, 8, 11, 13, 14, 15)
         }
 
         deep_harmonic_analysis = {}
 
-        for harmonic_number, info in harmonic_definitions.items():
+        for harmonic_number, info in harmonics_to_calculate.items():
             # calculate_celestial_positions'ı her harmonik için tekrar çağırmak yerine,
             # natal pozisyonları alıp harmonik dönüşümü yapmak daha verimli.
             harmonic_positions = get_harmonic_chart(birth_dt, harmonic_number, natal_celestial_positions) # Burada natal_celestial_positions kullanılır
@@ -877,6 +1200,7 @@ def calculate_deep_harmonic_analysis(birth_dt, natal_celestial_positions):
     except Exception as e:
         logger.error(f"calculate_deep_harmonic_analysis fonksiyonunda hata: {str(e)}", exc_info=True)
         return {}
+
 
 
 # Transit gezegen pozisyonlarının hesaplanması (Belirli bir tarih/saat için)
@@ -1822,6 +2146,14 @@ def get_midpoint_aspects(natal_celestial_positions, orb=2.0):
     """Natal haritadaki göksel cisim çiftlerinin midpointlerini ve bu midpointlerin
     diğer göksel cisimlere olan açılarını hesaplar."""
     try:
+
+        ASPECT_WEIGHTS = {
+    "Conjunction/Opposition": 5,
+    "Square": 4,
+    "Sesquiquadrate": 3,
+    "Semisquare": 2
+}
+
         # Sadece 'degree' anahtarı olan geçerli pozisyonları al
         valid_positions = {k: v for k, v in natal_celestial_positions.items() if isinstance(v, dict) and 'degree' in v}
 
@@ -1880,18 +2212,30 @@ def get_midpoint_aspects(natal_celestial_positions, orb=2.0):
                          aspects.append({
                              "celestial_body": p3_key,
                              "aspect_type": best_aspect_type,
+                             "weight": ASPECT_WEIGHTS.get(best_aspect_type, 1),
                              "orb": round(min_orb_found, 2)
-                         })
+                                        })
 
-                # Sadece açı yapan midpointleri ekle (Opsiyonel: hepsi de eklenebilir)
-                if aspects:
-                     combined_key = f"{p1_key}/{p2_key}"
-                     midpoint_results[combined_key] = {
-                         "degree": round(midpoint_deg, 2),
-                         "sign": midpoint_sign,
-                         "degree_in_sign": round(midpoint_deg_in_sign, 2),
-                         "aspects": sorted(aspects, key=lambda x: x['orb'])
-                     }
+               
+    
+                # Sadece anlamlı açıları tut
+                filtered_aspects = [
+                    a for a in aspects
+                    if (
+                        a["weight"] >= 4 or
+                        (a["weight"] == 3 and a["orb"] <= 0.7)
+                    )
+                ]
+
+                if filtered_aspects:
+                    combined_key = f"{p1_key}/{p2_key}"
+                    midpoint_results[combined_key] = {
+                        "degree": round(midpoint_deg, 2),
+                        "sign": midpoint_sign,
+                        "degree_in_sign": round(midpoint_deg_in_sign, 2),
+                        "aspects": sorted(filtered_aspects, key=lambda x: x["orb"])
+                    }
+
 
         logger.info(f"Midpoint hesaplamaları tamamlandı ({len(midpoint_results)} adet).")
         return midpoint_results
@@ -2289,7 +2633,7 @@ def calculate_astro_data(birth_date, birth_time, latitude, longitude, elevation_
         
         # 1.1 Natal Evler ve Açılar
         natal_houses_data = calculate_houses(birth_dt, latitude, longitude, house_system_bytes)
-        if "error" in natal_houses_data:
+        if natal_houses_data.get("error"):
             logger.error(f"Natal evler hesaplanırken hata: {natal_houses_data['error']}")
             return {"error": f"Natal evler hesaplanamadı: {natal_houses_data['error']}"}
         result["natal_houses"] = natal_houses_data
@@ -2330,12 +2674,16 @@ def calculate_astro_data(birth_date, birth_time, latitude, longitude, elevation_
         if natal_houses_data.get("important_angles"):
              for angle_name, angle_deg in natal_houses_data["important_angles"].items():
                  if angle_deg is not None:
-                     all_natal_celestial_positions[angle_name.capitalize()] = {
+                     name = "MC" if angle_name == "mc" else angle_name.capitalize()
+                     angle_data = {
                          "degree": angle_deg,
                          "sign": get_zodiac_sign(angle_deg),
                          "degree_in_sign": round(get_degree_in_sign(angle_deg), 2),
                          "is_angle": True,
                      }
+                     all_natal_celestial_positions[name] = angle_data
+                     # Template'in görebilmesi için ana sözlüğe ekle
+                     result["natal_planet_positions"][name] = angle_data
 
         # 1.5 Natal Açılar (Natal-Natal arası)
         natal_aspects = calculate_aspects(all_natal_celestial_positions)
@@ -2498,7 +2846,17 @@ def calculate_astro_data(birth_date, birth_time, latitude, longitude, elevation_
 
         # Sonucu JSON uyumlu hale getir
         final_result = ensure_json_serializable(result)
-        print(final_result)
+        for i, (category, data) in enumerate(result.items()):
+            color = COLOR_LIST[i % len(COLOR_LIST)]
+
+            json_line = json.dumps(
+                data,
+                ensure_ascii=False,
+                separators=(", ", ": ")
+            )
+
+            print(f"{BOLD}{color}[{category.upper()}]{RESET} {json_line}")
+
         return final_result
 
     except Exception as e:

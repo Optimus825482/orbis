@@ -5,10 +5,6 @@
 # OBLIGATORY (ZORUNLU) DEĞİŞKENLER
 # ===========================================
 
-# Flask Secret Key - Session ve CSRF koruması için
-# Üretmek için: python -c "import secrets; print(secrets.token_hex(32))"
-SECRET_KEY=your-secret-key-here-min-32-characters
-
 # OpenCage Geocoding API
 # Ücretsiz API key almak için: https://opencagedata.com/api
 OPENCAGE_API_KEY=your-opencage-api-key-here
@@ -54,4 +50,3 @@ FLASK_ENV=production
 # 2. Tüm "your-*" değerlerini gerçek API anahtarlarınızla değiştirin
 # 3. .env dosyasını asla GIT'e commit etmeyin (.gitignore'da)
 # 4. Production için SESSION_COOKIE_SECURE=True yapın
-# 5. Güçlü SECRET_KEY kullanın (en az 32 karakter)

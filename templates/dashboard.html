@@ -1,754 +1,516 @@
-{% extends "layout.html" %}
-
-{% block title %}Dashboard - Astro AI{% endblock %}
-
-{% block head %}
-{{ super() }}
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+{% extends "layout.html" %} {% block title %}ORBIS - Doğum ve Transit Girişi{%
+endblock %} {% block head %} {{ super() }}
 <style>
-    /* Tab yapısı için CSS */
-    .tabs-container {
-        width: 100%;
-    }
-
-    .tabs-header {
-        display: flex;
-        border-bottom: 1px solid #e5e7eb;
-        margin-bottom: 1.5rem;
-    }
-
-    .dark .tabs-header {
-        border-color: #334155;
-    }
-
-    .tab-button {
-        padding: 0.75rem 1.5rem;
-        font-weight: 500;
-        color: #6b7280;
-        background: transparent;
-        border: none;
-        border-bottom: 2px solid transparent;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .dark .tab-button {
-        color: #9ca3af;
-    }
-
-    .tab-button:hover {
-        color: #4b5563;
-    }
-
-    .dark .tab-button:hover {
-        color: #d1d5db;
-    }
-
-    .tab-button.active {
-        color: #6366f1;
-        border-bottom-color: #6366f1;
-    }
-
-    .dark .tab-button.active {
-        color: #818cf8;
-        border-bottom-color: #818cf8;
-    }
-
-    .tab-content {
-        display: none;
-    }
-
-    .tab-content.active {
-        display: block;
-    }
-
-    /* Konum öneri kutuları için stillendirmeler */
-    .location-suggestions-container {
-        position: relative;
-    }
-
-    .location-suggestions {
-        position: absolute;
-        z-index: 50;
-        background-color: white;
-        width: 100%;
-        margin-top: 0.25rem;
-        border-radius: 0.375rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        border: 1px solid #e5e7eb;
-        max-height: 15rem;
-        overflow-y: auto;
-    }
-
-    .dark .location-suggestions {
-        background-color: #334155;
-        border-color: #475569;
-    }
-
-    .location-suggestion-item {
-        padding: 0.5rem 0.75rem;
-        cursor: pointer;
-        color: #374151;
-        font-size: 0.875rem;
-    }
-
-    .dark .location-suggestion-item {
-        color: #e5e7eb;
-    }
-
-    .location-suggestion-item:hover {
-        background-color: #f3f4f6;
-    }
-
-    .dark .location-suggestion-item:hover {
-        background-color: #1e293b;
-    }
-
-    /* İyileştirilmiş card stilleri */
-    .dashboard-card {
-        background-color: white;
-        border-radius: 0.5rem;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        border: 1px solid #e5e7eb;
-    }
-
-    .dark .dashboard-card {
-        background-color: #1e293b;
-        border-color: #334155;
-    }
-
-    .card-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        color: #111827;
-        display: flex;
-        align-items: center;
-    }
-
-    .dark .card-title {
-        color: white;
-    }
-
-    .card-title svg {
-        margin-right: 0.5rem;
-        height: 1.25rem;
-        width: 1.25rem;
-        color: #6366f1;
-    }
-
-    .dark .card-title svg {
-        color: #818cf8;
-    }
-
-    /* Form alanları için geliştirmeler */
-    .form-section {
-        margin-bottom: 1.5rem;
-    }
-
-    .form-section-title {
-        font-size: 1.125rem;
-        font-weight: 500;
-        margin-bottom: 0.75rem;
-        color: #1f2937;
-        border-bottom: 1px solid #e5e7eb;
-        padding-bottom: 0.5rem;
-    }
-
-    .dark .form-section-title {
-        color: #f3f4f6;
-        border-color: #334155;
-    }
-
-    .form-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-
-    @media (min-width: 768px) {
-        .form-grid {
-            grid-template-columns: 1fr 1fr;
-        }
-    }
-
-    .form-field {
-        margin-bottom: 1rem;
-    }
-
-    .form-label {
-        display: block;
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: #374151;
-        margin-bottom: 0.25rem;
-    }
-
-    .dark .form-label {
-        color: #d1d5db;
-    }
-
-    .form-input {
-        width: 100%;
-        border-radius: 0.375rem;
-        border: 1px solid #d1d5db;
-        padding: 0.5rem 0.75rem;
-        background-color: white;
-        color: #111827;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    }
-
-    .form-input:focus {
-        border-color: #6366f1;
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-    }
-
-    .dark .form-input {
-        background-color: #334155;
-        border-color: #475569;
-        color: white;
-    }
-
-    .form-button-primary {
-        width: 100%;
-        padding: 0.5rem 1rem;
-        border: 1px solid transparent;
-        border-radius: 0.375rem;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: white;
-        background-color: #6366f1;
-        transition: background-color 0.2s;
-    }
-
-    .form-button-primary:hover {
-        background-color: #4f46e5;
-    }
-
-    .dark .form-button-primary {
-        background-color: #4f46e5;
-    }
-
-    .dark .form-button-primary:hover {
-        background-color: #4338ca;
-    }
-
-    .info-message {
-        background-color: #eff6ff;
-        color: #1e40af;
-        padding: 1rem;
-        border-radius: 0.375rem;
-        margin: 1rem 0;
-        font-size: 0.875rem;
-    }
-
-    .dark .info-message {
-        background-color: rgba(30, 58, 138, 0.2);
-        color: #93c5fd;
-    }
-
-    .info-message-title {
-        font-weight: 500;
-        margin-bottom: 0.25rem;
-    }
-
-    /* İçerik merkezlendirme */
-    .content-container {
-        max-width: 1024px;
-        margin-left: auto;
-        margin-right: auto;
-        padding: 0 1rem;
-    }
-
-    /* İkon stilleri */
-    .form-icon {
-        position: absolute;
-        top: 50%;
-        left: 0.75rem;
-        transform: translateY(-50%);
-        width: 1.25rem;
-        height: 1.25rem;
-        color: #9ca3af;
-        pointer-events: none;
-    }
-
-    .relative {
-        position: relative;
-    }
-
-    .pl-10 {
-        padding-left: 2.5rem;
-    }
+  .glass-panel {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.6;
+    cursor: pointer;
+  }
+  .location-suggestions {
+    position: absolute;
+    z-index: 50;
+    background-color: #1e293b;
+    width: 100%;
+    margin-top: 0.25rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-height: 15rem;
+    overflow-y: auto;
+  }
+  .location-suggestion-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    color: #e2e8f0;
+    font-size: 0.875rem;
+    transition: background-color 0.2s;
+  }
+  .location-suggestion-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
 </style>
-{% endblock %}
+{% endblock %} {% block content %}
+<div
+  class="relative min-h-screen flex flex-col items-center justify-center px-6 py-10 max-w-lg mx-auto w-full"
+>
+  <!-- Geometric Overlay Decor -->
+  <div
+    class="absolute top-[10%] left-0 w-full flex justify-center opacity-20 pointer-events-none"
+  >
+    <div
+      class="w-64 h-64 border border-white/20 rounded-full animate-spin-slow"
+    ></div>
+  </div>
 
-
-{% block content %}
-<div class="content-container py-8">
-    <!-- Hoş Geldiniz Kartı -->
-    <div class="dashboard-card">
-        <h1 class="card-title">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-            Ücretsiz Astrolojik Analiz
-        </h1>
-        <p style="color: #4b5563; margin-bottom: 1rem;">
-            Doğum bilgilerinizi girerek saniyeler içinde detaylı astrolojik haritanızı ve AI yorumlarınızı oluşturun. 
-            Bilgileriniz sadece tarayıcınızda saklanır, sunucularımıza kaydedilmez.
-        </p>
-    </div>
-
-    <!-- Tek Form Yapısı -->
-    <div class="dashboard-card">
-        <div id="calculationFormContainer">
-                <p class="info-message">
-                    <span class="info-message-title">Bilgi:</span> Başka birisi için astrolojik hesaplama yapmak için
-                    aşağıdaki formu doldurun.
-                </p>
-
-                <!-- Mevcut Kombinasyon Formu -->
-                <form id="otherPersonForm" method="POST" action="{{ url_for('main.show_results') }}">
-                    <!-- Doğum Bilgileri Kartı -->
-                    <div class="dashboard-card">
-                        <h2 class="card-title">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem; color: #6366f1;">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                            </svg>
-                            Doğum Bilgileri
-                        </h2>
-
-                        <div class="form-section">
-                            <div class="form-field">
-                                <label class="form-label" for="name">İsim</label>
-                                <input type="text" name="name" id="name" required placeholder="Adınız"
-                                    class="form-input">
-                            </div>
-
-                            <div class="form-grid">
-                                <div class="form-field">
-                                    <label class="form-label" for="birth_date">Doğum Tarihi</label>
-                                    <div class="relative">
-                                        <div class="form-icon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
-                                                <path fill-rule="evenodd"
-                                                    d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
-                                                    clip-rule="evenodd" />
-                                            </svg>
-                                        </div>
-                                        <input type="date" name="birth_date" id="birth_date" required
-                                            class="form-input pl-10">
-                                    </div>
-                                </div>
-                                <div class="form-field">
-                                    <label class="form-label" for="birth_time">Doğum Saati</label>
-                                    <div class="relative">
-                                        <div class="form-icon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
-                                                <path fill-rule="evenodd"
-                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-                                                    clip-rule="evenodd" />
-                                        </div>
-                                        <input type="time" name="birth_time" id="birth_time" required
-                                            class="form-input pl-10">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-field">
-                                <label class="form-label" for="suggestionInput">Doğum Yeri</label>
-                                <div class="relative">
-                                    <div class="form-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                            style="width: 1.25rem; height: 1.25rem;">
-                                            <path fill-rule="evenodd"
-                                                d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                                                clip-rule="evenodd" />
-                                    </div>
-                                    <input type="text" id="suggestionInput" name="birth_place_suggestion"
-                                        autocomplete="off" placeholder="Şehir, ülke adı girin..."
-                                        class="form-input pl-10">
-                                    <div id="suggestionResults" class="location-suggestions" style="display:none;">
-                                    </div>
-                                </div>
-                                <p style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">En az 3 karakter
-                                    girerek aramaya başlayın.</p>
-                            </div>
-
-                            <div class="form-grid">
-                                <div class="form-field">
-                                    <label class="form-label" for="latitude">Enlem</label>
-                                    <div class="relative">
-                                        <div class="form-icon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
-                                                <path fill-rule="evenodd"
-                                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                                                    clip-rule="evenodd" />
-                                        </div>
-                                        <input type="text" id="latitude" name="latitude" required
-                                            class="form-input pl-10">
-                                    </div>
-                                </div>
-                                <div class="form-field">
-                                    <label class="form-label" for="longitude">Boylam</label>
-                                    <div class="relative">
-                                        <div class="form-icon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
-                                                <path fill-rule="evenodd"
-                                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                                                    clip-rule="evenodd" />
-                                        </div>
-                                        <input type="text" id="longitude" name="longitude" required
-                                            class="form-input pl-10">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Transit Bilgileri Kartı - Mevcut kodu koruyoruz -->
-                    <div class="dashboard-card">
-                        <h2 class="card-title">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem; color: #6366f1;">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M16.2 7.8l-2 6.3-6.4 2.1 2-6.3z"></path>
-                            </svg>
-                            Transit Hesaplamaları (Opsiyonel)
-                        </h2>
-
-                        <div
-                            style="background-color: #eff6ff; color: #1e40af; padding: 1rem; border-radius: 0.375rem; margin: 1rem 0; font-size: 0.875rem;">
-                            <div style="font-weight: 500; margin-bottom: 0.25rem;">Transit Hesaplamaları Hakkında</div>
-                            <p>Belirli bir tarih, saat ve konum için transit gezegen pozisyonlarını hesaplayabilirsiniz.
-                                Transitler, doğum haritanızdaki gezegenlerin geçici etkileşimlerini gösterir.</p>
-                            <ul style="list-style: disc; margin-left: 1.25rem; margin-top: 0.5rem;">
-                                <li>Tarih ve saat belirtmezseniz: Şu anki tarih ve saat kullanılır.</li>
-                                <li>Konum belirtmezseniz: Doğum yeriniz transit hesaplamaları için kullanılır.</li>
-                            </ul>
-                        </div>
-
-                        <div class="form-section">
-                            <div class="form-grid">
-                                <div class="form-field">
-                                    <label class="form-label" for="transit_date">Transit Tarihi</label>
-                                    <div class="relative">
-                                        <div class="form-icon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
-                                                <path fill-rule="evenodd"
-                                                    d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
-                                                    clip-rule="evenodd" />
-                                            </svg>
-                                        </div>
-                                        <input type="date" id="transit_date" name="transit_date"
-                                            class="form-input pl-10"
-                                            placeholder="Boş bırakılırsa bugünün tarihi kullanılır">
-                                    </div>
-                                </div>
-                                <div class="form-field">
-                                    <label class="form-label" for="transit_time">Transit Saati</label>
-                                    <div class="relative">
-                                        <div class="form-icon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
-                                                <path fill-rule="evenodd"
-                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-                                                    clip-rule="evenodd" />
-                                        </div>
-                                        <input type="time" id="transit_time" name="transit_time"
-                                            class="form-input pl-10"
-                                            placeholder="Boş bırakılırsa şu anki saat kullanılır">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-field">
-                                <label class="form-label" for="transit_location_search">Transit Konumu</label>
-                                <div class="relative">
-                                    <div class="form-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                            style="width: 1.25rem; height: 1.25rem;">
-                                            <path fill-rule="evenodd"
-                                                d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                                                clip-rule="evenodd" />
-                                    </div>
-                                    <input type="text" id="transit_location_search" name="transit_location_search"
-                                        class="form-input pl-10"
-                                        placeholder="Şehir, ülke adı girin (boş bırakırsanız doğum yeriniz kullanılır)...">
-                                    <div id="transit_location_suggestions" class="location-suggestions"
-                                        style="display:none;"></div>
-                                </div>
-                            </div>
-
-                            <div class="form-grid">
-                                <div class="form-field">
-                                    <label class="form-label" for="transit_latitude">Transit Enlemi</label>
-                                    <div class="relative">
-                                        <div class="form-icon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
-                                                <path fill-rule="evenodd"
-                                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                                                    clip-rule="evenodd" />
-                                        </div>
-                                        <input type="text" id="transit_latitude" name="transit_latitude"
-                                            class="form-input pl-10"
-                                            placeholder="Boş bırakırsanız doğum yeriniz enlemi kullanılır">
-                                    </div>
-                                </div>
-                                <div class="form-field">
-                                    <label class="form-label" for="transit_longitude">Transit Boylamı</label>
-                                    <div class="relative">
-                                        <div class="form-icon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                                fill="currentColor" style="width: 1.25rem; height: 1.25rem;">
-                                                <path fill-rule="evenodd"
-                                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                                                    clip-rule="evenodd" />
-                                        </div>
-                                        <input type="text" id="transit_longitude" name="transit_longitude"
-                                            class="form-input pl-10"
-                                            placeholder="Boş bırakırsanız doğum yeriniz boylamı kullanılır">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Hesapla Butonu -->
-                    <div class="dashboard-card">
-                        <div class="form-field mb-0">
-                            <button type="submit" class="form-button-primary"
-                                style="background-color: #6366f1; color: white; padding: 0.75rem 2rem; width: 100%; border-radius: 0.375rem; font-weight: 600; font-size: 1rem; text-align: center;">
-                                <span style="display: flex; align-items: center; justify-content: center;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                        style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;">
-                                        <path fill-rule="evenodd"
-                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                            clip-rule="evenodd" />
-                                </span>
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
+  <!-- Page Header -->
+  <header class="text-center mb-8 w-full animate-fade-in relative z-10">
+    <h1
+      class="text-5xl font-display font-bold tracking-[0.2em] text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] mb-3"
+    >
+      ORBIS
+    </h1>
+    <div
+      class="h-[1px] w-24 bg-gradient-to-r from-transparent via-white/40 to-transparent mx-auto mb-4"
+    ></div>
+    <!-- ORBIS Avatar -->
+    <div class="flex flex-col items-center mb-4">
+      <div
+        class="w-20 h-20 rounded-full border-2 border-primary/30 p-1 mb-2 animate-breathe"
+      >
+        <div class="w-full h-full rounded-full overflow-hidden">
+          <img
+            src="{{ url_for('static', filename='ai-avatar-R.png') }}"
+            alt="ORBIS AI"
+            class="w-full h-full object-cover"
+          />
         </div>
+      </div>
+      <p
+        class="text-[10px] uppercase tracking-[0.4em] text-slate-400 font-bold"
+      >
+        Kaderin Geometrisi
+      </p>
     </div>
+  </header>
 
-    <!-- Sonuçlar Alanı (Gerektiğinde JavaScript ile doldurulacak) -->
-    <div id="resultsArea" class="hidden"></div>
+  <!-- Entry Form Panel -->
+  <div
+    class="w-full glass-panel rounded-3xl relative p-8 backdrop-blur-2xl z-10 shadow-3xl shadow-black/50 overflow-hidden"
+  >
+    <!-- Corner Decors -->
+    <div
+      class="absolute top-0 left-0 w-8 h-8 border-t border-l border-white/20"
+    ></div>
+    <div
+      class="absolute top-0 right-0 w-8 h-8 border-t border-r border-white/20"
+    ></div>
+    <div
+      class="absolute bottom-0 left-0 w-8 h-8 border-b border-l border-white/20"
+    ></div>
+    <div
+      class="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-white/20"
+    ></div>
 
-    <!-- Yükleniyor Ekranı -->
-    <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-sm w-full">
-            <div class="flex flex-col items-center">
-                <div
-                    style="border-top: 4px solid #6366f1; border-radius: 50%; width: 2.5rem; height: 2.5rem; animation: spin 1s linear infinite;">
-                </div>
-                <p class="mt-3 text-gray-700 dark:text-gray-300">Hesaplanıyor...</p>
-            </div>
+    <form
+      id="orbisForm"
+      method="POST"
+      action="{{ url_for('main.show_results') }}"
+      class="space-y-8"
+    >
+      <input type="hidden" id="latitude" name="latitude" />
+      <input type="hidden" id="longitude" name="longitude" />
+      <input type="hidden" id="transit_latitude" name="transit_latitude" />
+      <input type="hidden" id="transit_longitude" name="transit_longitude" />
+
+      <!-- Section: Birth Data -->
+      <div class="space-y-6">
+        <div class="flex items-center gap-3 mb-2">
+          <span
+            class="w-2 h-2 bg-primary rounded-full shadow-[0_0_8px_rgba(91,43,238,0.8)]"
+          ></span>
+          <h2
+            class="text-sm font-display font-bold text-white uppercase tracking-[0.2em]"
+          >
+            Doğum Bilgileri
+          </h2>
         </div>
+
+        <div class="group relative">
+          <label
+            class="block text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-2 font-bold ml-1"
+            >İsim</label
+          >
+          <input
+            type="text"
+            name="name"
+            id="name"
+            required
+            placeholder="İsminiz"
+            class="w-full px-5 py-4 bg-white/5 border border-white/10 text-sm text-white focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all font-display rounded-2xl outline-none hover:bg-white/10"
+          />
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="group relative">
+            <label
+              class="block text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-2 font-bold ml-1"
+              >Doğum Tarihi</label
+            >
+            <input
+              type="date"
+              name="birth_date"
+              id="birth_date"
+              required
+              class="w-full px-5 py-4 bg-white/5 border border-white/10 text-sm text-white focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all rounded-2xl outline-none hover:bg-white/10"
+            />
+          </div>
+          <div class="group relative">
+            <label
+              class="block text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-2 font-bold ml-1"
+              >Doğum Saati</label
+            >
+            <input
+              type="time"
+              name="birth_time"
+              id="birth_time"
+              required
+              class="w-full px-5 py-4 bg-white/5 border border-white/10 text-sm text-white focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all rounded-2xl outline-none hover:bg-white/10"
+            />
+          </div>
+        </div>
+
+        <div class="group relative">
+          <label
+            class="block text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-2 font-bold ml-1"
+            >Doğum Yeri</label
+          >
+          <div class="relative">
+            <input
+              type="text"
+              id="suggestionInput"
+              name="birth_place_suggestion"
+              autocomplete="off"
+              placeholder="Şehir Ara..."
+              class="w-full px-5 py-4 bg-white/5 border border-white/10 text-sm text-white focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all rounded-2xl outline-none hover:bg-white/10 pl-12"
+            />
+            <span
+              class="material-icons-round absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg"
+              >place</span
+            >
+            <div
+              id="suggestionResults"
+              class="location-suggestions hidden"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Divider Decor -->
+      <div class="relative py-4 flex items-center justify-center">
+        <div class="w-full h-[1px] bg-white/5"></div>
+        <div
+          class="absolute w-8 h-8 rounded-full border border-white/10 bg-background-dark flex items-center justify-center group pointer-events-none"
+        >
+          <span class="material-icons-round text-slate-600 text-xs"
+            >keyboard_double_arrow_down</span
+          >
+        </div>
+      </div>
+
+      <!-- Section: Transit Data -->
+      <div class="space-y-6">
+        <div class="flex items-center gap-3 mb-2">
+          <span
+            class="w-2 h-2 border border-accent rounded-full shadow-[0_0_8px_rgba(56,189,248,0.5)]"
+          ></span>
+          <h2
+            class="text-sm font-display font-bold text-white uppercase tracking-[0.2em]"
+          >
+            Transit Analizi
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="group relative">
+            <label
+              class="block text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-2 font-bold ml-1"
+              >Transit Tarihi</label
+            >
+            <input
+              type="date"
+              id="transit_date"
+              name="transit_date"
+              class="w-full px-5 py-4 bg-white/5 border border-white/10 text-sm text-white focus:ring-1 focus:ring-accent/50 focus:border-accent/50 transition-all rounded-2xl outline-none hover:bg-white/10"
+            />
+          </div>
+          <div class="group relative">
+            <label
+              class="block text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-2 font-bold ml-1"
+              >Transit Saati</label
+            >
+            <input
+              type="time"
+              id="transit_time"
+              name="transit_time"
+              class="w-full px-5 py-4 bg-white/5 border border-white/10 text-sm text-white focus:ring-1 focus:ring-accent/50 focus:border-accent/50 transition-all rounded-2xl outline-none hover:bg-white/10"
+            />
+          </div>
+        </div>
+
+        <div class="group relative">
+          <label
+            class="block text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-2 font-bold ml-1"
+            >Transit Yeri</label
+          >
+          <div class="relative">
+            <input
+              type="text"
+              id="transit_location_search"
+              name="transit_location_search"
+              autocomplete="off"
+              placeholder="Konum Ara..."
+              class="w-full px-5 py-4 bg-white/5 border border-white/10 text-sm text-white focus:ring-1 focus:ring-accent/50 focus:border-accent/50 transition-all rounded-2xl outline-none hover:bg-white/10 pl-12"
+            />
+            <span
+              class="material-icons-round absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg"
+              >public</span
+            >
+            <div
+              id="transit_location_suggestions"
+              class="location-suggestions hidden"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        class="w-full group relative mt-8 py-5 px-6 bg-primary hover:bg-violet-600 text-white font-bold font-display tracking-[0.2em] uppercase text-xs transition-all duration-500 rounded-2xl shadow-[0_0_30px_rgba(91,43,238,0.3)] overflow-hidden active:scale-[0.98]"
+      >
+        <div
+          class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"
+        ></div>
+        <span class="relative flex items-center justify-center gap-3">
+          ANALİZİ BAŞLAT
+          <span class="material-icons-round text-lg animate-pulse"
+            >auto_awesome</span
+          >
+        </span>
+      </button>
+    </form>
+  </div>
+
+  <!-- Privacy Note -->
+  <div
+    class="mt-8 flex items-start gap-4 p-5 rounded-3xl border border-white/5 bg-white/[0.02] max-w-sm backdrop-blur-sm relative z-10 transition-opacity hover:opacity-100 opacity-60"
+  >
+    <span class="material-icons-round text-slate-500 text-xl flex-shrink-0"
+      >shield</span
+    >
+    <div class="text-[10px] leading-relaxed text-slate-400 font-light">
+      <strong
+        class="text-slate-200 font-bold block mb-1 uppercase tracking-widest"
+        >Kozmik Güvenlik</strong
+      >
+      Verileriniz tarayıcınızda şifrelenir. Analiz süreci tamamlandıktan sonra
+      bulut üzerinden temizlenir.
     </div>
+  </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
+<!-- Loading Overlay -->
+<div
+  id="loadingOverlay"
+  class="fixed inset-0 bg-background-dark/95 backdrop-blur-3xl z-[100] hidden flex flex-col items-center justify-center transition-all duration-500"
+>
+  <div class="relative w-64 h-64 mb-10 flex items-center justify-center">
+    <div
+      class="absolute inset-0 border-[0.5px] border-white/10 rounded-full animate-spin-slow"
+    ></div>
+    <div
+      class="absolute inset-8 border-[0.5px] border-primary/20 rounded-full animate-spin-reverse-slow"
+    ></div>
+    <div
+      class="w-16 h-16 rounded-full border border-primary/40 flex items-center justify-center animate-breathe"
+    >
+      <span class="material-icons-round text-primary text-3xl animate-pulse"
+        >all_inclusive</span
+      >
+    </div>
+  </div>
+  <div class="text-center space-y-4">
+    <h3
+      class="text-2xl font-display font-bold tracking-widest text-white uppercase"
+    >
+      Hesaplanıyor
+    </h3>
+    <p
+      id="loading-message"
+      class="text-xs text-slate-400 font-light tracking-[0.2em] animate-pulse"
+    >
+      Yıldızların konumu taranıyor...
+    </p>
+  </div>
+</div>
+
+<!-- Copyright Footer -->
+<footer class="mt-8 pb-6 text-center px-4">
+  <!-- Sorumluluk Reddi -->
+  <div
+    class="max-w-md mx-auto mb-4 p-3 rounded-xl bg-slate-800/30 border border-slate-700/30"
+  >
+    <p class="text-[9px] text-slate-500 leading-relaxed">
+      <span class="text-amber-500/70">⚠️</span>
+      Bu uygulama yalnızca eğlence ve kişisel keşif amaçlıdır. Sunulan
+      astrolojik yorumlar, yapay zeka tarafından üretilmiş genel bilgilerdir ve
+      profesyonel danışmanlık niteliği taşımaz.
+    </p>
+  </div>
+
+  <p class="text-[10px] text-slate-600">© 2025 ORBIS Astrology</p>
+  <p class="text-[9px] text-slate-700 mt-1">by Erkan ERDEM</p>
+  <div class="flex items-center justify-center gap-3 mt-2">
+    <a
+      href="{{ url_for('legal.terms_of_service') }}"
+      class="text-[8px] text-slate-600 hover:text-slate-400 transition-colors"
+      >Kullanım Koşulları</a
+    >
+    <span class="text-slate-700">•</span>
+    <a
+      href="{{ url_for('legal.privacy_policy') }}"
+      class="text-[8px] text-slate-600 hover:text-slate-400 transition-colors"
+      >Gizlilik Politikası</a
+    >
+  </div>
+</footer>
+
+{% endblock %} {% block scripts %}
 <script>
-    const OPENCAGE_API_KEY = "86a739ff16b84521a20a5f492506d409";
+  const OPENCAGE_API_KEY = "{{ opencage_key }}";
 
-    // Tab geçişleri için fonksiyon
-    function switchTab( tabId ) {
-        // Tüm tab içeriklerini gizle
-        document.querySelectorAll( '.tab-content' ).forEach( tab => {
-            tab.classList.remove( 'active' );
-        } );
+  const loadingMessages = [
+    "Yıldızların konumu taranıyor...",
+    "Kozmik geometri hesaplanıyor...",
+    "Yapay zeka verileri sentezliyor...",
+    "Kaderin desenleri eşleştiriliyor...",
+  ];
 
-        // Tüm tab butonlarını pasif yap
-        document.querySelectorAll( '.tab-button' ).forEach( button => {
-            button.classList.remove( 'active' );
-        } );
-
-        // Seçilen tab'ı göster
-        document.getElementById( tabId + 'TabContent' ).classList.add( 'active' );
-        document.getElementById( tabId + 'Tab' ).classList.add( 'active' );
+  document.addEventListener("DOMContentLoaded", function () {
+    // Load saved data
+    const savedData = localStorage.getItem("astro_user_data");
+    if (savedData) {
+      try {
+        const data = JSON.parse(savedData);
+        if (data.name) document.getElementById("name").value = data.name;
+        if (data.birth_date)
+          document.getElementById("birth_date").value = data.birth_date;
+        if (data.birth_time)
+          document.getElementById("birth_time").value = data.birth_time;
+        if (data.birth_place_suggestion)
+          document.getElementById("suggestionInput").value =
+            data.birth_place_suggestion;
+        if (data.latitude)
+          document.getElementById("latitude").value = data.latitude;
+        if (data.longitude)
+          document.getElementById("longitude").value = data.longitude;
+      } catch (e) {
+        console.error("Error loading stored info", e);
+      }
     }
 
-    // Tarih formatını YYYY-MM-DD formatına çeviren yardımcı fonksiyon
-    function formatDate(date) {
-        if (!date) return '';
-        const d = new Date(date);
-        let month = '' + (d.getMonth() + 1);
-        let day = '' + d.getDate();
-        const year = d.getFullYear();
+    // Form Submission Logic with Ad Control
+    const orbisForm = document.getElementById("orbisForm");
+    orbisForm.addEventListener("submit", function (e) {
+      e.preventDefault(); // Önce formu durdur
 
-        if (month.length < 2) month = '0' + month;
-        if (day.length < 2) day = '0' + day;
-
-        return [year, month, day].join('-');
-    }
-
-    // Doküman hazır olduğunda çalışacak kod
-    document.addEventListener( 'DOMContentLoaded', function () {
-        const savedData = localStorage.getItem('astro_user_data');
-        if (savedData) {
-            try {
-                const data = JSON.parse(savedData);
-                // Formları doldur
-                if (data.name) document.getElementById('name').value = data.name;
-                if (data.birth_date) document.getElementById('birth_date').value = data.birth_date;
-                if (data.birth_time) document.getElementById('birth_time').value = data.birth_time;
-                if (data.birth_place_suggestion) document.getElementById('suggestionInput').value = data.birth_place_suggestion;
-                if (data.latitude) document.getElementById('latitude').value = data.latitude;
-                if (data.longitude) document.getElementById('longitude').value = data.longitude;
-                
-                // Kişisel tab varsa orayı da doldur
-                if (document.getElementById('personal_name')) document.getElementById('personal_name').value = data.name;
-                // ... diğerleri gizli input olduğu için gerek olmayabilir ama güvenlik için:
-                if (document.getElementById('personal_birth_date')) document.getElementById('personal_birth_date').value = data.birth_date;
-            } catch (e) {
-                console.error('Kayıtlı veri yüklenemedi', e);
-            }
-        }
-
-        // Form submit edildiğinde verileri kaydet
-        const otherForm = document.getElementById('otherPersonForm');
-        if (otherForm) {
-            otherForm.addEventListener('submit', function() {
-                const formData = {
-                    name: document.getElementById('name').value,
-                    birth_date: document.getElementById('birth_date').value,
-                    birth_time: document.getElementById('birth_time').value,
-                    birth_place_suggestion: document.getElementById('suggestionInput').value,
-                    latitude: document.getElementById('latitude').value,
-                    longitude: document.getElementById('longitude').value
-                };
-                localStorage.setItem('astro_user_data', JSON.stringify(formData));
-            });
-        }
-
-        // Doğum yeri araması için event listener ekle
-    const suggestionInput = document.getElementById( 'suggestionInput' );
-    const suggestionResults = document.getElementById( 'suggestionResults' );
-
-    if ( suggestionInput && suggestionResults ) {
-        suggestionInput.addEventListener( 'input', function () {
-            const query = this.value.trim();
-            if ( query.length >= 3 ) {
-                fetchLocationSuggestions( query, suggestionResults );
-            } else {
-                suggestionResults.style.display = 'none';
-            }
-        } );
-    }
-
-    // Transit doğum yeri araması için event listener ekle
-    const transitLocationSearch = document.getElementById( 'transit_location_search' );
-    const transitLocationSuggestions = document.getElementById( 'transit_location_suggestions' );
-
-    if ( transitLocationSearch && transitLocationSuggestions ) {
-        transitLocationSearch.addEventListener( 'input', function () {
-            const query = this.value.trim();
-            if ( query.length >= 3 ) {
-                fetchLocationSuggestions( query, transitLocationSuggestions );
-            } else {
-                transitLocationSuggestions.style.display = 'none';
-            }
-        } );
-    }
-
-    // Kişisel bilgiler için transit doğum yeri araması
-    const personalTransitLocationSearch = document.getElementById( 'personal_transit_location_search' );
-    const personalTransitLocationSuggestions = document.getElementById( 'personal_transit_location_suggestions' );
-
-    if ( personalTransitLocationSearch && personalTransitLocationSuggestions ) {
-        personalTransitLocationSearch.addEventListener( 'input', function () {
-            const query = this.value.trim();
-            if ( query.length >= 3 ) {
-                fetchLocationSuggestions( query, personalTransitLocationSuggestions );
-            } else {
-                personalTransitLocationSuggestions.style.display = 'none';
-            }
-        } );
-    }
+      // Reklam kontrolü yap
+      if (window.OrbisBridge) {
+        window.OrbisBridge.requestAnalysis(
+          // Başarılı - reklam izlendi veya premium
+          function () {
+            submitForm();
+          },
+          // İptal edildi
+          function () {
+            console.log("[ORBIS] Analiz iptal edildi");
+          }
+        );
+      } else {
+        // Bridge yoksa direkt submit
+        submitForm();
+      }
     });
 
-    // Konum önerilerini getiren fonksiyon
-    function fetchLocationSuggestions( query, resultsContainer ) {
-        const OPENCAGE_API_KEY = "86a739ff16b84521a20a5f492506d409";
+    function submitForm() {
+      $("#loadingOverlay").removeClass("hidden").addClass("flex");
+      let msgIdx = 0;
+      const msgInterval = setInterval(() => {
+        msgIdx = (msgIdx + 1) % loadingMessages.length;
+        $("#loading-message").fadeOut(400, function () {
+          $(this).text(loadingMessages[msgIdx]).fadeIn(400);
+        });
+      }, 2500);
 
-        if ( !OPENCAGE_API_KEY ) {
-            console.error( 'OpenCage API anahtarı tanımlanmamış' );
-            return;
-        }
+      const formData = {
+        name: document.getElementById("name").value,
+        birth_date: document.getElementById("birth_date").value,
+        birth_time: document.getElementById("birth_time").value,
+        birth_place_suggestion:
+          document.getElementById("suggestionInput").value,
+        latitude: document.getElementById("latitude").value,
+        longitude: document.getElementById("longitude").value,
+      };
+      localStorage.setItem("astro_user_data", JSON.stringify(formData));
 
-        const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent( query )}&key=${OPENCAGE_API_KEY}&limit=5&no_annotations=1&language=tr`;
-
-        fetch( url )
-            .then( response => response.json() )
-            .then( data => {
-                resultsContainer.innerHTML = '';
-                if ( data.results && data.results.length > 0 ) {
-                    data.results.forEach( result => {
-                        const item = document.createElement( 'div' );
-                        item.className = 'location-suggestion-item';
-                        item.textContent = result.formatted;
-                        item.dataset.lat = result.geometry.lat;
-                        item.dataset.lng = result.geometry.lng;
-
-                        item.addEventListener( 'click', function () {
-                            // Doğru input alanlarını seç
-                            let inputField, latField, lngField;
-
-                            if ( resultsContainer.id === 'suggestionResults' ) {
-                                inputField = document.getElementById( 'suggestionInput' );
-                                latField = document.getElementById( 'latitude' );
-                                lngField = document.getElementById( 'longitude' );
-                            } else if ( resultsContainer.id === 'transit_location_suggestions' ) {
-                                inputField = document.getElementById( 'transit_location_search' );
-                                latField = document.getElementById( 'transit_latitude' );
-                                lngField = document.getElementById( 'transit_longitude' );
-                            } else if ( resultsContainer.id === 'personal_transit_location_suggestions' ) {
-                                inputField = document.getElementById( 'personal_transit_location_search' );
-                                latField = document.getElementById( 'personal_transit_latitude' );
-                                lngField = document.getElementById( 'personal_transit_longitude' );
-                            }
-
-                            if ( inputField && latField && lngField ) {
-                                inputField.value = result.formatted;
-                                latField.value = result.geometry.lat;
-                                lngField.value = result.geometry.lng;
-                                resultsContainer.style.display = 'none';
-                            }
-                        } );
-
-                        resultsContainer.appendChild( item );
-                    } );
-
-                    resultsContainer.style.display = 'block';
-                } else {
-                    resultsContainer.style.display = 'none';
-                }
-            } )
-            .catch( error => {
-                console.error( 'Konum araması sırasında hata oluştu:', error );
-                resultsContainer.style.display = 'none';
-            } );
+      // Formu gönder
+      document.getElementById("orbisForm").submit();
     }
+
+    // Location Autocomplete
+    setupLocationSearch(
+      "suggestionInput",
+      "suggestionResults",
+      "latitude",
+      "longitude"
+    );
+    setupLocationSearch(
+      "transit_location_search",
+      "transit_location_suggestions",
+      "transit_latitude",
+      "transit_longitude"
+    );
+
+    function setupLocationSearch(inputId, resultsId, latId, lngId) {
+      const $input = $("#" + inputId);
+      const $results = $("#" + resultsId);
+
+      $input.on("input", function () {
+        const query = $(this).val().trim();
+        if (query.length >= 3) {
+          const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
+            query
+          )}&key=${OPENCAGE_API_KEY}&limit=5&language=tr`;
+          fetch(url)
+            .then((res) => res.json())
+            .then((data) => {
+              $results.empty().removeClass("hidden");
+              if (data.results && data.results.length > 0) {
+                data.results.forEach((res) => {
+                  const $item = $(
+                    '<div class="location-suggestion-item"></div>'
+                  )
+                    .text(res.formatted)
+                    .on("click", function () {
+                      $input.val(res.formatted);
+                      $("#" + latId).val(res.geometry.lat);
+                      $("#" + lngId).val(res.geometry.lng);
+                      $results.addClass("hidden");
+                    });
+                  $results.append($item);
+                });
+              } else {
+                $results.addClass("hidden");
+              }
+            });
+        } else {
+          $results.addClass("hidden");
+        }
+      });
+
+      $(document).on("click", function (e) {
+        if (!$(e.target).closest(".group").length) {
+          $results.addClass("hidden");
+        }
+      });
+    }
+  });
 </script>
 {% endblock %}

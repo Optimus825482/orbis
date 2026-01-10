@@ -26,6 +26,11 @@ wheels/
 .flaskenv
 instance/
 
+# Firebase Admin SDK (ASLA COMMIT ETME!)
+*-firebase-adminsdk-*.json
+firebase-adminsdk*.json
+serviceAccountKey.json
+
 # Flask
 instance/
 .webassets-cache
@@ -59,3 +64,6 @@ term.txt
 ASD.txt
 calculate_astro_data.txt
 .vercel
+
+# Auto Claude data directory
+.auto-claude/

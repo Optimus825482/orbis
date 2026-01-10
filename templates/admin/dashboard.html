@@ -1,0 +1,402 @@
+{% extends "admin/layout.html" %} {% block title %}ORBIS Admin - Dashboard{%
+endblock %} {% block page_title %}Dashboard{% endblock %} {% block page_subtitle
+%}Genel bakış ve istatistikler{% endblock %} {% block content %}
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+  <!-- Total Users -->
+  <div class="stat-card rounded-2xl p-6 cosmic-glow">
+    <div class="flex items-center justify-between mb-4">
+      <div
+        class="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center"
+      >
+        <span class="material-icons-round text-primary text-2xl">people</span>
+      </div>
+      <span class="text-[10px] uppercase tracking-widest text-slate-500"
+        >Toplam</span
+      >
+    </div>
+    <div class="text-3xl font-bold font-display" id="stat-total-users">-</div>
+    <div class="text-xs text-slate-500 mt-1">Kayıtlı Kullanıcı</div>
+  </div>
+
+  <!-- Premium Users -->
+  <div class="stat-card rounded-2xl p-6">
+    <div class="flex items-center justify-between mb-4">
+      <div
+        class="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center"
+      >
+        <span class="material-icons-round text-yellow-400 text-2xl"
+          >diamond</span
+        >
+      </div>
+      <span class="text-[10px] uppercase tracking-widest text-slate-500"
+        >Premium</span
+      >
+    </div>
+    <div class="text-3xl font-bold font-display" id="stat-premium-users">-</div>
+    <div class="text-xs text-slate-500 mt-1">Premium Kullanıcı</div>
+  </div>
+
+  <!-- Active Today -->
+  <div class="stat-card rounded-2xl p-6">
+    <div class="flex items-center justify-between mb-4">
+      <div
+        class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center"
+      >
+        <span class="material-icons-round text-green-400 text-2xl"
+          >trending_up</span
+        >
+      </div>
+      <span class="text-[10px] uppercase tracking-widest text-slate-500"
+        >Bugün</span
+      >
+    </div>
+    <div class="text-3xl font-bold font-display" id="stat-active-today">-</div>
+    <div class="text-xs text-slate-500 mt-1">Aktif Kullanıcı</div>
+  </div>
+
+  <!-- Total Analyses -->
+  <div class="stat-card rounded-2xl p-6">
+    <div class="flex items-center justify-between mb-4">
+      <div
+        class="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center"
+      >
+        <span class="material-icons-round text-accent text-2xl"
+          >auto_awesome</span
+        >
+      </div>
+      <span class="text-[10px] uppercase tracking-widest text-slate-500"
+        >Toplam</span
+      >
+    </div>
+    <div class="text-3xl font-bold font-display" id="stat-total-analyses">
+      -
+    </div>
+    <div class="text-xs text-slate-500 mt-1">Analiz Yapıldı</div>
+  </div>
+</div>
+
+<!-- Second Row -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+  <!-- Quick Actions -->
+  <div class="glass-card rounded-2xl p-6">
+    <h3 class="font-display font-bold text-lg mb-4 flex items-center gap-2">
+      <span class="material-icons-round text-primary">bolt</span>
+      Hızlı İşlemler
+    </h3>
+
+    <div class="space-y-3">
+      <a
+        href="{{ url_for('admin.push_notifications') }}"
+        class="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+      >
+        <span class="material-icons-round text-accent"
+          >notifications_active</span
+        >
+        <span class="text-sm">Push Bildirim Gönder</span>
+        <span class="material-icons-round text-slate-500 ml-auto text-lg"
+          >chevron_right</span
+        >
+      </a>
+
+      <a
+        href="{{ url_for('admin.users') }}?filter=premium"
+        class="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+      >
+        <span class="material-icons-round text-yellow-400"
+          >workspace_premium</span
+        >
+        <span class="text-sm">Premium Kullanıcılar</span>
+        <span class="material-icons-round text-slate-500 ml-auto text-lg"
+          >chevron_right</span
+        >
+      </a>
+
+      <a
+        href="{{ url_for('admin.statistics') }}"
+        class="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+      >
+        <span class="material-icons-round text-green-400">analytics</span>
+        <span class="text-sm">Detaylı İstatistikler</span>
+        <span class="material-icons-round text-slate-500 ml-auto text-lg"
+          >chevron_right</span
+        >
+      </a>
+    </div>
+  </div>
+
+  <!-- User Distribution -->
+  <div class="glass-card rounded-2xl p-6">
+    <h3 class="font-display font-bold text-lg mb-4 flex items-center gap-2">
+      <span class="material-icons-round text-primary">pie_chart</span>
+      Kullanıcı Dağılımı
+    </h3>
+
+    <div class="flex items-center justify-center py-4">
+      <div class="relative w-32 h-32">
+        <!-- Circular Progress -->
+        <svg class="w-full h-full transform -rotate-90">
+          <circle
+            cx="64"
+            cy="64"
+            r="56"
+            stroke="currentColor"
+            stroke-width="12"
+            fill="none"
+            class="text-slate-700"
+          />
+          <circle
+            id="premium-circle"
+            cx="64"
+            cy="64"
+            r="56"
+            stroke="currentColor"
+            stroke-width="12"
+            fill="none"
+            class="text-yellow-400"
+            stroke-dasharray="352"
+            stroke-dashoffset="352"
+            stroke-linecap="round"
+          />
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <span id="premium-percent" class="text-2xl font-bold">0%</span>
+          <span class="text-[10px] text-slate-500">Premium</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-center gap-6 mt-4">
+      <div class="flex items-center gap-2">
+        <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+        <span class="text-xs text-slate-400"
+          >Premium (<span id="premium-count">0</span>)</span
+        >
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-3 h-3 rounded-full bg-slate-600"></div>
+        <span class="text-xs text-slate-400"
+          >Ücretsiz (<span id="free-count">0</span>)</span
+        >
+      </div>
+    </div>
+  </div>
+
+  <!-- Credits Overview -->
+  <div class="glass-card rounded-2xl p-6">
+    <h3 class="font-display font-bold text-lg mb-4 flex items-center gap-2">
+      <span class="material-icons-round text-primary">toll</span>
+      Kredi Özeti
+    </h3>
+
+    <div class="space-y-4">
+      <div class="p-4 rounded-xl bg-primary/10 border border-primary/20">
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-slate-400">Toplam Kredi</span>
+          <span class="material-icons-round text-primary"
+            >account_balance_wallet</span
+          >
+        </div>
+        <div class="text-2xl font-bold mt-2" id="stat-total-credits">-</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div class="p-3 rounded-xl bg-white/5">
+          <span class="text-[10px] text-slate-500 uppercase tracking-wider"
+            >Ort. Kredi/Kullanıcı</span
+          >
+          <div class="text-lg font-bold mt-1" id="stat-avg-credits">-</div>
+        </div>
+        <div class="p-3 rounded-xl bg-white/5">
+          <span class="text-[10px] text-slate-500 uppercase tracking-wider"
+            >Ort. Analiz/Kullanıcı</span
+          >
+          <div class="text-lg font-bold mt-1" id="stat-avg-analyses">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Users Table -->
+<div class="glass-card rounded-2xl p-6">
+  <div class="flex items-center justify-between mb-6">
+    <h3 class="font-display font-bold text-lg flex items-center gap-2">
+      <span class="material-icons-round text-primary">group</span>
+      Son Kullanıcılar
+    </h3>
+    <a
+      href="{{ url_for('admin.users') }}"
+      class="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
+    >
+      Tümünü Gör
+      <span class="material-icons-round text-sm">arrow_forward</span>
+    </a>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full">
+      <thead>
+        <tr
+          class="text-left text-xs text-slate-500 uppercase tracking-wider border-b border-border-dark"
+        >
+          <th class="pb-3 font-medium">Kullanıcı</th>
+          <th class="pb-3 font-medium">Durum</th>
+          <th class="pb-3 font-medium">Kredi</th>
+          <th class="pb-3 font-medium">Analiz</th>
+          <th class="pb-3 font-medium">Son Aktivite</th>
+          <th class="pb-3 font-medium"></th>
+        </tr>
+      </thead>
+      <tbody id="recent-users-table">
+        <tr>
+          <td colspan="6" class="py-8 text-center text-slate-500">
+            <span class="material-icons-round animate-spin">refresh</span>
+            <span class="block mt-2 text-sm">Yükleniyor...</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  // Load dashboard data
+  async function loadDashboardData() {
+    try {
+      // Stats overview
+      const statsRes = await fetch("/admin/api/stats/overview");
+      const statsData = await statsRes.json();
+
+      if (statsData.success) {
+        const stats = statsData.data;
+
+        document.getElementById("stat-total-users").textContent = formatNumber(
+          stats.totalUsers
+        );
+        document.getElementById("stat-premium-users").textContent =
+          formatNumber(stats.premiumUsers);
+        document.getElementById("stat-active-today").textContent = formatNumber(
+          stats.activeToday
+        );
+        document.getElementById("stat-total-analyses").textContent =
+          formatNumber(stats.totalAnalyses);
+        document.getElementById("stat-total-credits").textContent =
+          formatNumber(stats.totalCredits);
+
+        // Averages
+        const avgCredits =
+          stats.totalUsers > 0
+            ? (stats.totalCredits / stats.totalUsers).toFixed(1)
+            : 0;
+        const avgAnalyses =
+          stats.totalUsers > 0
+            ? (stats.totalAnalyses / stats.totalUsers).toFixed(1)
+            : 0;
+        document.getElementById("stat-avg-credits").textContent = avgCredits;
+        document.getElementById("stat-avg-analyses").textContent = avgAnalyses;
+
+        // User distribution chart
+        const premiumPercent =
+          stats.totalUsers > 0
+            ? (stats.premiumUsers / stats.totalUsers) * 100
+            : 0;
+        document.getElementById("premium-percent").textContent =
+          premiumPercent.toFixed(1) + "%";
+        document.getElementById("premium-count").textContent =
+          stats.premiumUsers;
+        document.getElementById("free-count").textContent = stats.freeUsers;
+
+        // Update circle
+        const circle = document.getElementById("premium-circle");
+        const circumference = 2 * Math.PI * 56; // r=56
+        const offset = circumference - (premiumPercent / 100) * circumference;
+        circle.style.strokeDashoffset = offset;
+      }
+
+      // Recent users
+      const usersRes = await fetch("/admin/api/users?limit=5");
+      const usersData = await usersRes.json();
+
+      if (usersData.success) {
+        renderRecentUsers(usersData.data.users);
+      }
+    } catch (error) {
+      console.error("Dashboard data error:", error);
+      showToast("Veriler yüklenirken hata oluştu", "error");
+    }
+  }
+
+  function renderRecentUsers(users) {
+    const tbody = document.getElementById("recent-users-table");
+
+    if (users.length === 0) {
+      tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="py-8 text-center text-slate-500">
+                        Henüz kullanıcı yok
+                    </td>
+                </tr>
+            `;
+      return;
+    }
+
+    tbody.innerHTML = users
+      .map(
+        (user) => `
+            <tr class="table-row border-b border-border-dark/50 transition-colors">
+                <td class="py-4">
+                    <div class="flex items-center gap-3">
+                        <img src="${
+                          user.photoURL ||
+                          "https://ui-avatars.com/api/?name=" +
+                            encodeURIComponent(user.displayName || "U")
+                        }" 
+                             alt="" class="w-8 h-8 rounded-full">
+                        <div>
+                            <div class="font-medium text-sm">${
+                              user.displayName || "İsimsiz"
+                            }</div>
+                            <div class="text-xs text-slate-500">${
+                              user.email || "-"
+                            }</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="py-4">
+                    ${
+                      user.isPremium
+                        ? '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs"><span class="material-icons-round text-xs">diamond</span> Premium</span>'
+                        : '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-500/20 text-slate-400 text-xs">Ücretsiz</span>'
+                    }
+                </td>
+                <td class="py-4">
+                    <span class="font-mono text-sm">${user.credits || 0}</span>
+                </td>
+                <td class="py-4">
+                    <span class="font-mono text-sm">${
+                      user.totalAnalyses || 0
+                    }</span>
+                </td>
+                <td class="py-4">
+                    <span class="text-xs text-slate-500">${
+                      user.dailyUsage?.date || "-"
+                    }</span>
+                </td>
+                <td class="py-4">
+                    <a href="/admin/users/${
+                      user.id
+                    }" class="p-2 hover:bg-white/5 rounded-lg transition-colors inline-flex">
+                        <span class="material-icons-round text-slate-400 text-lg">chevron_right</span>
+                    </a>
+                </td>
+            </tr>
+        `
+      )
+      .join("");
+  }
+
+  // Load on page ready
+  document.addEventListener("DOMContentLoaded", loadDashboardData);
+</script>
+{% endblock %}

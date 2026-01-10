@@ -1,0 +1,186 @@
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    jsonify,
+    flash,
+    redirect,
+    url_for,
+    current_app,
+    send_from_directory,
+)
+import os
+import ai_interpretations
+from astro_calculations import calculate_astro_data
+from datetime import datetime
+import json
+import logging
+from utils import (
+    parse_time_flexible,
+    convert_times_to_str,
+    get_element_class,
+    Constants,
+)
+from location_service import LocationService
+from cache_config import cached_location_search, cache
+
+bp = Blueprint("main", __name__)
+logger = logging.getLogger(__name__)
+
+# Lazy init LocationService
+_location_service = None
+
+def get_location_service():
+    global _location_service
+    if _location_service is None:
+        api_key = current_app.config.get("OPENCAGE_API_KEY")
+        _location_service = LocationService(api_key=api_key)
+    return _location_service
+
+@bp.route("/")
+def index():
+    return render_template("index.html")
+
+@bp.route("/sw.js")
+def service_worker():
+    """Service Worker'ı root'tan sun - PWA için gerekli"""
+    return send_from_directory(
+        os.path.join(current_app.root_path, "static", "js"),
+        "sw.js",
+        mimetype="application/javascript"
+    )
+
+@bp.route("/firebase-messaging-sw.js")
+def firebase_messaging_sw():
+    """Firebase Messaging Service Worker'ı root'tan sun - FCM için gerekli"""
+    return send_from_directory(
+        os.path.join(current_app.root_path, "static"),
+        "firebase-messaging-sw.js",
+        mimetype="application/javascript"
+    )
+
+@bp.route("/favicon.ico")
+def favicon():
+    """Favicon'u root'tan sun"""
+    return send_from_directory(
+        os.path.join(current_app.root_path, "static"),
+        "favicon.ico",
+        mimetype="image/x-icon"
+    )
+
+@bp.route("/dashboard")
+def dashboard():
+    opencage_key = current_app.config.get("OPENCAGE_API_KEY", "")
+    return render_template("dashboard.html", opencage_key=opencage_key)
+
+@bp.route("/results", methods=["GET", "POST"])
+def show_results():
+    try:
+        if request.method == "POST":
+            # Formdan gelen verileri al
+            data = request.form
+            birth_date_str = data["birth_date"]
+            birth_time_str = data["birth_time"]
+            latitude_str = data["latitude"]
+            longitude_str = data["longitude"]
+            user_name = data.get("name", "Değerli Danışanım")
+            
+            # Transit bilgileri (opsiyonel)
+            transit_date = data.get("transit_date")
+            transit_time = data.get("transit_time")
+            transit_lat = data.get("transit_latitude")
+            transit_lng = data.get("transit_longitude")
+            
+            transit_info = None
+            if transit_date and transit_time:
+                transit_info = {
+                    "date": transit_date,
+                    "time": transit_time,
+                    "latitude": float(transit_lat) if transit_lat else float(latitude_str),
+                    "longitude": float(transit_lng) if transit_lng else float(longitude_str)
+                }
+
+            # Astrolojik hesaplamaları yap
+            birth_date = datetime.strptime(birth_date_str, "%Y-%m-%d").date()
+            birth_time = parse_time_flexible(birth_time_str)
+            
+            astro_data = calculate_astro_data(
+                birth_date=birth_date,
+                birth_time=birth_time,
+                latitude=float(latitude_str),
+                longitude=float(longitude_str),
+                transit_info=transit_info
+            )
+
+            if not astro_data or "error" in astro_data:
+                flash("Hesaplama sırasında bir hata oluştu.")
+                return redirect(url_for("main.dashboard"))
+
+            # Kullanıcı bilgilerini ekle
+            astro_data["user_name"] = user_name
+            astro_data["birth_info"] = {
+                "user_name": user_name,
+                "date": birth_date_str,
+                "time": birth_time_str,
+                "location": {"latitude": latitude_str, "longitude": longitude_str, "name": data.get("birth_place_suggestion", "")}
+            }
+
+            return render_template("new_result.html", astro_data=astro_data, user_name=user_name)
+        
+        # GET ise (doğrudan linkle gelindiyse)
+        return render_template("new_result.html", astro_data=None, user_name=None)
+
+    except Exception as e:
+        logger.error(f"show_results hatası: {str(e)}", exc_info=True)
+        flash("Bir hata oluştu.")
+        return redirect(url_for("main.dashboard"))
+
+@bp.route("/api/get_ai_interpretation", methods=["POST"])
+def api_get_ai_interpretation():
+    try:
+        data = request.get_json()
+        interpretation_type = data.get("interpretation_type", "daily")
+        astro_data = data.get("astro_data", {})
+        user_name = data.get("user_name", "Değerli Danışanım")
+
+        # Ek parametreler (tarih, dönem vb.) - hem Türkçe hem İngilizce destekle
+        extra_params = {
+            "date": data.get("date") or data.get("tarih"),
+            "start_date": data.get("start_date") or data.get("baslangic_tarihi"),
+            "end_date": data.get("end_date") or data.get("bitis_tarihi"),
+            "period": data.get("period") or data.get("donem"),
+            "duration": data.get("duration") or data.get("sure")
+        }
+        # None değerleri temizle
+        extra_params = {k: v for k, v in extra_params.items() if v is not None}
+
+        result = ai_interpretations.get_ai_interpretation_engine(
+            astro_data, interpretation_type, user_name, **extra_params
+        )
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"API hatası: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@bp.route("/settings")
+def settings():
+    return render_template("settings.html")
+
+@bp.route("/search_location")
+def search_location():
+    query = request.args.get("query", "")
+    if not query or len(query) < 3:
+        return jsonify({"locations": []})
+    
+    try:
+        results = _get_cached_locations(query)
+        return jsonify({"locations": results})
+    except Exception as e:
+        logger.error(f"Location search error: {str(e)}")
+        return jsonify({"locations": [], "error": str(e)}), 500
+
+@cached_location_search()
+def _get_cached_locations(query):
+    service = get_location_service()
+    return service.search_location(query)

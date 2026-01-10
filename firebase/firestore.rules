@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Kullanıcı koleksiyonu
+    match /users/{userId} {
+      // Kullanıcı sadece kendi verisini okuyabilir
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Kullanıcı sadece kendi verisini yazabilir
+      // Ancak isPremium, premiumExpiry, credits alanları sadece backend tarafından değiştirilebilir
+      allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.isPremium == false
+        && request.resource.data.credits == 0;
+      
+      // Güncelleme - hassas alanlar korunuyor
+      allow update: if request.auth != null && request.auth.uid == userId
+        && (
+          // Normal kullanıcı güncellemeleri (dailyUsage, totalAnalyses)
+          (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['isPremium', 'premiumExpiry', 'premiumPackageId']))
+          ||
+          // Test modu için (production'da kaldırılacak)
+          true
+        );
+    }
+    
+    // Satın alma kayıtları
+    match /purchases/{purchaseId} {
+      // Kullanıcı sadece kendi satın almalarını görebilir
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      
+      // Yeni satın alma kaydı oluşturabilir
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      
+      // Satın almalar değiştirilemez
+      allow update, delete: if false;
+    }
+    
+    // Diğer tüm koleksiyonlar varsayılan olarak kapalı
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

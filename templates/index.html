@@ -1,101 +1,409 @@
-{% extends "layout.html" %}
+{% extends "layout.html" %} {% block title %}ORBIS - Kaderin Geometrisi{%
+endblock %} {% block head %} {{ super() }}
+<style>
+  .feature-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+  }
+  .feature-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(91, 43, 238, 0.3);
+    transform: translateY(-2px);
+  }
+  .tutorial-step {
+    opacity: 0;
+    transform: translateX(20px);
+    animation: slideIn 0.4s ease forwards;
+  }
+  .tutorial-step:nth-child(1) {
+    animation-delay: 0.1s;
+  }
+  .tutorial-step:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  .tutorial-step:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+  .tutorial-step:nth-child(4) {
+    animation-delay: 0.4s;
+  }
+  @keyframes slideIn {
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="relative flex-1 flex flex-col overflow-hidden">
+  <div
+    class="relative z-10 flex flex-col flex-1 px-6 pt-10 pb-20 max-w-md mx-auto w-full"
+  >
+    <!-- Brand / Hero Section -->
+    <div class="flex-1 flex flex-col items-center justify-center relative">
+      <div class="relative w-52 h-52 mb-6">
+        <div
+          class="absolute inset-0 border border-slate-700/50 rounded-full opacity-30"
+        ></div>
+        <div
+          class="absolute inset-4 border border-slate-700/50 rotate-45 opacity-20"
+        ></div>
+        <div class="relative w-full h-full flex items-center justify-center">
+          <div
+            class="absolute inset-0 border border-slate-500/30 rounded-full opacity-40 animate-spin-slow"
+            style="border-style: dashed"
+          ></div>
+          <div
+            class="absolute inset-8 border border-primary/50 rounded-full opacity-60"
+          ></div>
 
-{% block title %}Astro AI - Anasayfa{% endblock %}
-
-{% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <!-- Hero Section -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl overflow-hidden">
-        <div class="relative">
-            <!-- Sabit renk gradyanı -->
-            <div class="absolute inset-0" style="background: linear-gradient(to right, #4c1d95, #7e22ce);">
-            </div>
-            <div class="relative px-6 py-16 sm:px-12 sm:py-24 lg:py-32 lg:px-16">
-                <div class="md:w-3/5 text-white">
-                    <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-                        Astro AI'a Hoş Geldiniz
-                    </h1>
-                    <p class="mt-6 max-w-3xl text-xl">
-                        Modern teknolojinin antik bilgelikle buluştuğu noktada, yıldızların sizin için ne söylediğini
-                        keşfedin.
-                        Astro AI, doğum haritanızı profesyonel astrologların bilgisiyle yorumlar.
-                    </p>
-                    <div class="mt-10 flex gap-4">
-                        <a href="{{ url_for('main.dashboard') }}"
-                            style="display:inline-flex; align-items:center; padding: 0.75rem 2rem; background-color: #4f46e5; color: white; border-radius: 0.5rem; font-weight: 600; font-size: 1.125rem; text-decoration: none; transition: background-color 0.2s;">
-                            <span style="display:flex; align-items:center;">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    style="height: 1.25rem; width: 1.25rem; margin-right: 0.5rem;" viewBox="0 0 20 20"
-                                    fill="currentColor">
-                                    <path fill-rule="evenodd"
-                                        d="M5 4a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V5a1 1 0 00-1-1H5zm8.5 4a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 3a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm-7 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 3a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm7 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                                Dashboard'a Git
-                            </span>
-                        </a>
-                    </div>
-                </div>
-            </div>
+          <!-- App Logo / AI Avatar Container -->
+          <div
+            class="relative w-40 h-40 rounded-full overflow-hidden shadow-[0_0_60px_rgba(91,43,238,0.5)] border-2 border-primary/30 animate-pulse"
+          >
+            <img
+              src="{{ url_for('static', filename='ai-avatar-R.png') }}"
+              alt="ORBIS AI"
+              class="w-full h-full object-cover"
+            />
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-background-dark/30 via-transparent to-transparent opacity-60"
+            ></div>
+          </div>
         </div>
+      </div>
+
+      <!-- Title Section -->
+      <div class="text-center space-y-2 animate-fade-in mb-4">
+        <h1
+          class="font-display text-5xl font-bold tracking-[0.2em] text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]"
+        >
+          ORBIS
+        </h1>
+        <p
+          class="font-display text-[10px] uppercase tracking-[0.4em] text-primary font-bold"
+        >
+          Kaderin Geometrisi
+        </p>
+      </div>
+
+      <!-- Nasıl Kullanılır Butonu -->
+      <button
+        onclick="openTutorialModal()"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-[10px] uppercase tracking-widest text-slate-300 hover:text-white transition-all mb-6"
+      >
+        <span class="material-icons-round text-sm">help_outline</span>
+        Nasıl Kullanılır?
+      </button>
     </div>
 
-    <!-- Features Section -->
-    <div class="py-16 sm:py-24">
-        <div class="text-center">
-            <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
-                Astro AI ile Keşfedin
-            </h2>
-            <p class="mt-4 text-lg text-gray-500 dark:text-gray-400">
-                Doğum haritanızı analiz ederek hayatınızdaki kozmik etkileri anlayın.
-            </p>
+    <!-- Uygulama Tanıtımı -->
+    <div class="flex-none space-y-4">
+      <div
+        class="bg-surface-dark/40 backdrop-blur-xl rounded-2xl p-5 border border-white/5 shadow-2xl"
+      >
+        <p class="text-sm text-slate-300 leading-relaxed text-center">
+          <span class="text-primary font-bold">ORBIS</span>, yapay zeka destekli
+          astroloji platformudur. Doğum haritanızı analiz eder, transit
+          gezegenlerle karşılaştırır ve
+          <span class="text-accent">kişiselleştirilmiş kozmik yorumlar</span>
+          sunar.
+        </p>
+      </div>
+
+      <!-- Özellik Kartları -->
+      <div class="grid grid-cols-3 gap-2 mb-4">
+        <div class="feature-card rounded-xl p-3 text-center">
+          <span class="material-icons-round text-primary text-xl mb-1"
+            >auto_awesome</span
+          >
+          <p
+            class="text-[9px] text-slate-400 uppercase tracking-wider font-bold"
+          >
+            AI Yorumlar
+          </p>
         </div>
-
-        <div class="mt-12 grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            <!-- Feature 1 -->
-            <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
-                <div class="text-indigo-600 dark:text-indigo-400">
-                    <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
-                        </path>
-                    </svg>
-                </div>
-                <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">Detaylı Analiz</h3>
-                <p class="mt-2 text-gray-500 dark:text-gray-400">
-                    Gezegenlerin konumları ve açıları hakkında detaylı bilgi edinin.
-                </p>
-            </div>
-
-            <!-- Feature 2 -->
-            <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
-                <div class="text-indigo-600 dark:text-indigo-400">
-                    <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
-                        </path>
-                    </svg>
-                </div>
-                <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">AI Yorumları</h3>
-                <p class="mt-2 text-gray-500 dark:text-gray-400">
-                    Yapay zeka destekli astrolojik yorumlarla geleceğe ışık tutun.
-                </p>
-            </div>
-
-            <!-- Feature 3 -->
-            <div class="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
-                <div class="text-indigo-600 dark:text-indigo-400">
-                    <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-                <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">Anlık Hesaplama</h3>
-                <p class="mt-2 text-gray-500 dark:text-gray-400">
-                    Saniyeler içinde doğum haritanızı oluşturun ve yorumlayın.
-                </p>
-            </div>
+        <div class="feature-card rounded-xl p-3 text-center">
+          <span class="material-icons-round text-accent text-xl mb-1"
+            >psychology</span
+          >
+          <p
+            class="text-[9px] text-slate-400 uppercase tracking-wider font-bold"
+          >
+            15+ Analiz
+          </p>
         </div>
+        <div class="feature-card rounded-xl p-3 text-center">
+          <span class="material-icons-round text-pink-400 text-xl mb-1"
+            >record_voice_over</span
+          >
+          <p
+            class="text-[9px] text-slate-400 uppercase tracking-wider font-bold"
+          >
+            Sesli Okuma
+          </p>
+        </div>
+      </div>
+
+      <!-- Main Actions -->
+      <div class="space-y-3">
+        <a
+          href="{{ url_for('main.dashboard') }}"
+          class="w-full bg-primary hover:bg-violet-600 text-white font-display font-bold py-4 px-6 rounded-2xl shadow-[0_0_30px_rgba(91,43,238,0.4)] transition-all active:scale-[0.98] flex items-center justify-center gap-3 group relative overflow-hidden"
+        >
+          <div
+            class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"
+          ></div>
+          <span class="tracking-[0.2em] text-xs">KEŞFETMEYE BAŞLA</span>
+          <span
+            class="material-icons-round text-lg transition-transform group-hover:translate-x-1"
+            >arrow_forward</span
+          >
+        </a>
+
+        <p
+          class="text-center text-[9px] text-slate-500 font-mono tracking-widest uppercase opacity-60"
+        >
+          Siber-Astroloji v2.0 • Orbis Inc.
+        </p>
+      </div>
     </div>
+  </div>
 </div>
+
+<!-- Nasıl Kullanılır Modal -->
+<div
+  id="tutorialModal"
+  class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] hidden items-center justify-center p-4"
+  onclick="if(event.target === this) closeTutorialModal()"
+>
+  <div
+    class="bg-slate-900 border border-white/10 rounded-3xl max-w-md w-full max-h-[85vh] overflow-hidden shadow-2xl"
+  >
+    <!-- Modal Header -->
+    <div class="p-5 border-b border-white/5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/50"
+        >
+          <img
+            src="{{ url_for('static', filename='ai-avatar-R.png') }}"
+            alt="ORBIS"
+            class="w-full h-full object-cover"
+          />
+        </div>
+        <div>
+          <h2 class="text-white font-bold text-base">
+            ORBIS Nasıl Kullanılır?
+          </h2>
+          <p class="text-[9px] text-slate-500 uppercase tracking-wider">
+            Adım Adım Rehber
+          </p>
+        </div>
+      </div>
+      <button
+        onclick="closeTutorialModal()"
+        class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all"
+      >
+        <span class="material-icons-round text-lg">close</span>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="p-5 overflow-y-auto max-h-[55vh] space-y-3">
+      <!-- Adım 1 -->
+      <div
+        class="tutorial-step flex gap-3 p-3 bg-white/5 rounded-xl border border-white/5"
+      >
+        <div
+          class="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0"
+        >
+          <span class="text-primary font-bold text-sm">1</span>
+        </div>
+        <div>
+          <h3 class="text-white font-bold text-xs mb-1">
+            Doğum Bilgilerinizi Girin
+          </h3>
+          <p class="text-slate-400 text-[10px] leading-relaxed">
+            İsminizi, doğum tarihinizi, saatinizi ve doğum yerinizi girin.
+          </p>
+        </div>
+      </div>
+
+      <!-- Adım 2 -->
+      <div
+        class="tutorial-step flex gap-3 p-3 bg-white/5 rounded-xl border border-white/5"
+      >
+        <div
+          class="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center flex-shrink-0"
+        >
+          <span class="text-accent font-bold text-sm">2</span>
+        </div>
+        <div>
+          <h3 class="text-white font-bold text-xs mb-1">
+            Transit Bilgilerini Ayarlayın
+          </h3>
+          <p class="text-slate-400 text-[10px] leading-relaxed">
+            Hangi tarih ve konum için analiz istediğinizi belirleyin.
+          </p>
+        </div>
+      </div>
+
+      <!-- Adım 3 -->
+      <div
+        class="tutorial-step flex gap-3 p-3 bg-white/5 rounded-xl border border-white/5"
+      >
+        <div
+          class="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center flex-shrink-0"
+        >
+          <span class="text-pink-400 font-bold text-sm">3</span>
+        </div>
+        <div>
+          <h3 class="text-white font-bold text-xs mb-1">Analizi Başlatın</h3>
+          <p class="text-slate-400 text-[10px] leading-relaxed">
+            "Analizi Başlat" butonuna tıklayın. ORBIS haritanızı hesaplayacak.
+          </p>
+        </div>
+      </div>
+
+      <!-- Adım 4 -->
+      <div
+        class="tutorial-step flex gap-3 p-3 bg-white/5 rounded-xl border border-white/5"
+      >
+        <div
+          class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0"
+        >
+          <span class="text-emerald-400 font-bold text-sm">4</span>
+        </div>
+        <div>
+          <h3 class="text-white font-bold text-xs mb-1">
+            AI Yorumlarını Keşfedin
+          </h3>
+          <p class="text-slate-400 text-[10px] leading-relaxed">
+            "ORBIS AI" sekmesinde detaylı yorumları okuyun veya dinleyin!
+          </p>
+        </div>
+      </div>
+
+      <!-- Özellikler -->
+      <div
+        class="mt-4 p-3 bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl border border-primary/20"
+      >
+        <h4
+          class="text-white font-bold text-[10px] uppercase tracking-wider mb-2 flex items-center gap-2"
+        >
+          <span class="material-icons-round text-primary text-xs">stars</span>
+          ORBIS Özellikleri
+        </h4>
+        <div class="grid grid-cols-2 gap-1.5 text-[9px] text-slate-300">
+          <div class="flex items-center gap-1.5">
+            <span class="material-icons-round text-primary text-[10px]"
+              >check_circle</span
+            >
+            15+ Farklı Analiz
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="material-icons-round text-accent text-[10px]"
+              >check_circle</span
+            >
+            AI Destekli Yorumlar
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="material-icons-round text-pink-400 text-[10px]"
+              >check_circle</span
+            >
+            Sesli Okuma
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="material-icons-round text-emerald-400 text-[10px]"
+              >check_circle</span
+            >
+            Transit Analizi
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="material-icons-round text-amber-400 text-[10px]"
+              >check_circle</span
+            >
+            Vedik Astroloji
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="material-icons-round text-cyan-400 text-[10px]"
+              >check_circle</span
+            >
+            Dönemsel Öngörüler
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="p-4 border-t border-white/5">
+      <button
+        onclick="closeTutorialModal()"
+        class="w-full py-3 bg-primary hover:bg-primary/80 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl transition-all active:scale-[0.98]"
+      >
+        Anladım, Başlayalım!
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Copyright Footer -->
+<footer class="mt-8 pb-6 text-center px-4">
+  <!-- Sorumluluk Reddi -->
+  <div
+    class="max-w-md mx-auto mb-4 p-3 rounded-xl bg-slate-800/30 border border-slate-700/30"
+  >
+    <p class="text-[9px] text-slate-500 leading-relaxed">
+      <span class="text-amber-500/70">⚠️</span>
+      Bu uygulama yalnızca eğlence ve kişisel keşif amaçlıdır. Sunulan
+      astrolojik yorumlar, yapay zeka tarafından üretilmiş genel bilgilerdir ve
+      profesyonel danışmanlık niteliği taşımaz.
+    </p>
+  </div>
+
+  <p class="text-[10px] text-slate-600">© 2025 ORBIS Astrology</p>
+  <p class="text-[9px] text-slate-700 mt-1">by Erkan ERDEM</p>
+  <div class="flex items-center justify-center gap-3 mt-2">
+    <a
+      href="{{ url_for('legal.terms_of_service') }}"
+      class="text-[8px] text-slate-600 hover:text-slate-400 transition-colors"
+      >Kullanım Koşulları</a
+    >
+    <span class="text-slate-700">•</span>
+    <a
+      href="{{ url_for('legal.privacy_policy') }}"
+      class="text-[8px] text-slate-600 hover:text-slate-400 transition-colors"
+      >Gizlilik Politikası</a
+    >
+  </div>
+</footer>
+
+{% endblock %} {% block scripts %}
+<script>
+  // Tutorial Modal Functions
+  function openTutorialModal() {
+    document.getElementById("tutorialModal").classList.remove("hidden");
+    document.getElementById("tutorialModal").classList.add("flex");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeTutorialModal() {
+    document.getElementById("tutorialModal").classList.add("hidden");
+    document.getElementById("tutorialModal").classList.remove("flex");
+    document.body.style.overflow = "";
+    localStorage.setItem("orbis_tutorial_seen", "true");
+  }
+
+  $(document).ready(function () {
+    $(".animate-fade-in").css("opacity", "0").animate({ opacity: 1 }, 1200);
+
+    // İlk ziyarette tutorial modal'ı otomatik aç
+    const tutorialSeen = localStorage.getItem("orbis_tutorial_seen");
+    if (!tutorialSeen) {
+      setTimeout(() => openTutorialModal(), 800);
+    }
+  });
+</script>
 {% endblock %}

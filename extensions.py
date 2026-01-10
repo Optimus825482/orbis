@@ -1,7 +1,27 @@
+"""
+Flask Extensions
+
+Merkezi extension yönetimi. Production'da CORS kısıtlanmalıdır.
+"""
+import os
 from flask_cors import CORS
 
 cors = CORS()
 
 def init_extensions(app):
     """Extension'ları başlat."""
-    cors.init_app(app)
+    # Production için CORS kısıtlaması
+    if os.environ.get('FLASK_ENV') == 'production':
+        cors.init_app(app, resources={
+            r"/api/*": {
+                "origins": [
+                    "https://ast-kappa.vercel.app",
+                    "https://*.vercel.app"
+                ],
+                "methods": ["GET", "POST", "OPTIONS"],
+                "allow_headers": ["Content-Type"]
+            }
+        })
+    else:
+        # Development: her şeye izin ver
+        cors.init_app(app)

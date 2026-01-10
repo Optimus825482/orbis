@@ -1,0 +1,82 @@
+ORBIS - KULLANIM ŞARTLARI
+==========================
+Son güncelleme: 10 Ocak 2026
+
+1. ŞARTLARIN KABULÜ
+-------------------
+ORBIS uygulamasını ("Uygulama") kullanarak, bu Kullanım Şartları'nı ("Şartlar") okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan etmiş olursunuz. Bu şartları kabul etmiyorsanız, lütfen Uygulamayı kullanmayınız.
+
+2. HİZMET TANIMI
+----------------
+ORBIS, yapay zeka destekli bir astroloji platformudur. Sunduğumuz hizmetler:
+- Doğum haritası (natal chart) hesaplama ve görselleştirme
+- Transit gezegen analizleri
+- AI destekli kişiselleştirilmiş yorumlar
+- Vedik astroloji hesaplamaları
+- Sesli yorum okuma özelliği
+
+3. ÖNEMLİ SORUMLULUK REDDİ
+--------------------------
+*** DİKKAT ***
+
+ORBIS YALNIZCA EĞLENCE AMAÇLIDIR.
+
+Sunulan astrolojik yorumlar ve analizler bilimsel gerçeklik iddiası taşımamaktadır. Sağlık, finans, hukuk veya diğer önemli yaşam kararlarınızı ORBIS yorumlarına dayandırmamanızı şiddetle tavsiye ederiz.
+
+ORBIS:
+- Tıbbi tavsiye yerine geçmez
+- Finansal danışmanlık sağlamaz
+- Psikolojik terapi yerine kullanılamaz
+- Geleceği kesin olarak tahmin etmez
+
+4. KULLANICI YÜKÜMLÜLÜKLERİ
+---------------------------
+
+4.1 Yaş Sınırı:
+13 yaşından büyük olmalısınız. 18 yaşından küçükseniz ebeveyn/vasi onayı gereklidir.
+
+4.2 Doğru Bilgi:
+Doğum bilgilerinizi doğru girmelisiniz. Yanlış bilgi, hatalı sonuçlara yol açar.
+
+4.3 Kötüye Kullanım Yasağı:
+Uygulamayı yasadışı amaçlarla, spam veya kötü amaçlı yazılım dağıtmak için kullanamazsınız.
+
+4.4 Fikri Mülkiyet:
+İçerikleri izinsiz kopyalayamaz, dağıtamaz veya ticari amaçla kullanamazsınız.
+
+5. REKLAMLAR
+------------
+ORBIS ücretsiz sürümü, Google AdMob aracılığıyla reklam içermektedir. Reklamlar üçüncü taraf içeriklerdir ve ORBIS, reklam içeriklerinden sorumlu değildir.
+
+6. FİKRİ MÜLKİYET HAKLARI
+-------------------------
+ORBIS uygulaması, logosu, tasarımı, içerikleri ve yazılımı telif hakkı ile korunmaktadır.
+
+İzin Verilenler:
+- Kişisel kullanım için yorumlarınızı kaydedebilirsiniz
+- Sosyal medyada paylaşabilirsiniz (kaynak belirterek)
+
+Yasak Olanlar:
+- Ticari amaçla kullanım
+- Tersine mühendislik
+
+7. HİZMET DEĞİŞİKLİKLERİ
+------------------------
+ORBIS, herhangi bir zamanda ve önceden bildirimde bulunmaksızın hizmetlerini değiştirme, askıya alma veya sonlandırma hakkını saklı tutar.
+
+8. SORUMLULUK SINIRLAMASI
+-------------------------
+ORBIS, uygulamanın kullanımından kaynaklanan doğrudan, dolaylı, arızi, özel veya sonuç olarak ortaya çıkan zararlardan sorumlu tutulamaz. Uygulama "OLDUĞU GİBİ" sunulmaktadır ve herhangi bir garanti verilmemektedir.
+
+9. UYGULANACAK HUKUK
+--------------------
+Bu Şartlar, Türkiye Cumhuriyeti kanunlarına tabidir. Herhangi bir uyuşmazlık durumunda İstanbul Mahkemeleri ve İcra Daireleri yetkilidir.
+
+10. İLETİŞİM
+------------
+ORBIS Destek
+E-posta: support@orbis.app
+Web: https://orbis.app
+
+---
+© 2026 ORBIS - Tüm hakları saklıdır.

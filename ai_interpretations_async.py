@@ -13,6 +13,7 @@ Kullanım:
 import os
 import logging
 import asyncio
+import json
 from typing import Optional, Dict, Any
 import aiohttp
 from dotenv import load_dotenv
@@ -33,14 +34,12 @@ def load_local_settings():
 local_settings = load_local_settings()
 
 # API Keys
-HYPERBOLIC_API_KEY = local_settings.get("hyperbolic_api_key") or os.getenv("HYPERBOLIC_API_KEY")
 GOOGLE_API_KEY = local_settings.get("llm_api_key") or os.getenv("GOOGLE_API_KEY")
 OPENROUTER_API_KEY = local_settings.get("openrouter_api_key") or os.getenv("OPENROUTER_API_KEY")
 ZAI_API_KEY = local_settings.get("zai_api_key") or os.getenv("ZAI_API_KEY")
 DEEPSEEK_API_KEY = local_settings.get("deepseek_api_key") or os.getenv("DEEPSEEK_API_KEY")
 
 # API Endpoints
-HYPERBOLIC_API_URL = "https://api.hyperbolic.xyz/v1/chat/completions"
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 ZAI_API_URL = "https://api.zai-api.com/v1/chat/completions"
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
@@ -196,54 +195,7 @@ async def call_zai_async(session: aiohttp.ClientSession, prompt: str) -> Optiona
         return {"success": False, "error": str(e)}
 
 
-async def call_hyperbolic_async(session: aiohttp.ClientSession, prompt: str, max_tokens: int = 4028) -> Optional[Dict[str, Any]]:
-    """
-    Hyperbolic API'ye async çağrı yap.
-    
-    Args:
-        session: aiohttp ClientSession
-        prompt: Prompt text
-        max_tokens: Maximum tokens for response
-        
-    Returns:
-        Response dictionary or None if error
-    """
-    if not HYPERBOLIC_API_KEY:
-        logger.error("HYPERBOLIC_API_KEY not configured")
-        return None
-    
-    headers = {
-        "Authorization": f"Bearer {HYPERBOLIC_API_KEY}",
-        "Content-Type": "application/json",
-    }
-    
-    payload = {
-        "model": "deepseek-ai/DeepSeek-V3",
-        "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": max_tokens,
-    }
-    
-    try:
-        async with session.post(HYPERBOLIC_API_URL, json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=30)) as response:
-            response.raise_for_status()
-            data = await response.json()
-            
-            if "choices" in data and len(data["choices"]) > 0:
-                interpretation = data["choices"][0]["message"]["content"]
-                return {"success": True, "interpretation": interpretation}
-            else:
-                logger.error("Hyperbolic API response missing 'choices'")
-                return {"success": False, "error": "Invalid response format"}
-                
-    except asyncio.TimeoutError:
-        logger.error("Hyperbolic API timeout")
-        return {"success": False, "error": "Request timeout"}
-    except aiohttp.ClientError as e:
-        logger.error(f"Hyperbolic API error: {e}")
-        return {"success": False, "error": str(e)}
-    except Exception as e:
-        logger.error(f"Unexpected error calling Hyperbolic: {e}")
-        return {"success": False, "error": str(e)}
+# Hyperbolic functions removed
 
 
 async def call_openrouter_async(session: aiohttp.ClientSession, prompt: str, model: str = "deepseek/deepseek-chat") -> Optional[Dict[str, Any]]:
@@ -335,21 +287,36 @@ async def generate_interpretation_async(
                 user_message=data if isinstance(data, str) else data.get("message", "")
             )
         elif provider == "birth_chart":
+            # Doğru key: natal_planet_positions (eski: planet_positions)
+            positions = data.get("natal_planet_positions") or data.get("planet_positions", {})
             planet_positions_str = ""
-            for planet, details in data.get("planet_positions", {}).items():
-                planet_positions_str += f"- {planet}: {details.get('degree', '?')}° {details.get('sign', '?')}\n"
+            for planet, details in positions.items():
+                if isinstance(details, dict) and 'degree' in details:
+                    sign = details.get('sign', '?')
+                    house = details.get('house', '')
+                    retro = " (R)" if details.get('retrograde') else ""
+                    house_str = f" - {house}. Ev" if house else ""
+                    planet_positions_str += f"- {planet}: {details['degree']:.2f}° {sign}{house_str}{retro}\n"
             
-            ascendant_str = f"{data.get('ascendant', {}).get('sign', '?')} {data.get('ascendant', {}).get('degree', '?'):.2f}°"
+            # Doğru key: natal_ascendant (eski: ascendant)
+            asc_info = data.get("natal_ascendant") or data.get("ascendant", {})
+            if isinstance(asc_info, dict) and asc_info.get('degree') is not None:
+                ascendant_str = f"{asc_info.get('sign', '?')} {asc_info.get('degree', 0):.2f}°"
+            else:
+                ascendant_str = "Bilinmiyor"
             
+            # Doğru key: natal_aspects (eski: aspects)
+            aspects = data.get("natal_aspects") or data.get("aspects", [])
             aspects_str = ""
-            for aspect in data.get("aspects", []):
-                aspects_str += f"- {aspect.get('planet1', '?')} {aspect.get('aspect_type', '?')} {aspect.get('planet2', '?')} (Orb: {aspect.get('orb', '?'):.2f})\n"
+            for aspect in aspects[:20]:  # En önemli 20 açı
+                if isinstance(aspect, dict):
+                    aspects_str += f"- {aspect.get('planet1', '?')} {aspect.get('aspect_type', '?')} {aspect.get('planet2', '?')} (Orb: {aspect.get('orb', 0):.2f}°)\n"
             
             prompt = BIRTH_CHART_PROMPT.format(
                 user_name=user_name,
-                planet_positions=planet_positions_str,
+                planet_positions=planet_positions_str or "Gezegen verisi yok.",
                 ascendant=ascendant_str,
-                aspects=aspects_str,
+                aspects=aspects_str or "Açı verisi yok.",
             )
             logger.debug(f"Generated birth_chart prompt: {prompt[:200]}...")
             
@@ -362,21 +329,32 @@ async def generate_interpretation_async(
             logger.debug(f"Generated detailed prompt: {prompt[:200]}...")
             
         elif provider == "transit":
+            # Doğru key: natal_planet_positions
+            natal_positions = data.get("natal_planet_positions") or data.get("planet_positions", {})
             natal_planets_str = ""
-            if "planet_positions" in data:
-                for planet, details in data["planet_positions"].items():
-                    natal_planets_str += f"- {planet}: {details.get('degree', '?'):.2f}° {details.get('sign', '?')} ({details.get('house', '?')}. Ev)\n"
+            for planet, details in natal_positions.items():
+                if isinstance(details, dict) and 'degree' in details:
+                    retro = " (R)" if details.get('retrograde') else ""
+                    natal_planets_str += f"- {planet}: {details.get('degree', 0):.2f}° {details.get('sign', '?')} ({details.get('house', '?')}. Ev){retro}\n"
             
+            # Transit pozisyonları
+            transit_positions = data.get("transit_positions") or data.get("transit_planet_positions", {})
             transit_planets_str = ""
-            if "transit_positions" in data:
-                for planet, details in data["transit_positions"].items():
-                    retro = "R" if details.get("retrograde", False) else ""
-                    transit_planets_str += f"- {planet}: {details.get('longitude', '?'):.2f}° {details.get('sign', '?')} ({details.get('house', '?')}. Ev) {retro}\n"
+            for planet, details in transit_positions.items():
+                if isinstance(details, dict):
+                    deg = details.get('longitude') or details.get('degree', 0)
+                    retro = " (R)" if details.get("retrograde", False) else ""
+                    transit_planets_str += f"- {planet}: {deg:.2f}° {details.get('sign', '?')} ({details.get('house', '?')}. Ev){retro}\n"
             
+            # Transit-Natal Açıları
+            transit_aspects = data.get("transit_to_natal_aspects") or data.get("transit_natal_aspects", [])
             transit_aspects_str = ""
-            if "transit_natal_aspects" in data:
-                for aspect in data["transit_natal_aspects"]:
-                    transit_aspects_str += f"- Transit {aspect.get('transit_planet', '?')} {aspect.get('aspect', '?')} Natal {aspect.get('natal_planet', '?')} (Orb: {aspect.get('orb', '?'):.2f}°)\n"
+            for aspect in transit_aspects[:25]:
+                if isinstance(aspect, dict):
+                    p1 = aspect.get('transit_planet') or aspect.get('planet1') or aspect.get('planet', '?')
+                    p2 = aspect.get('natal_planet') or aspect.get('planet2', '?')
+                    asp_type = aspect.get('aspect') or aspect.get('aspect_type', '?')
+                    transit_aspects_str += f"- Transit {p1} {asp_type} Natal {p2} (Orb: {aspect.get('orb', 0):.2f}°)\n"
             
             prompt = TRANSIT_ANALYSIS_PROMPT.format(
                 user_name=user_name,
@@ -404,11 +382,7 @@ async def generate_interpretation_async(
         if result and result.get("success"):
             return result
 
-        logger.warning("DeepSeek başarısız oldu, Hyperbolic deneniyor...")
-        result = await call_hyperbolic_async(session, prompt)
-        
-        if result and result.get("success"):
-            return result
+        logger.warning("DeepSeek başarısız oldu, OpenRouter deneniyor...")
         
         logger.warning("Hyperbolic başarısız oldu, OpenRouter deneniyor...")
         result = await call_openrouter_async(session, prompt)

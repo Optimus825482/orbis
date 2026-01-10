@@ -1,6 +1,26 @@
 {
   "version": 2,
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Service-Worker-Allowed", "value": "/" },
+        { "key": "Content-Type", "value": "application/javascript" }
+      ]
+    },
+    {
+      "source": "/static/js/sw.js",
+      "headers": [
+        { "key": "Service-Worker-Allowed", "value": "/" },
+        { "key": "Content-Type", "value": "application/javascript" }
+      ]
+    }
+  ],
   "rewrites": [
+    {
+      "source": "/sw.js",
+      "destination": "/static/js/sw.js"
+    },
     {
       "source": "/(.*)",
       "destination": "/api/index"
