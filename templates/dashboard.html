@@ -990,10 +990,10 @@ endblock %} {% block head %} {{ super() }}
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify( { device_id: deviceId, email: userEmail } ),
               } );
-              
+
               const recordResult = await recordResponse.json();
               console.log( "[ORBIS] Ad watch recorded:", recordResult );
-            } catch (recordError) {
+            } catch ( recordError ) {
               console.error( "[ORBIS] Failed to record ad watch:", recordError );
               // Devam et yine de - kayıt hatasında kullanıcıyı bloklamayalım
             }
@@ -1002,7 +1002,6 @@ endblock %} {% block head %} {{ super() }}
           } else {
             console.warn( "[ORBIS] OrbisRewardedAds not available" );
             alert( "Reklam sistemi yüklenemedi. Lütfen uygulamayı yeniden başlatın." );
-            $( "#loadingOverlay" ).addClass( "hidden" ).removeClass( "flex" );
             return;
           }
         } else {
@@ -1012,6 +1011,8 @@ endblock %} {% block head %} {{ super() }}
           }
         }
 
+        // 🎯 ŞU NOKTADA REKLAM BİTMİŞ, DEVAM ET
+        console.log( "[ORBIS] 🔄 Reklam kontrolü tamamlandı, loading başlıyor..." );
         $( "#loadingOverlay" ).removeClass( "hidden" ).addClass( "flex" );
         let msgIdx = 0;
         const msgInterval = setInterval( () => {
