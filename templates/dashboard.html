@@ -949,7 +949,8 @@ endblock %} {% block head %} {{ super() }}
           console.log( "[ORBIS] Rewarded ad required for analysis" );
 
           // Rewarded ad göster
-          if ( window.OrbisRewardedAds ) {
+          if ( window.OrbisRewardedAds && typeof window.OrbisRewardedAds.showForAnalysis === 'function' ) {
+            console.log( "[ORBIS] OrbisRewardedAds.showForAnalysis is available" );
             const rewarded = await window.OrbisRewardedAds.showForAnalysis();
 
             if ( !rewarded ) {
