@@ -94,35 +94,6 @@
           ]
         }
       }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:768649602152:android:0bed32c337f0d24f1907dd",
-        "android_client_info": {
-          "package_name": "com.orbisastro.orbis"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "768649602152-aous93aj0cnn8bjdsqvjo4t62ip2feci.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBqE1fm9Z5_o8NpzUvkY4kfSx-oxXUW2MU"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "768649602152-aous93aj0cnn8bjdsqvjo4t62ip2feci.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
     }
   ],
   "configuration_version": "1"
