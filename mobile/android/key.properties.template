@@ -1,0 +1,99 @@
+# 🔑 key.properties Template
+
+## ⚠️ UYARI
+
+Bu dosya GİZLİ tutulmalı ve asla git'e commit edilmemeli!
+
+Şu dosyaya ekleyeceksiniz:
+```
+D:\astro-ai-predictor\backend\flask_app\mobile\android\key.properties
+```
+
+---
+
+## İçerik
+
+```properties
+# Keystore şifresi
+storePassword=OrbisAstroKeyStore2025!Secure
+
+# Key şifresi (genellikle aynısı)
+keyPassword=OrbisKeyPass2025!Secure
+
+# Key alias (keystore oluştururken kullanılan ad)
+keyAlias=orbis-key
+
+# Keystore dosya yolu (relative to android folder)
+storeFile=app/orbis-release-key.jks
+```
+
+---
+
+## Nasıl Oluşturulur?
+
+### PowerShell'de (Windows):
+
+```powershell
+cd "D:\astro-ai-predictor\backend\flask_app\mobile\android"
+
+@"
+storePassword=OrbisAstroKeyStore2025!Secure
+keyPassword=OrbisKeyPass2025!Secure
+keyAlias=orbis-key
+storeFile=app/orbis-release-key.jks
+"@ | Out-File -Encoding UTF8 key.properties
+```
+
+### Git Bash'de (Linux/Mac):
+
+```bash
+cd D:/astro-ai-predictor/backend/flask_app/mobile/android
+
+cat > key.properties << EOF
+storePassword=OrbisAstroKeyStore2025!Secure
+keyPassword=OrbisKeyPass2025!Secure
+keyAlias=orbis-key
+storeFile=app/orbis-release-key.jks
+EOF
+```
+
+---
+
+## .gitignore'a Ekle
+
+Bu dosyayı git'ten hariç tutun:
+
+```bash
+cd D:/astro-ai-predictor/backend/flask_app/mobile
+
+# .gitignore dosyasını açın ve şunu ekleyin:
+echo "key.properties" >> .gitignore
+echo "*.jks" >> .gitignore
+echo "*.keystore" >> .gitignore
+```
+
+---
+
+## Doğrulama
+
+Dosya oluşturulduktan sonra:
+
+```bash
+# Dosya mevcut mu?
+ls -la D:\astro-ai-predictor\backend\flask_app\mobile\android\key.properties
+
+# İçeriği kontrol et
+cat D:\astro-ai-predictor\backend\flask_app\mobile\android\key.properties
+```
+
+**Beklenen çıktı:**
+```
+storePassword=OrbisAstroKeyStore2025!Secure
+keyPassword=OrbisKeyPass2025!Secure
+keyAlias=orbis-key
+storeFile=app/orbis-release-key.jks
+```
+
+---
+
+**Created:** 2026-02-02
