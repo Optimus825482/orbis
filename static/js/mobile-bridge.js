@@ -110,11 +110,20 @@ const OrbisBridge = {
 
     console.log("[ORBIS] Durum:", this.getStatusSummary());
 
+    // User properties ayarla
+    this.setUserProperties({
+      user_type: this.state.isPremium ? "premium" : "free",
+      credits_available: this.state.credits,
+      platform: this.state.isNative ? "mobile" : "web",
+      install_date: this.state.installDate || "unknown",
+    });
+
     // GA: Uygulama başlatma event'i
     this.trackEvent("app_start", {
       platform: this.state.isNative ? "native" : "web",
       is_premium: this.state.isPremium,
       credits: this.state.credits,
+      total_analyses: this.state.totalAnalyses || 0,
     });
   },
 
@@ -129,17 +138,149 @@ const OrbisBridge = {
    */
   trackEvent(eventName, params = {}) {
     try {
+      const enrichedParams = {
+        ...params,
+        timestamp: new Date().toISOString(),
+        user_type: this.state.isPremium ? "premium" : "free",
+        platform: this.state.isNative ? "mobile" : "web",
+        session_id: this.getSessionId(),
+      };
+
+      // Google Analytics
       if (typeof gtag === "function") {
-        gtag("event", eventName, {
-          ...params,
-          timestamp: new Date().toISOString(),
-          user_type: this.state.isPremium ? "premium" : "free",
-        });
-        console.log(`[GA] Event: ${eventName}`, params);
+        gtag("event", eventName, enrichedParams);
+        console.log(`[GA4] Event: ${eventName}`, enrichedParams);
+      }
+
+      // Firebase Analytics (native only)
+      if (this.state.isNative && typeof Capacitor !== "undefined") {
+        try {
+          const { FirebaseAnalytics } = Capacitor.Plugins;
+          if (FirebaseAnalytics) {
+            FirebaseAnalytics.logEvent({
+              name: eventName,
+              params: this.sanitizeFirebaseParams(enrichedParams),
+            });
+            console.log(`[Firebase] Event: ${eventName}`);
+          }
+        } catch (fbError) {
+          console.log("[Firebase] Analytics not available:", fbError.message);
+        }
       }
     } catch (error) {
       console.error("[GA] Event tracking error:", error);
     }
+  },
+
+  /**
+   * Firebase için parametre temizleme (max 100 karakter)
+   */
+  sanitizeFirebaseParams(params) {
+    const sanitized = {};
+    for (const [key, value] of Object.entries(params)) {
+      if (typeof value === "string" && value.length > 100) {
+        sanitized[key] = value.substring(0, 97) + "...";
+      } else if (typeof value === "object") {
+        sanitized[key] = JSON.stringify(value).substring(0, 100);
+      } else {
+        sanitized[key] = value;
+      }
+    }
+    return sanitized;
+  },
+
+  /**
+   * Session ID oluştur/al
+   */
+  getSessionId() {
+    let sessionId = sessionStorage.getItem("orbis_session_id");
+    if (!sessionId) {
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      sessionStorage.setItem("orbis_session_id", sessionId);
+    }
+    return sessionId;
+  },
+
+  /**
+   * User properties ayarla
+   */
+  setUserProperties(properties) {
+    try {
+      if (typeof gtag === "function") {
+        gtag("set", "user_properties", properties);
+        console.log("[GA4] User properties set:", properties);
+      }
+
+      if (this.state.isNative && typeof Capacitor !== "undefined") {
+        try {
+          const { FirebaseAnalytics } = Capacitor.Plugins;
+          if (FirebaseAnalytics) {
+            for (const [key, value] of Object.entries(properties)) {
+              FirebaseAnalytics.setUserProperty({ name: key, value: String(value) });
+            }
+          }
+        } catch (fbError) {
+          console.log("[Firebase] setUserProperty failed:", fbError.message);
+        }
+      }
+    } catch (error) {
+      console.error("[GA] User properties error:", error);
+    }
+  },
+
+  /**
+   * Conversion tracking
+   */
+  trackConversion(conversionType, value = 0, currency = "TRY") {
+    this.trackEvent("conversion", {
+      conversion_type: conversionType,
+      value: value,
+      currency: currency,
+    });
+
+    // Enhanced ecommerce için
+    if (typeof gtag === "function" && value > 0) {
+      gtag("event", "purchase", {
+        transaction_id: `txn_${Date.now()}`,
+        value: value,
+        currency: currency,
+        items: [
+          {
+            item_id: conversionType,
+            item_name: conversionType,
+            price: value,
+            quantity: 1,
+          },
+        ],
+      });
+    }
+  },
+
+  /**
+   * Error tracking
+   */
+  trackError(error, context = {}) {
+    const errorData = {
+      error_message: error.message || String(error),
+      error_stack: error.stack ? error.stack.substring(0, 500) : "N/A",
+      error_context: JSON.stringify(context).substring(0, 200),
+      page_url: window.location.href,
+    };
+
+    this.trackEvent("app_error", errorData);
+
+    console.error("[ORBIS] Error tracked:", errorData);
+  },
+
+  /**
+   * Funnel tracking
+   */
+  trackFunnelStep(funnelName, stepName, stepNumber) {
+    this.trackEvent("funnel_step", {
+      funnel_name: funnelName,
+      step_name: stepName,
+      step_number: stepNumber,
+    });
   },
 
   /**

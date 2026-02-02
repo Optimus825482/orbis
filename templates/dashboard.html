@@ -749,6 +749,11 @@ endblock %} {% block head %} {{ super() }}
     orbisForm.addEventListener( "submit", function ( e ) {
       e.preventDefault(); // Önce formu durdur
 
+      // Funnel tracking: Form başlangıcı
+      if ( window.OrbisBridge && typeof window.OrbisBridge.trackFunnelStep === 'function' ) {
+        window.OrbisBridge.trackFunnelStep( "analysis_flow", "form_submitted", 1 );
+      }
+
       // Validation - latitude/longitude kontrolü
       const latitude = document.getElementById( "latitude" ).value;
       const longitude = document.getElementById( "longitude" ).value;
@@ -948,14 +953,31 @@ endblock %} {% block head %} {{ super() }}
         if ( usage.requires_ad ) {
           console.log( "[ORBIS] Rewarded ad required for analysis" );
 
+          // Funnel: Reklam gerekli adımı
+          if ( window.OrbisBridge && typeof window.OrbisBridge.trackFunnelStep === 'function' ) {
+            window.OrbisBridge.trackFunnelStep( "analysis_flow", "ad_required", 2 );
+          }
+
           // Rewarded ad göster
           if ( window.OrbisRewardedAds && typeof window.OrbisRewardedAds.showForAnalysis === 'function' ) {
             console.log( "[ORBIS] OrbisRewardedAds.showForAnalysis is available" );
             const rewarded = await window.OrbisRewardedAds.showForAnalysis();
 
             if ( !rewarded ) {
+              // Funnel: Reklam izlenmedi
+              if ( window.OrbisBridge ) {
+                window.OrbisBridge.trackEvent( "ad_skipped_or_failed", {
+                  reason: "user_declined_or_error",
+                  step: "analysis_start"
+                } );
+              }
               alert( "Analiz yapmak için reklam izlemeniz gerekiyor!" );
               return;
+            }
+
+            // Funnel: Reklam izlendi
+            if ( window.OrbisBridge ) {
+              window.OrbisBridge.trackFunnelStep( "analysis_flow", "ad_watched", 3 );
             }
 
             // Reklam izlendi, kullanımı kaydet
@@ -968,6 +990,11 @@ endblock %} {% block head %} {{ super() }}
             console.log( "[ORBIS] Ad watched, usage recorded" );
           } else {
             console.warn( "[ORBIS] OrbisRewardedAds not available" );
+          }
+        } else {
+          // Funnel: Reklam gerekmiyor (premium veya limit içinde)
+          if ( window.OrbisBridge ) {
+            window.OrbisBridge.trackFunnelStep( "analysis_flow", "no_ad_required", 2 );
           }
         }
 
@@ -1015,11 +1042,30 @@ endblock %} {% block head %} {{ super() }}
         };
         console.log( "[ORBIS] Final form values:", finalValues );
 
+        // Funnel: Form gönderiliyor
+        if ( window.OrbisBridge && typeof window.OrbisBridge.trackFunnelStep === 'function' ) {
+          window.OrbisBridge.trackFunnelStep( "analysis_flow", "form_submitting", 4 );
+          window.OrbisBridge.trackEvent( "analysis_request", {
+            has_transit_data: !!transitDateDisplay,
+            is_premium: window.OrbisBridge.state?.isPremium || false
+          } );
+        }
+
         // Formu gönder
         console.log( "[ORBIS] Submitting form NOW..." );
         document.getElementById( "orbisForm" ).submit();
       } catch ( error ) {
         console.error( "[ORBIS] submitForm ERROR:", error );
+
+        // Error tracking
+        if ( window.OrbisBridge && typeof window.OrbisBridge.trackError === 'function' ) {
+          window.OrbisBridge.trackError( error, {
+            location: "dashboard_submit_form",
+            birth_date: birthDateDisplay,
+            transit_date: transitDateDisplay
+          } );
+        }
+
         alert( "Form gönderilirken hata: " + error.message );
         $( "#loadingOverlay" ).addClass( "hidden" ).removeClass( "flex" );
       }
