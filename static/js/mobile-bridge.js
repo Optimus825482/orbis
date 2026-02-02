@@ -1092,6 +1092,49 @@ const OrbisBridge = {
 // Global erişim
 window.OrbisBridge = OrbisBridge;
 
+// OrbisRewardedAds alias - results sayfası için uyumluluk
+window.OrbisRewardedAds = {
+  showForInterpretation: async function() {
+    console.log("[ORBIS] OrbisRewardedAds.showForInterpretation called");
+    
+    if (!OrbisBridge.state.isNative) {
+      console.log("[ORBIS] Web platform - simulating ad watched");
+      return true; // Web'de reklam simüle et
+    }
+    
+    try {
+      const { AdMob } = Capacitor.Plugins;
+      
+      return new Promise(async (resolve) => {
+        const rewardListener = AdMob.addListener("onRewardedVideoAdReward", () => {
+          console.log("[ORBIS] Reward earned!");
+          rewardListener.remove();
+          resolve(true);
+        });
+        
+        const dismissListener = AdMob.addListener("onRewardedVideoAdDismissed", () => {
+          dismissListener.remove();
+          setTimeout(() => resolve(false), 100);
+        });
+        
+        try {
+          await AdMob.showRewardVideoAd();
+          // Yeni reklam yükle
+          OrbisBridge.loadRewardedAd();
+        } catch (error) {
+          console.error("[ORBIS] Show rewarded ad error:", error);
+          rewardListener.remove();
+          dismissListener.remove();
+          resolve(false);
+        }
+      });
+    } catch (error) {
+      console.error("[ORBIS] OrbisRewardedAds error:", error);
+      return false;
+    }
+  }
+};
+
 // Sayfa yüklendiğinde başlat
 document.addEventListener("DOMContentLoaded", () => {
   OrbisBridge.init();
