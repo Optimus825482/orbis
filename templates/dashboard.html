@@ -963,6 +963,8 @@ endblock %} {% block head %} {{ super() }}
             console.log( "[ORBIS] OrbisRewardedAds.showForAnalysis is available" );
             const rewarded = await window.OrbisRewardedAds.showForAnalysis();
 
+            console.log( "[ORBIS] Rewarded ad result:", rewarded );
+
             if ( !rewarded ) {
               // Funnel: Reklam izlenmedi
               if ( window.OrbisBridge ) {
@@ -972,6 +974,7 @@ endblock %} {% block head %} {{ super() }}
                 } );
               }
               alert( "Analiz yapmak için reklam izlemeniz gerekiyor!" );
+              $( "#loadingOverlay" ).addClass( "hidden" ).removeClass( "flex" );
               return;
             }
 
@@ -981,15 +984,26 @@ endblock %} {% block head %} {{ super() }}
             }
 
             // Reklam izlendi, kullanımı kaydet
-            await fetch( "/api/record_ad_watch", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify( { device_id: deviceId, email: userEmail } ),
-            } );
+            try {
+              const recordResponse = await fetch( "/api/record_ad_watch", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify( { device_id: deviceId, email: userEmail } ),
+              } );
+              
+              const recordResult = await recordResponse.json();
+              console.log( "[ORBIS] Ad watch recorded:", recordResult );
+            } catch (recordError) {
+              console.error( "[ORBIS] Failed to record ad watch:", recordError );
+              // Devam et yine de - kayıt hatasında kullanıcıyı bloklamayalım
+            }
 
-            console.log( "[ORBIS] Ad watched, usage recorded" );
+            console.log( "[ORBIS] ✅ Ad watched successfully, proceeding to submit..." );
           } else {
             console.warn( "[ORBIS] OrbisRewardedAds not available" );
+            alert( "Reklam sistemi yüklenemedi. Lütfen uygulamayı yeniden başlatın." );
+            $( "#loadingOverlay" ).addClass( "hidden" ).removeClass( "flex" );
+            return;
           }
         } else {
           // Funnel: Reklam gerekmiyor (premium veya limit içinde)
