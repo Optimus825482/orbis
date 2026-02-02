@@ -75,10 +75,7 @@ def create_app(test_config=None):
         force_https=os.getenv("FLASK_ENV") == "production",
         strict_transport_security=os.getenv("FLASK_ENV") == "production",
         session_cookie_secure=os.getenv("FLASK_ENV") == "production",
-        session_cookie_httponly=True,
-        session_cookie_samesite='Lax',
         content_security_policy=None,  # CSP devre dışı - mobil app uyumluluğu için
-        force_https_permanent=False
     )
     
     # CSRF protection için secret key kontrolü
