@@ -22,8 +22,8 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="com.orbis.astrology" />
-                  <option name="mobileSdkAppId" value="1:768649602152:android:60ed300755196e4d1907dd" />
+                  <option name="appId" value="com.orbisapp.astrology" />
+                  <option name="mobileSdkAppId" value="1:768649602152:android:368bf247de7864521907dd" />
                   <option name="projectId" value="orbis-ffa9e" />
                   <option name="projectNumber" value="768649602152" />
                 </ConnectionSetting>
