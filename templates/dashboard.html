@@ -711,7 +711,7 @@ endblock %} {% block head %} {{ super() }}
       try {
         const data = JSON.parse( savedData );
         console.log( "[ORBIS] Parsed birth data:", data );
-        
+
         if ( data.name ) {
           document.getElementById( "name" ).value = data.name;
           console.log( "[ORBIS] ✓ Name loaded:", data.name );
@@ -735,7 +735,7 @@ endblock %} {% block head %} {{ super() }}
           document.getElementById( "longitude" ).value = data.longitude;
           console.log( "[ORBIS] ✓ Coordinates loaded:", data.latitude, data.longitude );
         }
-        
+
         console.log( "[ORBIS] ✅ Birth data successfully restored from cache!" );
       } catch ( e ) {
         console.error( "[ORBIS] ❌ Error loading stored info:", e );

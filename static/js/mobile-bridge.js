@@ -776,28 +776,62 @@ const OrbisBridge = {
     return new Promise(async (resolve) => {
       try {
         const { AdMob } = Capacitor.Plugins;
+        
+        let rewarded = false;
+        let rewardListener = null;
+        let dismissListener = null;
+        let failedListener = null;
+        
+        // Tüm listener'ları temizle
+        const cleanup = () => {
+          try {
+            if (rewardListener) rewardListener.remove();
+            if (dismissListener) dismissListener.remove();
+            if (failedListener) failedListener.remove();
+          } catch (e) {
+            console.log("[ORBIS] Listener cleanup:", e);
+          }
+        };
 
-        const rewardListener = AdMob.addListener(
+        // Ödül kazanıldığında
+        rewardListener = await AdMob.addListener(
           "onRewardedVideoAdReward",
           () => {
-            console.log("[ORBIS] Ödül kazanıldı!");
+            console.log("[ORBIS] ✅ Ödül kazanıldı!");
+            rewarded = true;
 
             // GA: Rewarded ad izlendi event'i
             this.trackEvent("ad_reward", {
               ad_type: "rewarded",
               reward_type: "analysis_credit",
             });
-
-            rewardListener.remove();
-            resolve(true);
           }
         );
 
-        const dismissListener = AdMob.addListener(
+        // Reklam kapatıldığında (ödül alınsa da alınmasa da bu tetiklenir)
+        dismissListener = await AdMob.addListener(
           "onRewardedVideoAdDismissed",
           () => {
-            dismissListener.remove();
-            setTimeout(() => resolve(false), 100);
+            console.log("[ORBIS] Reklam kapatıldı, ödül durumu:", rewarded);
+            cleanup();
+            
+            // Yeni reklam yükle
+            this.loadRewardedAd();
+            
+            // Biraz bekle ve sonucu döndür
+            setTimeout(() => {
+              resolve(rewarded);
+            }, 300);
+          }
+        );
+        
+        // Reklam yüklenemezse
+        failedListener = await AdMob.addListener(
+          "onRewardedVideoAdFailedToLoad",
+          (error) => {
+            console.error("[ORBIS] Rewarded ad yüklenemedi:", error);
+            cleanup();
+            resolve(false);
           }
         );
 
@@ -806,10 +840,9 @@ const OrbisBridge = {
           ad_type: "rewarded",
         });
 
+        console.log("[ORBIS] Rewarded video gösteriliyor...");
         await AdMob.showRewardVideoAd();
-
-        // Yeni reklam yükle
-        this.loadRewardedAd();
+        
       } catch (error) {
         console.error("[ORBIS] Rewarded ad gösterme hatası:", error);
         resolve(false);
