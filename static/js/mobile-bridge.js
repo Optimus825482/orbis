@@ -1125,11 +1125,22 @@ const OrbisBridge = {
 // Global erişim
 window.OrbisBridge = OrbisBridge;
 
-// OrbisRewardedAds alias - results sayfası için uyumluluk
+// OrbisRewardedAds alias - results sayfası ve dashboard için uyumluluk
 window.OrbisRewardedAds = {
+  // Results sayfası için
   showForInterpretation: async function() {
     console.log("[ORBIS] OrbisRewardedAds.showForInterpretation called");
-    
+    return this._showRewardedAd();
+  },
+  
+  // Dashboard için
+  showForAnalysis: async function() {
+    console.log("[ORBIS] OrbisRewardedAds.showForAnalysis called");
+    return this._showRewardedAd();
+  },
+  
+  // Ortak rewarded ad gösterme fonksiyonu
+  _showRewardedAd: async function() {
     if (!OrbisBridge.state.isNative) {
       console.log("[ORBIS] Web platform - simulating ad watched");
       return true; // Web'de reklam simüle et
@@ -1139,25 +1150,54 @@ window.OrbisRewardedAds = {
       const { AdMob } = Capacitor.Plugins;
       
       return new Promise(async (resolve) => {
-        const rewardListener = AdMob.addListener("onRewardedVideoAdReward", () => {
-          console.log("[ORBIS] Reward earned!");
-          rewardListener.remove();
-          resolve(true);
+        let rewarded = false;
+        let rewardListener = null;
+        let dismissListener = null;
+        let failedListener = null;
+        
+        // Tüm listener'ları temizle
+        const cleanup = () => {
+          try {
+            if (rewardListener) rewardListener.remove();
+            if (dismissListener) dismissListener.remove();
+            if (failedListener) failedListener.remove();
+          } catch (e) {
+            console.log("[ORBIS] Listener cleanup:", e);
+          }
+        };
+
+        // Ödül kazanıldığında
+        rewardListener = await AdMob.addListener("onRewardedVideoAdReward", () => {
+          console.log("[ORBIS] ✅ Reward earned!");
+          rewarded = true;
         });
         
-        const dismissListener = AdMob.addListener("onRewardedVideoAdDismissed", () => {
-          dismissListener.remove();
-          setTimeout(() => resolve(false), 100);
-        });
-        
-        try {
-          await AdMob.showRewardVideoAd();
+        // Reklam kapatıldığında
+        dismissListener = await AdMob.addListener("onRewardedVideoAdDismissed", () => {
+          console.log("[ORBIS] Ad dismissed, rewarded:", rewarded);
+          cleanup();
+          
           // Yeni reklam yükle
           OrbisBridge.loadRewardedAd();
+          
+          setTimeout(() => {
+            resolve(rewarded);
+          }, 300);
+        });
+        
+        // Reklam yüklenemezse
+        failedListener = await AdMob.addListener("onRewardedVideoAdFailedToLoad", (error) => {
+          console.error("[ORBIS] Rewarded ad failed to load:", error);
+          cleanup();
+          resolve(false);
+        });
+
+        try {
+          console.log("[ORBIS] Showing rewarded video ad...");
+          await AdMob.showRewardVideoAd();
         } catch (error) {
           console.error("[ORBIS] Show rewarded ad error:", error);
-          rewardListener.remove();
-          dismissListener.remove();
+          cleanup();
           resolve(false);
         }
       });
