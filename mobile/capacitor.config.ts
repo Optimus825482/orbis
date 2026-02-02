@@ -5,11 +5,13 @@ const config: CapacitorConfig = {
   appName: "ORBIS",
   webDir: "www",
 
-  // Server configuration - Production URL
+  // Server configuration - Coolify Production URL
   server: {
-    url: "https://ast-kappa.vercel.app",
+    // TODO: Coolify URL'ini buraya yaz (örn: https://orbis.yourdomain.com)
+    // Şimdilik local test için:
+    // url: "http://10.0.2.2:8005", // Android emulator için
     androidScheme: "https",
-    cleartext: false,
+    cleartext: true, // HTTP için gerekli (development)
   },
 
   plugins: {
