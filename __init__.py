@@ -69,33 +69,17 @@ def create_app(test_config=None):
     init_extensions(app)
 
     # Security headers and HTTPS enforcement
-    if os.getenv("FLASK_ENV") == "production":
-        # Production'da Talisman aktif - HTTP security headers
-        Talisman(
-            app,
-            force_https=True,
-            strict_transport_security=True,
-            session_cookie_secure=True,
-            session_cookie_httponly=True,
-            session_cookie_samesite='Lax',
-            content_security_policy={
-                'default-src': "'self'",
-                'script-src': "'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdn.tailwindcss.com",
-                'style-src': "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.tailwindcss.com",
-                'img-src': "'self' data: https: blob:",
-                'font-src': "'self' data: https:",
-                'connect-src': "'self' https://fcm.googleapis.com https://*.firebaseio.com",
-                'frame-src': "'none'",
-            },
-            force_https_permanent=True
-        )
-    else:
-        # Development'da TLS skip et (HTTP için)
-        Talisman(
-            app,
-            force_https=False,
-            session_cookie_secure=False,
-        )
+    # CSP mobil uygulama için devre dışı - inline script/style ve CDN'ler gerekli
+    Talisman(
+        app,
+        force_https=os.getenv("FLASK_ENV") == "production",
+        strict_transport_security=os.getenv("FLASK_ENV") == "production",
+        session_cookie_secure=os.getenv("FLASK_ENV") == "production",
+        session_cookie_httponly=True,
+        session_cookie_samesite='Lax',
+        content_security_policy=None,  # CSP devre dışı - mobil app uyumluluğu için
+        force_https_permanent=False
+    )
     
     # CSRF protection için secret key kontrolü
     if not app.config.get("SECRET_KEY"):

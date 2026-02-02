@@ -7,11 +7,9 @@ const config: CapacitorConfig = {
 
   // Server configuration - Coolify Production URL
   server: {
-    // TODO: Coolify URL'ini buraya yaz (örn: https://orbis.yourdomain.com)
-    // Şimdilik local test için:
-    // url: "http://10.0.2.2:8005", // Android emulator için
+    url: "https://app.orbisastro.online",
     androidScheme: "https",
-    cleartext: true, // HTTP için gerekli (development)
+    cleartext: false,
   },
 
   plugins: {

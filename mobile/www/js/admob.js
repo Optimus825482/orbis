@@ -273,7 +273,7 @@ const OrbisAds = {
   },
 
   /**
-   * Rewarded Interstitial reklam yükle
+   * Rewarded Video reklam yükle (Analiz için)
    */
   async loadRewarded() {
     if (!this.isInitialized) return;
@@ -282,11 +282,15 @@ const OrbisAds = {
       const { AdMob } = Capacitor.Plugins;
 
       await AdMob.prepareRewardVideoAd({
-        adId: this.AD_UNITS.REWARDED_INTERSTITIAL,
+        adId: this.AD_UNITS.REWARDED_ANALYSIS,  // Rewarded Video ID kullan
         isTesting: false, // Production mode
       });
+
+      this.rewardedLoaded = true;
+      console.log("[AdMob] Rewarded loaded successfully");
     } catch (error) {
       console.error("[AdMob] Load rewarded error:", error);
+      this.rewardedLoaded = false;
     }
   },
 
