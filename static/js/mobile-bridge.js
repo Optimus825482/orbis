@@ -49,7 +49,7 @@ const OrbisBridge = {
       APP_ID: "ca-app-pub-2444093901783574~4683309361",
       BANNER: "ca-app-pub-2444093901783574/5860659669",
       INTERSTITIAL: "ca-app-pub-2444093901783574/8840184408",
-      REWARDED: "ca-app-pub-2444093901783574/4900939398",
+      REWARDED: "ca-app-pub-2444093901783574/9083651006",
     },
 
     // Interstitial gösterim aralığı (her X analizde bir)

@@ -7,6 +7,35 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:768649602152:android:60ed300755196e4d1907dd",
+        "android_client_info": {
+          "package_name": "com.orbis.astrology"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "768649602152-aous93aj0cnn8bjdsqvjo4t62ip2feci.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBqE1fm9Z5_o8NpzUvkY4kfSx-oxXUW2MU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "768649602152-aous93aj0cnn8bjdsqvjo4t62ip2feci.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:768649602152:android:368bf247de7864521907dd",
         "android_client_info": {
           "package_name": "com.orbisapp.astrology"
@@ -19,6 +48,14 @@
           "android_info": {
             "package_name": "com.orbisapp.astrology",
             "certificate_hash": "6716164640df40f246eb57327bbd09c7b6afa538"
+          }
+        },
+        {
+          "client_id": "768649602152-vn89llv5o14bgijgcar6nprklb8j3e5u.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.orbisapp.astrology",
+            "certificate_hash": "3ed8d6388a9a2dbfab32f28f02fb2e014d0d128e"
           }
         },
         {
