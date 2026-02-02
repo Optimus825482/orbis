@@ -142,7 +142,8 @@ class UsageTracker:
             "is_admin": is_admin,
             "premium_until": "lifetime" if is_admin else user_data.get("premium_until"),
             "show_ads": not is_premium,  # Admin ve premium kullanıcılara reklam gösterme
-            "requires_ad": not is_premium  # Ücretsiz kullanıcılar her işlem için reklam izlemeli
+            "requires_ad": not is_premium,  # Ücretsiz kullanıcılar her işlem için reklam izlemeli
+            "last_ad_watch": user_data.get("last_ad_watch")  # Son reklam izleme zamanı
         }
         
         print(f"[UsageTracker] get_user_usage result: {result}")
@@ -198,6 +199,31 @@ class UsageTracker:
             }
         
         # Ücretsiz kullanıcı - HER İŞLEM İÇİN REKLAM ZORUNLU
+        # ⚠️ CRITICAL: Son 5 dakika içinde reklam izlendiyse geçerli say
+        last_ad_watch = usage.get("last_ad_watch")
+        
+        if last_ad_watch:
+            try:
+                last_ad_time = datetime.fromisoformat(last_ad_watch)
+                elapsed = (datetime.now() - last_ad_time).total_seconds()
+                
+                # Son 5 dakika içinde reklam izlendiyse geçerli
+                if elapsed < 300:  # 5 dakika = 300 saniye
+                    print(f"[UsageTracker] ✅ Reklam {elapsed:.0f} saniye önce izlendi, geçerli")
+                    return {
+                        "allowed": True,
+                        "reason": "ad_recently_watched",
+                        "remaining": "unlimited",
+                        "show_ads": False,
+                        "requires_ad": False,  # Reklam az önce izlendi
+                        "message": "Analiz yapabilirsiniz",
+                        "ad_valid_for": int(300 - elapsed)  # Kalan süre
+                    }
+                else:
+                    print(f"[UsageTracker] ⏰ Reklam {elapsed:.0f} saniye önce izlendi, süresi doldu")
+            except (ValueError, TypeError) as e:
+                print(f"[UsageTracker] ⚠️ last_ad_watch parse error: {e}")
+        
         print(f"[UsageTracker] Ücretsiz kullanıcı - reklam izleme zorunlu")
         return {
             "allowed": True, 
@@ -212,10 +238,13 @@ class UsageTracker:
         """
         Kullanımı kaydet (reklam izleme)
         feature: 'ad_watch' - analiz veya yorum için reklam izlendi
+        
+        ⚠️ CRITICAL: Son reklam izleme zamanını kaydet (5 dk geçerli)
         """
         today = date.today().isoformat()
+        now = datetime.now()
         
-        print(f"[UsageTracker] ")
+        print(f"[UsageTracker] record_usage: {device_id}, {feature}")
         
         # Supabase'e yaz
         if self.use_supabase:
@@ -225,16 +254,14 @@ class UsageTracker:
                 
                 if doc.exists:
                     user_data = doc.to_dict()
-                    print(f"[UsageTracker] ")
                 else:
                     user_data = {
                         "device_id": device_id,
                         "email": email,
                         "usage": {},
                         "premium": False,
-                        "created_at": datetime.now().isoformat()
+                        "created_at": now.isoformat()
                     }
-                    print(f"[UsageTracker] ")
                 
                 # Admin ve Premium kontrolü
                 is_admin = self._is_admin(email)
@@ -244,20 +271,25 @@ class UsageTracker:
                         user_data["usage"] = {}
                     old_usage = user_data["usage"].get(today, 0)
                     user_data["usage"][today] = old_usage + 1
-                    user_data["updated_at"] = datetime.now().isoformat()
+                    
+                    # 🔥 CRITICAL: Son reklam izleme zamanını kaydet
+                    user_data["last_ad_watch"] = now.isoformat()
+                    user_data["updated_at"] = now.isoformat()
+                    
                     doc_ref.set(user_data)
-                    print(f"[UsageTracker] ")
+                    print(f"[UsageTracker] ✅ Reklam izlendi, timestamp kaydedildi: {user_data['last_ad_watch']}")
                 else:
-                    print(f"[UsageTracker] ")
+                    print(f"[UsageTracker] Admin/Premium - kayıt atlandı")
                 
             except Exception as e:
-                print(f"[UsageTracker] ")
+                print(f"[UsageTracker] Supabase error: {e}")
                 # Fallback to memory
                 if device_id not in self._memory_storage:
                     self._memory_storage[device_id] = {"usage": {}, "premium": False}
                 if today not in self._memory_storage[device_id].get("usage", {}):
                     self._memory_storage[device_id]["usage"][today] = 0
                 self._memory_storage[device_id]["usage"][today] += 1
+                self._memory_storage[device_id]["last_ad_watch"] = now.isoformat()
         else:
             # Memory/File storage
             data = self._load_data()
@@ -276,12 +308,15 @@ class UsageTracker:
             if not is_admin and not self._check_premium(data[device_id]):
                 old_usage = data[device_id]["usage"][today]
                 data[device_id]["usage"][today] += 1
-                print(f"[UsageTracker] ")
+                
+                # 🔥 CRITICAL: Son reklam izleme zamanını kaydet
+                data[device_id]["last_ad_watch"] = now.isoformat()
+                print(f"[UsageTracker] ✅ Reklam izlendi (memory), timestamp: {data[device_id]['last_ad_watch']}")
             
             self._save_data(data)
         
         result = self.get_user_usage(device_id, email)
-        print(f"[UsageTracker] ")
+        print(f"[UsageTracker] record_usage result: {result}")
         return result
     
     def set_premium(self, device_id: str, days: int = 30) -> dict:
