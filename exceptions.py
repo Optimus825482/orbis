@@ -10,6 +10,7 @@ Kullanım:
     raise InvalidDateError("Geçersiz tarih: 32/01/1990")
 """
 
+from functools import wraps
 from typing import Optional, Any
 
 
@@ -376,6 +377,7 @@ def handle_errors(default_message: str = "Bir hata oluştu"):
             pass
     """
     def decorator(func):
+        @wraps(func)
         def wrapper(*args, **kwargs):
             import logging
             logger = logging.getLogger(__name__)
@@ -412,6 +414,7 @@ def safe_execute(default_value: Any = None):
             pass
     """
     def decorator(func):
+        @wraps(func)
         def wrapper(*args, **kwargs):
             import logging
             logger = logging.getLogger(__name__)

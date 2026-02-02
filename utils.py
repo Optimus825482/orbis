@@ -371,6 +371,8 @@ def log_function_call(func):
         def my_function():
             pass
     """
+    from functools import wraps
+    @wraps(func)
     def wrapper(*args, **kwargs):
         logger.debug(f"Calling {func.__name__} with args={args}, kwargs={kwargs}")
         try:
