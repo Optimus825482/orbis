@@ -101,3 +101,12 @@ app/src/main/assets/capacitor.plugins.json
 app/src/main/res/xml/config.xml
 key.properties
 *.jks
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+fastlane/play-store-credentials.json
+fastlane/orbis-ffa9e-*.json
+fastlane/README.md

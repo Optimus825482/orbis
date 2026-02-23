@@ -1,0 +1,207 @@
+# ═══════════════════════════════════════════════════════════════
+# ORBIS - Fastlane Configuration
+# Kaderin Geometrisi - Android Beta & Release Deployment
+# ═══════════════════════════════════════════════════════════════
+
+default_platform(:android)
+
+platform :android do
+
+  # ─────────────────────────────────────────────────────────────
+  # BETA DEPLOYMENT
+  # Google Play Store Beta (Internal Testing / Closed Testing)
+  # ─────────────────────────────────────────────────────────────
+  desc "Build ve Beta track'e yükle (Internal Testing)"
+  lane :beta do
+    # Version bilgisini göster
+    UI.message("🚀 ORBIS Beta Build başlatılıyor...")
+
+    # AAB (Android App Bundle) oluştur - Play Store AAB istiyor
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      project_dir: "./"
+    )
+
+    # Google Play Store Beta track'e yükle
+    upload_to_play_store(
+      track: "internal",                    # internal / alpha / beta / production
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_apk: true,                # AAB yüklüyoruz, APK değil
+      release_status: "draft"               # draft / completed
+    )
+
+    UI.success("✅ ORBIS Beta başarıyla Play Store Internal Testing'e yüklendi!")
+  end
+
+  # ─────────────────────────────────────────────────────────────
+  # BETA APK - Sadece APK oluştur (Play Store'a yüklemeden)
+  # ─────────────────────────────────────────────────────────────
+  desc "Sadece Release APK oluştur (dağıtım için)"
+  lane :build_apk do
+    UI.message("📦 ORBIS Release APK oluşturuluyor...")
+
+    gradle(
+      task: "assemble",
+      build_type: "Release",
+      project_dir: "./"
+    )
+
+    apk_path = Actions.lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH]
+    UI.success("✅ APK hazır: #{apk_path}")
+  end
+
+  # ─────────────────────────────────────────────────────────────
+  # BETA AAB - Sadece AAB oluştur
+  # ─────────────────────────────────────────────────────────────
+  desc "Sadece Release AAB oluştur"
+  lane :build_aab do
+    UI.message("📦 ORBIS Release AAB oluşturuluyor...")
+
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      project_dir: "./"
+    )
+
+    aab_path = Actions.lane_context[SharedValues::GRADLE_AAB_OUTPUT_PATH]
+    UI.success("✅ AAB hazır: #{aab_path}")
+  end
+
+  # ─────────────────────────────────────────────────────────────
+  # CLOSED BETA (Alpha Track)
+  # ─────────────────────────────────────────────────────────────
+  desc "Closed Beta (Alpha track) yükle"
+  lane :alpha do
+    UI.message("🔒 ORBIS Closed Alpha Build başlatılıyor...")
+
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      project_dir: "./"
+    )
+
+    upload_to_play_store(
+      track: "alpha",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_apk: true,
+      release_status: "draft"
+    )
+
+    UI.success("✅ ORBIS Alpha track'e yüklendi!")
+  end
+
+  # ─────────────────────────────────────────────────────────────
+  # OPEN BETA
+  # ─────────────────────────────────────────────────────────────
+  desc "Open Beta track'e yükle"
+  lane :open_beta do
+    UI.message("🌍 ORBIS Open Beta Build başlatılıyor...")
+
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      project_dir: "./"
+    )
+
+    upload_to_play_store(
+      track: "beta",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_apk: true,
+      release_status: "completed"
+    )
+
+    UI.success("✅ ORBIS Open Beta'ya yüklendi!")
+  end
+
+  # ─────────────────────────────────────────────────────────────
+  # PRODUCTION RELEASE
+  # ─────────────────────────────────────────────────────────────
+  desc "Production'a yükle (DİKKAT: Canlıya çıkar!)"
+  lane :release do
+    UI.message("🚀 ORBIS Production Release başlatılıyor...")
+    UI.important("⚠️  Bu işlem uygulamayı canlıya çıkaracak!")
+
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      project_dir: "./"
+    )
+
+    upload_to_play_store(
+      track: "production",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      skip_upload_apk: true,
+      release_status: "completed"
+    )
+
+    UI.success("✅ ORBIS Production'a yüklendi!")
+  end
+
+  # ─────────────────────────────────────────────────────────────
+  # BETA'DAN PRODUCTION'A PROMOTE ET
+  # ─────────────────────────────────────────────────────────────
+  desc "Beta'daki build'i Production'a promote et"
+  lane :promote_to_production do
+    UI.message("⬆️  Beta build Production'a promote ediliyor...")
+
+    upload_to_play_store(
+      track: "internal",
+      track_promote_to: "production",
+      skip_upload_aab: true,
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+
+    UI.success("✅ Beta build Production'a promote edildi!")
+  end
+
+  # ─────────────────────────────────────────────────────────────
+  # METADATA SYNC
+  # ─────────────────────────────────────────────────────────────
+  desc "Play Store metadata'sını indir"
+  lane :sync_metadata do
+    UI.message("📥 Play Store metadata indiriliyor...")
+    download_from_play_store
+    UI.success("✅ Metadata indirildi: fastlane/metadata/android/")
+  end
+
+  # ─────────────────────────────────────────────────────────────
+  # VERSION BUMP
+  # ─────────────────────────────────────────────────────────────
+  desc "Version code'u artır"
+  lane :bump_version do |options|
+    # build.gradle'dan mevcut version'ı oku
+    build_gradle = File.read("../app/build.gradle")
+    current_version_code = build_gradle.match(/versionCode\s*=\s*(\d+)/)[1].to_i
+    current_version_name = build_gradle.match(/versionName\s*=\s*"([^"]+)"/)[1]
+
+    new_version_code = current_version_code + 1
+
+    # Version name bump (patch)
+    version_parts = current_version_name.split(".")
+    version_parts[2] = (version_parts[2].to_i + 1).to_s
+    new_version_name = version_parts.join(".")
+
+    # build.gradle güncelle
+    updated_gradle = build_gradle
+      .gsub(/versionCode\s*=\s*\d+/, "versionCode = #{new_version_code}")
+      .gsub(/versionName\s*=\s*"[^"]+"/, "versionName = \"#{new_version_name}\"")
+
+    File.write("../app/build.gradle", updated_gradle)
+
+    UI.success("✅ Version güncellendi: #{current_version_name} (#{current_version_code}) → #{new_version_name} (#{new_version_code})")
+  end
+
+end

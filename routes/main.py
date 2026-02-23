@@ -51,6 +51,93 @@ def index():
     return render_template("index.html")
 
 
+@bp.route("/hakkimizda")
+def about():
+    """Hakkımızda sayfası - AdSense onayı için public içerik"""
+    return render_template("public/about.html")
+
+
+@bp.route("/iletisim")
+def contact():
+    """İletişim sayfası - AdSense onayı için public içerik"""
+    return render_template("public/contact.html")
+
+
+@bp.route("/blog")
+def blog_index():
+    """Blog ana sayfası - AdSense onayı için public içerik"""
+    return render_template("public/blog/index.html")
+
+
+@bp.route("/blog/<slug>")
+def blog_post(slug):
+    """Blog yazısı sayfası"""
+    template = f"public/blog/{slug}.html"
+    try:
+        return render_template(template)
+    except Exception:
+        return render_template("404.html"), 404
+
+
+@bp.route("/nasil-calisir")
+def how_it_works():
+    """Nasıl çalışır sayfası - AdSense onayı için public içerik"""
+    return render_template("public/how-it-works.html")
+
+
+@bp.route("/sss")
+def faq():
+    """Sıkça sorulan sorular - AdSense onayı için public içerik"""
+    return render_template("public/faq.html")
+
+
+@bp.route("/robots.txt")
+def robots_txt():
+    """robots.txt dosyası"""
+    content = """User-agent: *
+Allow: /
+Allow: /hakkimizda
+Allow: /iletisim
+Allow: /blog
+Allow: /nasil-calisir
+Allow: /sss
+Allow: /privacy-policy
+Allow: /terms-of-service
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /results
+Disallow: /settings
+
+Sitemap: https://app.orbisastro.online/sitemap.xml
+"""
+    from flask import Response
+    return Response(content, mimetype="text/plain")
+
+
+@bp.route("/sitemap.xml")
+def sitemap_xml():
+    """sitemap.xml dosyası"""
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://app.orbisastro.online/</loc><priority>1.0</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://app.orbisastro.online/hakkimizda</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://app.orbisastro.online/iletisim</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://app.orbisastro.online/nasil-calisir</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://app.orbisastro.online/sss</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://app.orbisastro.online/blog</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://app.orbisastro.online/blog/dogum-haritasi-nedir</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://app.orbisastro.online/blog/transit-gezegen-etkileri</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://app.orbisastro.online/blog/astrolojide-evler-sistemi</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://app.orbisastro.online/blog/yapay-zeka-ve-astroloji</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://app.orbisastro.online/blog/burc-uyumlulugu</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://app.orbisastro.online/privacy-policy</loc><priority>0.5</priority><changefreq>yearly</changefreq></url>
+  <url><loc>https://app.orbisastro.online/terms-of-service</loc><priority>0.5</priority><changefreq>yearly</changefreq></url>
+</urlset>"""
+    from flask import Response
+    return Response(xml, mimetype="application/xml")
+
+
 @bp.route("/sw.js")
 def service_worker():
     """Service Worker'ı root'tan sun - PWA için gerekli"""

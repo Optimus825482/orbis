@@ -1,0 +1,50 @@
+ORBIS is an AI-powered astrology app that analyzes your birth chart and provides personalized cosmic interpretations.
+
+✨ FEATURES
+
+🔮 BIRTH CHART ANALYSIS
+• Detailed natal chart calculation
+• Planet positions and house placements
+• Aspect analysis
+• Visual chart rendering
+
+🤖 AI-POWERED INTERPRETATIONS
+• Personalized astrological readings
+• 15+ analysis categories
+• In-depth character analysis
+• Periodic forecasts
+
+🌙 TRANSIT ANALYSIS
+• Current planetary transits
+• Comparison with natal chart
+• Important transit periods
+• Daily/weekly/monthly effects
+
+📿 VEDIC ASTROLOGY
+• Indian astrology calculations
+• Nakshatra (Moon sign) analysis
+• Dasha periods
+• Vedic interpretation support
+
+🎧 TEXT-TO-SPEECH
+• Listen to AI interpretations
+• Natural voice reading
+• Background playback
+
+📊 DETAILED ANALYSES
+• Sun sign analysis
+• Moon sign analysis
+• Rising sign analysis
+• House interpretations
+• Planetary strengths
+• Elemental balance
+• Modality analysis
+
+⚠️ DISCLAIMER
+ORBIS is for entertainment purposes only. The interpretations provided do not claim scientific validity.
+
+📱 Basic features are free. Upgrade to premium for an ad-free experience.
+
+🔒 Your data is safe. We do not share your personal information with third parties.
+
+Download, explore your birth chart, and begin your cosmic journey!

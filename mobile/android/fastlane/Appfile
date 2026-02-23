@@ -1,0 +1,2 @@
+json_key_file("fastlane/orbis-ffa9e-e53b55f5ade2.json") # Google Play Console API JSON key dosyası
+package_name("com.orbisastro.orbis") # Uygulama package name

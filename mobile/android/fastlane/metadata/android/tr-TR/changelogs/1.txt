@@ -1,0 +1,9 @@
+v1.0.0 - İlk Beta Sürümü
+
+🚀 Yeni Özellikler:
+• Doğum haritası hesaplama ve görselleştirme
+• AI destekli astrolojik yorumlar (15+ kategori)
+• Transit gezegen analizi
+• Vedik astroloji desteği
+• Sesli okuma özelliği
+• Türkçe ve İngilizce dil desteği

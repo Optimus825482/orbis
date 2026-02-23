@@ -1,0 +1,9 @@
+v1.0.0 - First Beta Release
+
+🚀 New Features:
+• Birth chart calculation and visualization
+• AI-powered astrological interpretations (15+ categories)
+• Transit planet analysis
+• Vedic astrology support
+• Text-to-speech feature
+• Turkish and English language support
