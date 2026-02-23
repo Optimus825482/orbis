@@ -1,4 +1,4 @@
-package com.orbisapp.astrology;
+package com.orbisastro.orbis;
 
 import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
