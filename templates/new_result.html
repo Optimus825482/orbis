@@ -1478,7 +1478,7 @@ super() }}
     <footer id="ai-modal-footer"
       class="sticky bottom-0 mt-8 bg-surface-dark/95 backdrop-blur-xl p-3 -mx-4 mb-[-2rem] rounded-b-[3rem] border-t border-white/5 z-20 hidden">
       
-      <!-- Row 1: TTS + Speed + Voice Gender + Copy -->
+      <!-- Row 1: TTS + Speed + Copy -->
       <div class="flex items-center gap-2 mb-2">
         <button id="modal-read-aloud"
           class="px-3 py-2 bg-primary rounded-xl text-[10px] font-bold uppercase tracking-widest text-white flex items-center justify-center gap-1.5 shadow-md shadow-primary/20 active:scale-95 transition-all">
@@ -1500,14 +1500,6 @@ super() }}
             <span class="material-icons-round text-xs">add</span>
             </button>
             </div>
-
-        <!-- Voice Gender Toggle -->
-        <button id="voice-gender-btn" onclick="toggleVoiceGender()"
-          class="flex items-center gap-1 px-2.5 py-1.5 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 active:scale-95 transition-all"
-          title="Ses Değiştir">
-          <span class="material-icons-round text-sm text-pink-400" id="voice-gender-icon">face_3</span>
-          <span class="text-[9px] font-bold text-slate-300" id="voice-gender-label">Kadın</span>
-        </button>
 
         <button id="modal-copy"
           class="ml-auto w-9 h-9 bg-white/5 rounded-xl flex items-center justify-center text-slate-400 hover:text-white border border-white/5 active:scale-95 transition-all"
@@ -2704,7 +2696,7 @@ super() }}
     rate: parseFloat( localStorage.getItem( 'tts-speed' ) || '1.5' ),
     voicesLoaded: false,
     selectedVoice: null,
-    voiceGender: localStorage.getItem( 'tts-voice-gender' ) || 'female', // 'male' | 'female'
+    voiceGender: 'female', // Fixed to female voice
 
     // Platform detection
     isNative: false,
@@ -2712,8 +2704,7 @@ super() }}
 
     async init() {
       console.log( '[TTS] Engine initializing...' );
-      // Update voice gender UI
-      this.updateVoiceGenderUI();
+      // Voice gender fixed to female
 
       // Check if running in Capacitor native environment
       this.isNative = typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform();
@@ -2821,22 +2812,7 @@ super() }}
     findBestTurkishVoice( voices ) {
       const trVoices = voices.filter( v => v.lang.includes( 'tr' ) );
 
-      if ( this.voiceGender === 'male' ) {
-        // Erkek sesi tercih et
-        const maleNames = ['Kerem', 'Mehmet', 'Ali', 'Tolga', 'Male', 'Erkek'];
-        const maleVoice = trVoices.find( v =>
-          maleNames.some( name => v.name.toLowerCase().includes( name.toLowerCase() ) )
-        );
-        // Erkek ses bulunamazsa, kadın olmayan ilk Türkçe sesi al
-        if ( maleVoice ) return maleVoice;
-        const femaleNames = ['Seda', 'Emel', 'Asli', 'Filiz', 'Gul', 'Zehra', 'Female', 'Kadın'];
-        const nonFemaleVoice = trVoices.find( v =>
-          !femaleNames.some( name => v.name.toLowerCase().includes( name.toLowerCase() ) )
-        );
-        return nonFemaleVoice || trVoices[0] || voices.find( v => v.lang.includes( 'en' ) ) || voices[0];
-      }
-
-      // Kadın sesi tercih et (varsayılan)
+      // Kadın sesi tercih et (sabit)
       const femaleNames = ['Seda', 'Emel', 'Asli', 'Filiz', 'Gul', 'Zehra', 'Google', 'Female'];
       const femaleVoice = trVoices.find( v =>
         femaleNames.some( name => v.name.toLowerCase().includes( name.toLowerCase() ) )
@@ -2844,28 +2820,7 @@ super() }}
       return femaleVoice || trVoices[0] || voices.find( v => v.lang.includes( 'en' ) ) || voices[0];
     },
 
-    updateVoiceGenderUI() {
-      const $icon = $( '#voice-gender-icon' );
-      const $label = $( '#voice-gender-label' );
-      if ( this.voiceGender === 'male' ) {
-        $icon.text( 'face_6' ).removeClass( 'text-pink-400' ).addClass( 'text-blue-400' );
-        $label.text( 'Erkek' );
-      } else {
-        $icon.text( 'face_3' ).removeClass( 'text-blue-400' ).addClass( 'text-pink-400' );
-        $label.text( 'Kadın' );
-      }
-    },
-
-    setVoiceGender( gender ) {
-      this.voiceGender = gender;
-      localStorage.setItem( 'tts-voice-gender', gender );
-      this.updateVoiceGenderUI();
-
-      // Re-select voice with new gender preference
-      if ( !this.isNative && typeof speechSynthesis !== 'undefined' ) {
-        const voices = speechSynthesis.getVoices();
-        this.selectedVoice = this.findBestTurkishVoice( voices );
-      }
+    // Voice gender is fixed, no UI update needed
 
       // If currently speaking, restart with new voice
       if ( this.status === 'playing' ) {
@@ -3402,11 +3357,7 @@ super() }}
       }, 8000 );
     }
 
-    // Global Voice Gender Toggle
-    function toggleVoiceGender() {
-      const newGender = TTS.voiceGender === 'female' ? 'male' : 'female';
-      TTS.setVoiceGender( newGender );
-    }
+        // Voice gender toggle removed - fixed to female voice
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PREMIUM MODAL - Satın Alma Ekranı
