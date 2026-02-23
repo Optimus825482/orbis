@@ -14,6 +14,7 @@ from services.ai_service import (
     get_ai_interpretation_engine as get_ai_interpretation_engine_service,
 )
 from services.astro_service import calculate_astro_data
+from services.chart_db_service import smart_calculate
 from datetime import datetime
 import json
 import logging
@@ -255,7 +256,7 @@ def show_results():
                 details={"latitude": latitude_str, "longitude": longitude_str}
             ) from ve
 
-        astro_data = calculate_astro_data(
+        astro_data = smart_calculate(
             birth_date=birth_date,
             birth_time=birth_time,
             latitude=lat,
@@ -337,19 +338,22 @@ def api_get_ai_interpretation():
     # None değerleri temizle
     extra_params = {k: v for k, v in extra_params.items() if v is not None}
 
+    # API'den yorum al
     result = get_ai_interpretation_engine_service(
         astro_data, interpretation_type, user_name, **extra_params
     )
     
-    # Başarılı yorum sonrası kullanımı kaydet
-    if result.get("success") and device_id:
-        from monetization.usage_tracker import UsageTracker
-        usage_tracker = UsageTracker()
-        usage_info = usage_tracker.record_usage(device_id, "ai_interpretation", email)
-        result["usage"] = {
-            "remaining": usage_info.get("remaining", 0),
-            "is_premium": usage_info.get("is_premium", False)
-        }
+    # Başarılı yorum sonrası → kullanımı say
+    if result.get("success"):
+        # Kullanımı kaydet
+        if device_id:
+            from monetization.usage_tracker import UsageTracker
+            usage_tracker = UsageTracker()
+            usage_info = usage_tracker.record_usage(device_id, "ai_interpretation", email)
+            result["usage"] = {
+                "remaining": usage_info.get("remaining", 0),
+                "is_premium": usage_info.get("is_premium", False)
+            }
     
     return jsonify(result)
 
