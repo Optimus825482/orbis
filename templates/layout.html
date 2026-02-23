@@ -322,6 +322,92 @@
       {% block content %}{% endblock %}
     </main>
 
+    <!-- Footer -->
+    <footer class="bg-slate-900/80 border-t border-white/5 py-12 px-6 md:px-12 mt-auto">
+      <div class="max-w-6xl mx-auto">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+    
+          <!-- Brand -->
+          <div class="col-span-2 md:col-span-1">
+            <a href="{{ url_for('main.index') }}" class="flex items-center gap-2 mb-4 group">
+              <span
+                class="material-symbols-outlined text-primary text-2xl group-hover:scale-110 transition-transform">all_inclusive</span>
+              <span class="font-display font-medium text-xl tracking-[0.2em] text-white">ORBIS</span>
+            </a>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Yapay zeka destekli astroloji platformu. Kozmik rehberliğiniz burada.
+            </p>
+          </div>
+    
+          <!-- Keşfet -->
+          <div>
+            <h4 class="text-xs uppercase tracking-widest font-bold text-white mb-4">Keşfet</h4>
+            <ul class="space-y-2.5">
+              <li><a href="{{ url_for('main.how_it_works') }}"
+                  class="text-xs text-slate-400 hover:text-primary transition-colors">Nasıl Çalışır</a></li>
+              <li><a href="{{ url_for('main.blog_index') }}"
+                  class="text-xs text-slate-400 hover:text-primary transition-colors">Blog</a></li>
+              <li><a href="{{ url_for('main.faq') }}"
+                  class="text-xs text-slate-400 hover:text-primary transition-colors">Sıkça Sorulan Sorular</a></li>
+            </ul>
+          </div>
+    
+          <!-- Şirket -->
+          <div>
+            <h4 class="text-xs uppercase tracking-widest font-bold text-white mb-4">Şirket</h4>
+            <ul class="space-y-2.5">
+              <li><a href="{{ url_for('main.about') }}"
+                  class="text-xs text-slate-400 hover:text-primary transition-colors">Hakkımızda</a></li>
+              <li><a href="{{ url_for('main.contact') }}"
+                  class="text-xs text-slate-400 hover:text-primary transition-colors">İletişim</a></li>
+              <li><a href="{{ url_for('legal.privacy_policy') }}"
+                  class="text-xs text-slate-400 hover:text-primary transition-colors">Gizlilik Politikası</a></li>
+              <li><a href="{{ url_for('legal.terms_of_service') }}"
+                  class="text-xs text-slate-400 hover:text-primary transition-colors">Kullanım Koşulları</a></li>
+            </ul>
+          </div>
+    
+          <!-- İndir -->
+          <div>
+            <h4 class="text-xs uppercase tracking-widest font-bold text-white mb-4">İndir</h4>
+            <ul class="space-y-2.5">
+              <li>
+                <a href="https://play.google.com/store/apps/details?id=com.orbisastro.orbis" target="_blank" rel="noopener"
+                  class="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-primary transition-colors">
+                  <span class="material-icons-round text-sm">android</span> Google Play
+                </a>
+              </li>
+              <li>
+                <a href="{{ url_for('main.index') }}"
+                  class="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-primary transition-colors">
+                  <span class="material-icons-round text-sm">language</span> Web Uygulaması
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+    
+        <!-- Divider & Copyright -->
+        <div class="border-t border-white/5 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p class="text-[10px] text-slate-500">© 2026 ORBIS Astrology. Tüm hakları saklıdır.</p>
+          <div class="flex items-center gap-4">
+            <a href="{{ url_for('legal.privacy_policy') }}"
+              class="text-[10px] text-slate-500 hover:text-slate-300 transition-colors">Gizlilik</a>
+            <span class="text-slate-700">·</span>
+            <a href="{{ url_for('legal.terms_of_service') }}"
+              class="text-[10px] text-slate-500 hover:text-slate-300 transition-colors">Koşullar</a>
+            <span class="text-slate-700">·</span>
+            <a href="{{ url_for('main.contact') }}"
+              class="text-[10px] text-slate-500 hover:text-slate-300 transition-colors">İletişim</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+    <!-- /Footer -->
+    
+    <!-- Mobilde footer'ın bottom nav altında kalmaması için boşluk -->
+    <div class="h-24 md:hidden"></div>
+
     <!-- PWA Bottom Navigation (Mobile Only) -->
     <nav
       class="fixed bottom-0 left-0 w-full bg-background-dark/95 backdrop-blur-xl border-t border-white/5 pb-safe z-50 md:hidden">
