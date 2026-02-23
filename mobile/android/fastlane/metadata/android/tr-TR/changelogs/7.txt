@@ -1,0 +1,13 @@
+v1.0.6 - Kritik Hata Düzeltmesi
+
+🔧 Düzeltmeler:
+• Uygulama açılmama hatası giderildi
+• Paket yapılandırması düzeltildi
+• OAuth kimlik doğrulama akışı iyileştirildi
+
+✨ İyileştirmeler:
+• Kozmik Özet modal görünümü eklendi
+• Yazı boyutu ayarlama (A-/A+) eklendi
+• Sesli okuma erkek/kadın ses seçimi
+• Mobil hamburger menü eklendi
+• Tüm sayfalarda tutarlı navigasyon

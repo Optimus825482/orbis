@@ -1,0 +1,13 @@
+v1.0.6 - Critical Bug Fix
+
+🔧 Fixes:
+• Fixed app crash on launch
+• Fixed package configuration
+• Improved OAuth authentication flow
+
+✨ Improvements:
+• Added Cosmic Summary modal view
+• Added font size controls (A-/A+)
+• Added male/female voice selection for TTS
+• Added mobile hamburger menu
+• Consistent navigation across all pages
