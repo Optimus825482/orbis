@@ -66,6 +66,26 @@ super() }}
     box-shadow: 0 4px 12px rgba(91, 43, 238, 0.3);
   }
 
+  /* Chart Info Card Animations */
+  .chart-info-card {
+    animation: chartCardFadeIn 0.4s ease-out;
+  }
+
+  .chart-info-card.hidden {
+    animation: none;
+  }
+
+  @keyframes chartCardFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .orb-glow {
     filter: drop-shadow(0 0 15px rgba(91, 43, 238, 0.4));
   }
@@ -889,6 +909,33 @@ super() }}
                   <p class="text-[10px] text-slate-400">Hayatınızın 12 farklı alanı</p>
                 </div>
               </div>
+<!-- Haritalar Arası Bağlantı -->
+<div class="flex items-start gap-2.5 mt-4 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+  <span class="material-icons-round text-indigo-400 text-sm mt-0.5">hub</span>
+  <p class="text-[10px] text-slate-400 leading-relaxed">
+    <span class="text-indigo-300 font-semibold">Diğer Haritalarla İlişkisi:</span>
+    Natal haritanız, <span class="text-emerald-400">Transit</span> ve <span class="text-rose-400">Progresyon</span>
+    haritalarının temelidir. Tüm kozmik etkilerin sizi nasıl etkilediğini anlamak için önce bu haritadaki doğuştan gelen
+    enerjilerinizi keşfetmelisiniz.
+  </p>
+</div>
+
+<!-- AI Teaser -->
+<div onclick="interpretCurrentChart()"
+  class="mt-3 p-3.5 rounded-xl bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 border border-primary/15 cursor-pointer group hover:border-primary/30 transition-all duration-300">
+  <div class="flex items-center gap-2.5">
+    <div class="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+      <span class="material-icons-round text-primary text-sm">auto_awesome</span>
+    </div>
+    <div class="flex-1">
+      <p class="text-[10px] text-white/90 font-medium">Güneş-Ay-Yükselen üçlüsünüz nasıl bir kişilik ortaya çıkarıyor?
+      </p>
+      <p class="text-[9px] text-primary/70 mt-0.5">ORBIS AI haritanızdaki gizli kalıpları keşfetsin →</p>
+    </div>
+    <span
+      class="material-icons-round text-primary/50 text-sm group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+  </div>
+</div>
             </div>
           </div>
         </div>
@@ -932,6 +979,31 @@ super() }}
                   </li>
                 </ul>
               </div>
+<!-- Haritalar Arası Bağlantı -->
+<div class="flex items-start gap-2.5 mt-4 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+  <span class="material-icons-round text-teal-400 text-sm mt-0.5">hub</span>
+  <p class="text-[10px] text-slate-400 leading-relaxed">
+    <span class="text-teal-300 font-semibold">Diğer Haritalarla İlişkisi:</span>
+    Transit etkileri, <span class="text-primary">Natal</span> haritanızdaki doğuştan gelen enerjileri tetikler. <span
+      class="text-amber-400">Güneş Dönüşü</span> ile birlikte değerlendirildiğinde yılın kozmik haritası netleşir.
+  </p>
+</div>
+
+<!-- AI Teaser -->
+<div onclick="interpretCurrentChart()"
+  class="mt-3 p-3.5 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/10 border border-emerald-500/15 cursor-pointer group hover:border-emerald-500/30 transition-all duration-300">
+  <div class="flex items-center gap-2.5">
+    <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
+      <span class="material-icons-round text-emerald-400 text-sm">auto_awesome</span>
+    </div>
+    <div class="flex-1">
+      <p class="text-[10px] text-white/90 font-medium">Hangi gezegenler şu an natal pozisyonlarınızla konuşuyor?</p>
+      <p class="text-[9px] text-emerald-400/70 mt-0.5">Güncel kozmik etkilerin detaylı analizini görmek için →</p>
+    </div>
+    <span
+      class="material-icons-round text-emerald-400/50 text-sm group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+  </div>
+</div>
             </div>
           </div>
         </div>
@@ -981,6 +1053,33 @@ super() }}
                   </li>
                 </ul>
               </div>
+<!-- Haritalar Arası Bağlantı -->
+<div class="flex items-start gap-2.5 mt-4 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+  <span class="material-icons-round text-orange-400 text-sm mt-0.5">hub</span>
+  <p class="text-[10px] text-slate-400 leading-relaxed">
+    <span class="text-orange-300 font-semibold">Diğer Haritalarla İlişkisi:</span>
+    <span class="text-primary">Natal</span> haritanızın yıllık güncellemesidir. <span
+      class="text-emerald-400">Transit</span> etkileriyle birlikte değerlendirildiğinde yılın kozmik haritasını çizer.
+    <span class="text-cyan-400">Ay Dönüşü</span> ise aylık detayları verir.
+  </p>
+</div>
+
+<!-- AI Teaser -->
+<div onclick="interpretCurrentChart()"
+  class="mt-3 p-3.5 rounded-xl bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-amber-500/10 border border-amber-500/15 cursor-pointer group hover:border-amber-500/30 transition-all duration-300">
+  <div class="flex items-center gap-2.5">
+    <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+      <span class="material-icons-round text-amber-400 text-sm">auto_awesome</span>
+    </div>
+    <div class="flex-1">
+      <p class="text-[10px] text-white/90 font-medium">Bu yılın kozmik teması ne? Güneş Dönüşü haritanız neleri vaat
+        ediyor?</p>
+      <p class="text-[9px] text-amber-400/70 mt-0.5">Yıllık öngörülerin detaylı AI analizini keşfet →</p>
+    </div>
+    <span
+      class="material-icons-round text-amber-400/50 text-sm group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+  </div>
+</div>
             </div>
           </div>
         </div>
@@ -1034,6 +1133,32 @@ super() }}
                   olarak adlandırılır ve çok güçlü kabul edilir.
                 </p>
               </div>
+<!-- Haritalar Arası Bağlantı -->
+<div class="flex items-start gap-2.5 mt-4 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+  <span class="material-icons-round text-purple-400 text-sm mt-0.5">hub</span>
+  <p class="text-[10px] text-slate-400 leading-relaxed">
+    <span class="text-purple-300 font-semibold">Diğer Haritalarla İlişkisi:</span>
+    <span class="text-primary">Natal (D1)</span> haritanızın ruhsal derinliğidir. D1 dışsal potansiyeli, D9 ise içsel ve
+    karmik potansiyeli gösterir. İkisi birlikte ele alındığında tam tablo ortaya çıkar.
+  </p>
+</div>
+
+<!-- AI Teaser -->
+<div onclick="interpretCurrentChart()"
+  class="mt-3 p-3.5 rounded-xl bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-violet-500/10 border border-violet-500/15 cursor-pointer group hover:border-violet-500/30 transition-all duration-300">
+  <div class="flex items-center gap-2.5">
+    <div class="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center shrink-0">
+      <span class="material-icons-round text-violet-400 text-sm">auto_awesome</span>
+    </div>
+    <div class="flex-1">
+      <p class="text-[10px] text-white/90 font-medium">Vedik bilgeliğindeki evlilik ve ruhsal olgunluk ipuçlarınız
+        neler?</p>
+      <p class="text-[9px] text-violet-400/70 mt-0.5">Navamsa'nın karmik sırlarını AI ile keşfet →</p>
+    </div>
+    <span
+      class="material-icons-round text-violet-400/50 text-sm group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+  </div>
+</div>
             </div>
           </div>
         </div>
@@ -1087,6 +1212,32 @@ super() }}
                   </li>
                 </ul>
               </div>
+<!-- Haritalar Arası Bağlantı -->
+<div class="flex items-start gap-2.5 mt-4 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+  <span class="material-icons-round text-blue-400 text-sm mt-0.5">hub</span>
+  <p class="text-[10px] text-slate-400 leading-relaxed">
+    <span class="text-blue-300 font-semibold">Diğer Haritalarla İlişkisi:</span>
+    <span class="text-amber-400">Güneş Dönüşü</span>'nün aylık detay versiyonudur. Solar Return yılın genel haritasını
+    çizerken, Lunar Return aynı dönemdeki duygusal mikro döngüleri gösterir. <span
+      class="text-emerald-400">Transit</span> etkileriyle birlikte zamanlama bilgisi verir.
+  </p>
+</div>
+
+<!-- AI Teaser -->
+<div onclick="interpretCurrentChart()"
+  class="mt-3 p-3.5 rounded-xl bg-gradient-to-r from-cyan-500/10 via-blue-500/5 to-cyan-500/10 border border-cyan-500/15 cursor-pointer group hover:border-cyan-500/30 transition-all duration-300">
+  <div class="flex items-center gap-2.5">
+    <div class="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center shrink-0">
+      <span class="material-icons-round text-cyan-400 text-sm">auto_awesome</span>
+    </div>
+    <div class="flex-1">
+      <p class="text-[10px] text-white/90 font-medium">Bu ayın duygusal tonu ne? İç dünyanız ne söylüyor?</p>
+      <p class="text-[9px] text-cyan-400/70 mt-0.5">Aylık duygusal analizinizi AI ile keşfet →</p>
+    </div>
+    <span
+      class="material-icons-round text-cyan-400/50 text-sm group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+  </div>
+</div>
             </div>
           </div>
         </div>
@@ -1146,6 +1297,33 @@ super() }}
                   duygusal dönüm noktalarını işaret eder.
                 </p>
               </div>
+<!-- Haritalar Arası Bağlantı -->
+<div class="flex items-start gap-2.5 mt-4 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+  <span class="material-icons-round text-pink-400 text-sm mt-0.5">hub</span>
+  <p class="text-[10px] text-slate-400 leading-relaxed">
+    <span class="text-pink-300 font-semibold">Diğer Haritalarla İlişkisi:</span>
+    <span class="text-emerald-400">Transit</span> dışarıdan gelen kozmik etkileri, Progresyon ise içeriden gelen
+    dönüşümü gösterir. <span class="text-primary">Natal</span> haritanızın evrimleşmiş halidir — kim olduğunuz değil,
+    kim olduğunuzu keşfetme yolculuğunuz.
+  </p>
+</div>
+
+<!-- AI Teaser -->
+<div onclick="interpretCurrentChart()"
+  class="mt-3 p-3.5 rounded-xl bg-gradient-to-r from-rose-500/10 via-pink-500/5 to-rose-500/10 border border-rose-500/15 cursor-pointer group hover:border-rose-500/30 transition-all duration-300">
+  <div class="flex items-center gap-2.5">
+    <div class="w-8 h-8 rounded-lg bg-rose-500/20 flex items-center justify-center shrink-0">
+      <span class="material-icons-round text-rose-400 text-sm">auto_awesome</span>
+    </div>
+    <div class="flex-1">
+      <p class="text-[10px] text-white/90 font-medium">İçsel dönüşümünüz hangi noktada? Progresif Ay'ınız ne tetikliyor?
+      </p>
+      <p class="text-[9px] text-rose-400/70 mt-0.5">Psikolojik evriminizin AI analizini keşfet →</p>
+    </div>
+    <span
+      class="material-icons-round text-rose-400/50 text-sm group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+  </div>
+</div>
             </div>
           </div>
         </div>
@@ -1933,7 +2111,12 @@ super() }}
 
     // Harita açıklama kartlarını güncelle
     $( ".chart-info-card" ).addClass( "hidden" );
-    $( `#chart-info-${type}` ).removeClass( "hidden" );
+    const infoCard = $( `#chart-info-${type}` );
+    infoCard.removeClass( "hidden" );
+    // Animasyonu yeniden tetikle
+    infoCard[0].style.animation = 'none';
+    infoCard[0].offsetHeight; // reflow
+    infoCard[0].style.animation = '';
 
     // AI yorum butonunu güncelle
     updateInterpretButton( type );
