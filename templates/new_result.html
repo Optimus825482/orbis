@@ -130,6 +130,7 @@ super() }}
 
   .glass-tab {
     background: rgba(15, 23, 42, 0.4);
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
   }
 
@@ -3001,18 +3002,6 @@ super() }}
         femaleNames.some( name => v.name.toLowerCase().includes( name.toLowerCase() ) )
       );
       return femaleVoice || trVoices[0] || voices.find( v => v.lang.includes( 'en' ) ) || voices[0];
-    },
-
-    // Voice gender is fixed, no UI update needed
-
-      // If currently speaking, restart with new voice
-      if ( this.status === 'playing' ) {
-        const currentText = this.chunks.slice( this.currentChunkIndex ).join( ' ' );
-        this.stop();
-        if ( currentText ) {
-          setTimeout( () => this.start( currentText ), 100 );
-        }
-      }
     },
 
     changeSpeed( delta ) {
