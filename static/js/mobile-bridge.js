@@ -44,12 +44,12 @@ const OrbisBridge = {
       REWARDED: "ca-app-pub-3940256099942544/5224354917",
     },
 
-    // AdMob ID'leri (Production)
+    // AdMob ID'leri (Production) - ORBIS (com.orbisastro.orbis)
     ADMOB_PROD: {
-      APP_ID: "ca-app-pub-2444093901783574~4683309361",
-      BANNER: "ca-app-pub-2444093901783574/5860659669",
-      INTERSTITIAL: "ca-app-pub-2444093901783574/8840184408",
-      REWARDED: "ca-app-pub-2444093901783574/9083651006",
+      APP_ID: "ca-app-pub-2444093901783574~9279937953",
+      BANNER: "ca-app-pub-2444093901783574/1791137239",
+      INTERSTITIAL: "ca-app-pub-2444093901783574/8681172156",
+      REWARDED: "ca-app-pub-2444093901783574/9994253824",
     },
 
     // Interstitial gösterim aralığı (her X analizde bir)

@@ -13,7 +13,7 @@
 **Doğrulama:**
 ```bash
 # Production backend test
-curl https://ast-kappa.vercel.app/api/check_usage -X POST \
+curl https://app.orbisastro.online/api/check_usage -X POST \
   -H "Content-Type: application/json" \
   -d '{"device_id":"test_123"}'
 ```

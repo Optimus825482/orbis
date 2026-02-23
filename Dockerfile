@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     libffi-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Python dependencies

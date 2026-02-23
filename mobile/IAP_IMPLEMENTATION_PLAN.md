@@ -296,7 +296,7 @@ Premium users
 ### Testing Endpoint
 ```bash
 # Test premium check
-curl https://ast-kappa.vercel.app/api/premium_status \
+curl https://app.orbisastro.online/api/premium_status \
   -X POST \
   -H "Content-Type: application/json" \
   -d '{"device_id":"test_123"}'

@@ -20,7 +20,7 @@ def init_extensions(app):
             app,
             resources={
                 r"/api/*": {
-                    "origins": ["https://ast-kappa.vercel.app", "https://*.vercel.app"],
+                    "origins": ["https://app.orbisastro.online", "https://*.orbisastro.online"],
                     "methods": ["GET", "POST", "OPTIONS"],
                     "allow_headers": ["Content-Type"],
                 }

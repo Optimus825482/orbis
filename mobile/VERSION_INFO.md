@@ -50,7 +50,7 @@ Country:      TR
 appId: "com.orbisastro.orbis"
 appName: "ORBIS"
 server: {
-  url: "https://ast-kappa.vercel.app",
+  url: "https://app.orbisastro.online",
   androidScheme: "https",
   cleartext: false
 }
@@ -143,8 +143,8 @@ Purpose:    Google Play Store submission
 ## 🚀 Deployment URLs
 
 ```
-Backend:  https://ast-kappa.vercel.app
-Frontend: https://ast-kappa.vercel.app
+Backend:  https://app.orbisastro.online
+Frontend: https://app.orbisastro.online
 Admin:    https://www.orbisastro.online
 ```
 

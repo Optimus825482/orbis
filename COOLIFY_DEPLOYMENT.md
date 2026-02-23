@@ -46,7 +46,7 @@ Coolify'da şu ayarları yap:
 |------|-------|
 | **Build Pack** | `Dockerfile` |
 | **Dockerfile Location** | `Dockerfile` |
-| **Port** | `8000` |
+| **Port** | `8005` |
 | **Health Check Path** | `/api/health` |
 
 ---
@@ -59,7 +59,7 @@ Coolify'da **Settings → Environment Variables** bölümünde şunları ekle:
 # Flask Settings
 FLASK_ENV=production
 DEBUG=False
-PORT=8000
+PORT=8005
 SECRET_KEY=<güçlü-random-key-oluştur>
 
 # OpenAI API Key (AI yorumlar için)
@@ -184,7 +184,7 @@ Coolify şunları otomatik sağlar:
 ### Container Başlamıyor
 ```bash
 # Health check'i manuel test et
-docker exec -it orbis-backend curl http://localhost:8000/api/health
+docker exec -it orbis-backend curl http://localhost:8005/api/health
 ```
 
 ### Memory/CPU Sorunları

@@ -57,7 +57,7 @@ const OrbisIAP = {
       }
 
       const response = await fetch(
-        "https://ast-kappa.vercel.app/api/monetization/check-usage",
+        "https://app.orbisastro.online/api/monetization/check-usage",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -5,9 +5,9 @@ const config: CapacitorConfig = {
   appName: "ORBIS",
   webDir: "www",
 
-  // Server configuration - Vercel Production URL
+  // Server configuration - Coolify Production URL
   server: {
-    url: "https://ast-kappa.vercel.app",
+    url: "https://app.orbisastro.online",
     androidScheme: "https",
     cleartext: false,
   },

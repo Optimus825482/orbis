@@ -8,13 +8,13 @@ const OrbisAds = {
   // Ad Unit IDs - AdMob Console'dan
   AD_UNITS: {
     // Banner reklam
-    BANNER: "ca-app-pub-2444093901783574/5860659669",
+    BANNER: "ca-app-pub-2444093901783574/1791137239",
     // Geçiş reklamı (Interstitial)
-    INTERSTITIAL: "ca-app-pub-2444093901783574/8840184408",
+    INTERSTITIAL: "ca-app-pub-2444093901783574/8681172156",
     // Ödüllü Geçiş Reklamı (Rewarded Interstitial) - Genel kullanım
-    REWARDED_INTERSTITIAL: "ca-app-pub-2444093901783574/4900939398",
+    REWARDED_INTERSTITIAL: "ca-app-pub-2444093901783574/9994253824",
     // Ödüllü Video (Rewarded) - Analiz için
-    REWARDED_ANALYSIS: "ca-app-pub-2444093901783574/9083651006",
+    REWARDED_ANALYSIS: "ca-app-pub-2444093901783574/9994253824",
 
     // Test Ad Unit IDs (DEV) - Sadece geliştirme için
     // BANNER: "ca-app-pub-3940256099942544/6300978111",
@@ -22,8 +22,8 @@ const OrbisAds = {
     // REWARDED: "ca-app-pub-3940256099942544/5224354917",
   },
 
-  // App ID (Production)
-  APP_ID: "ca-app-pub-2444093901783574~4683309361",
+  // App ID (Production) - ORBIS (com.orbisastro.orbis)
+  APP_ID: "ca-app-pub-2444093901783574~9279937953",
 
   // State
   isInitialized: false,
@@ -44,7 +44,7 @@ const OrbisAds = {
   async checkAdStatus(deviceId, email) {
     try {
       const response = await fetch(
-        "https://ast-kappa.vercel.app/api/monetization/check-usage",
+        "https://app.orbisastro.online/api/monetization/check-usage",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
