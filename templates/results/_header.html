@@ -1,39 +1,6 @@
 <!-- ═══════════════════════════════════════════════════════════════════════════
-     RESULTS PAGE HEADER
+     RESULTS PAGE HEADER - Tabs Only
      ═══════════════════════════════════════════════════════════════════════════ -->
-<header
-  class="px-6 pt-8 pb-6 flex items-center justify-between sticky top-0 bg-background-dark/80 backdrop-blur-xl z-30"
->
-  <div
-    class="flex items-center gap-4 cursor-pointer active:scale-95 transition-all"
-    onclick="switchResultTab('chart')"
-  >
-    <div
-      class="w-10 h-10 rounded-full border border-primary/20 overflow-hidden shadow-[0_0_10px_rgba(91,43,238,0.1)]"
-    >
-      <span
-        class="material-icons-round text-2xl text-primary flex items-center justify-center w-full h-full"
-        >person</span
-      >
-    </div>
-    <div>
-      <h2
-        class="font-display font-bold text-lg text-white leading-tight truncate max-w-[150px]"
-      >
-        {{ astro_data.user_name }}
-      </h2>
-      <p class="text-[10px] text-slate-500 uppercase tracking-widest">
-        {{ astro_data.birth_info.date }} • {{ astro_data.birth_info.time }}
-      </p>
-    </div>
-  </div>
-  <button
-    onclick="shareResults()"
-    class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
-  >
-    <span class="material-icons-round text-lg">share</span>
-  </button>
-</header>
 
 <!-- Content Tabs Navigation -->
 <div class="px-6 mb-6">

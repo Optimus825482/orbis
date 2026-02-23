@@ -151,4 +151,51 @@
       </div>
     </div>
   </div>
-</div>
+<!-- Kozmik Baskınlık Bilgi Kartı -->
+<div class="cosmic-dominance-info" id="cosmic-dominance-info">
+  <div
+    style="max-width: 320px; margin: 1.5rem auto 0; padding: 1rem 1.25rem; background: linear-gradient(135deg, rgba(91,43,238,0.15), rgba(168,85,247,0.08)); border: 1px solid rgba(91,43,238,0.25); border-radius: 1.25rem; backdrop-filter: blur(8px);">
+    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+      <span class="material-icons-round" style="color: #a855f7; font-size: 18px;">local_fire_department</span>
+      <span
+        style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #c4b5fd;">Kozmik
+        Baskınlık Nedir?</span>
+      </div>
+      <div id="dominance-tip-container">
+        <p id="dominance-tip-text"
+          style="font-size: 11px; color: #cbd5e1; line-height: 1.6; margin: 0; transition: opacity 0.5s ease;">
+          Doğum haritanızdaki gezegenlerin burçlara dağılımı, hangi elementin (Ateş, Toprak, Hava, Su) ve hangi niteliğin
+          (Kardinal, Sabit, Değişken) sizde baskın olduğunu belirler.
+        </p>
+      </div>
+      </div>
+      </div>
+      </div>
+      
+      <script>
+        // Kozmik Baskınlık bilgi kartı - döngüsel ipuçları
+        ( function () {
+          const tips = [
+            'Doğum haritanızdaki gezegenlerin burçlara dağılımı, hangi elementin (Ateş, Toprak, Hava, Su) ve hangi niteliğin (Kardinal, Sabit, Değişken) sizde baskın olduğunu belirler.',
+            '🔥 <strong>Ateş Baskınlığı:</strong> Cesaret, enerji ve liderlik. Koç, Aslan ve Yay burçlarının enerjisi sizde yoğun.',
+            '🌍 <strong>Toprak Baskınlığı:</strong> Pratiklik, güvenilirlik ve kararlılık. Boğa, Başak ve Oğlak enerjisi sizde güçlü.',
+            '💨 <strong>Hava Baskınlığı:</strong> İletişim, entelektüellik ve sosyallik. İkizler, Terazi ve Kova enerjisi ile parlıyorsunuz.',
+            '💧 <strong>Su Baskınlığı:</strong> Sezgi, empati ve duygusal derinlik. Yengeç, Akrep ve Balık enerjisi sizi yönlendiriyor.',
+            '⚡ <strong>Kardinal Nitelik:</strong> Başlatıcı, lider ve girişimci. Yeni projelere atılmayı seversiniz.',
+            '🪨 <strong>Sabit Nitelik:</strong> Kararlı, sabırlı ve dayanıklı. Başladığınız işi sonuna kadar götürürsünüz.',
+            '🌊 <strong>Değişken Nitelik:</strong> Esnek, uyumlu ve çok yönlü. Değişime kolayca adapte olursunuz.'
+          ];
+          let tipIndex = 0;
+          const tipEl = document.getElementById( 'dominance-tip-text' );
+          if ( !tipEl ) return;
+
+          setInterval( () => {
+            tipIndex = ( tipIndex + 1 ) % tips.length;
+            tipEl.style.opacity = '0';
+            setTimeout( () => {
+              tipEl.innerHTML = tips[tipIndex];
+              tipEl.style.opacity = '1';
+            }, 400 );
+          }, 4000 );
+        } )();
+      </script>

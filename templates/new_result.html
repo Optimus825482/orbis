@@ -461,11 +461,19 @@ super() }}
 
         <!-- Expand CTA -->
         <div id="summary-read-more" class="hidden mt-3 flex items-center justify-between">
-          <button onclick="event.stopPropagation(); openKozmikOzetModal()"
-            class="text-xs text-accent hover:text-accent/80 flex items-center gap-1.5 font-medium transition-colors">
-            <span class="material-icons-round text-base">fullscreen</span>
-            Tam Ekran Oku
-          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="event.stopPropagation(); openKozmikOzetModal()"
+              class="text-xs text-accent hover:text-accent/80 flex items-center gap-1.5 font-medium transition-colors">
+              <span class="material-icons-round text-base">fullscreen</span>
+              Tam Ekran Oku
+            </button>
+            <!-- Inline TTS Button -->
+            <button onclick="event.stopPropagation(); playKozmikOzetTTS()" id="kozmik-ozet-tts-btn"
+              class="px-2.5 py-1.5 bg-primary/20 hover:bg-primary/30 border border-primary/30 rounded-xl text-[10px] font-bold text-primary flex items-center gap-1 active:scale-95 transition-all">
+              <span class="material-icons-round text-sm" id="kozmik-ozet-tts-icon">volume_up</span>
+              <span id="kozmik-ozet-tts-label">Dinle</span>
+            </button>
+            </div>
           <button onclick="event.stopPropagation(); loadAISummary()" id="refresh-summary-btn"
             class="text-[10px] text-slate-500 hover:text-accent flex items-center gap-1 transition-colors">
             <span class="material-icons-round text-sm">refresh</span>
@@ -2133,7 +2141,23 @@ super() }}
       // Modal içeriğini ayarla
       currentInterpretationText = kozmikOzetText;
       $( '#ai-modal-title' ).text( 'Kozmik Özet' );
-      $( '#ai-modal-body' ).html( marked.parse( kozmikOzetText ) );
+
+      // Yönlendirme notu ile birlikte göster
+      const disclaimerNote = `
+        <div class="mt-6 p-4 rounded-2xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
+          <div class="flex items-start gap-3">
+            <span class="material-icons-round text-primary text-lg mt-0.5 shrink-0">info</span>
+            <div>
+              <p class="text-[11px] text-slate-300 leading-relaxed">
+                Bu, tüm hesaplamalarınızın sonucunda ortaya çıkan <strong class="text-white">kozmik bir özettir</strong>. 
+                Kişiliğinize özel detaylı analizler için 
+                <button onclick="closeAIModal(); setTimeout(() => switchResultTab('ai'), 300)" class="text-accent font-bold hover:underline">ORBIS AI</button> 
+                sekmesine göz atın.
+              </p>
+            </div>
+          </div>
+        </div>`;
+      $( '#ai-modal-body' ).html( marked.parse( kozmikOzetText ) + disclaimerNote );
 
       // Font boyutunu uygula
       applyModalFontSize();
@@ -2592,14 +2616,31 @@ super() }}
         // Ham metni sakla (modal ve TTS için)
         kozmikOzetText = result.interpretation;
 
-        // Markdown'ı parse et ve göster
-        $content.html( marked.parse( result.interpretation ) );
+        // Markdown'ı parse et ve göster - sonuna yönlendirme notu ekle
+        const disclaimerNote = `
+          <div class="mt-6 p-4 rounded-2xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
+            <div class="flex items-start gap-3">
+              <span class="material-icons-round text-primary text-lg mt-0.5 shrink-0">info</span>
+              <div>
+                <p class="text-[11px] text-slate-300 leading-relaxed">
+                  Bu, tüm hesaplamalarınızın sonucunda ortaya çıkan <strong class="text-white">kozmik bir özettir</strong>. 
+                  Kişiliğinize özel detaylı analizler için 
+                  <button onclick="event.stopPropagation(); switchResultTab('ai')" class="text-accent font-bold hover:underline">ORBIS AI</button> 
+                  sekmesine göz atın.
+                </p>
+              </div>
+            </div>
+          </div>`;
+        $content.html( marked.parse( result.interpretation ) + disclaimerNote );
 
         // Preview mode: fade overlay ve expand butonlarını göster
         $( '#summary-fade-overlay' ).removeClass( 'hidden' );
         $( '#summary-read-more' ).removeClass( 'hidden' ).addClass( 'flex' );
         $( '#summary-expand-icon' ).removeClass( 'hidden' ).addClass( 'flex' );
         $( '#refresh-summary-btn-loading' ).addClass( 'hidden' );
+
+        // Burç kartlarına tıklanabilir işareti göster
+        showZodiacClickIndicators();
 
         // Loader'ı kapat (500ms sonra, animasyon için)
         setTimeout( () => {
@@ -3302,6 +3343,64 @@ super() }}
       alert( 'Sesli okuma başlatılamadı: ' + e.message );
     }
   }
+
+    // Kozmik Özet inline TTS button handler
+    function playKozmikOzetTTS() {
+      if ( !kozmikOzetText ) return;
+
+      // TTS durumunu kontrol et
+      if ( TTS.status === 'playing' ) {
+        TTS.stop();
+        $( '#kozmik-ozet-tts-icon' ).text( 'volume_up' );
+        $( '#kozmik-ozet-tts-label' ).text( 'Dinle' );
+        return;
+      }
+
+      // Metni ayarla ve başlat
+      currentInterpretationText = kozmikOzetText;
+      $( '#kozmik-ozet-tts-icon' ).text( 'stop' );
+      $( '#kozmik-ozet-tts-label' ).text( 'Durdur' );
+
+      try {
+        TTS.startFromModal();
+      } catch ( e ) {
+        console.error( '[TTS] Kozmik Özet TTS Error:', e );
+        $( '#kozmik-ozet-tts-icon' ).text( 'volume_up' );
+        $( '#kozmik-ozet-tts-label' ).text( 'Dinle' );
+      }
+    }
+
+    // Burç kartlarına tıklanabilir işaret göster
+    function showZodiacClickIndicators() {
+      // Zodiac kartlarına pulse animasyonu ekle
+      $( '.quick-stats-card-indicator' ).remove(); // Önceki varsa temizle
+
+      const zodiacCards = document.querySelectorAll( '[onclick^="toggleSignInfo"]' );
+      zodiacCards.forEach( card => {
+        // Tıklama indicator badge ekle
+        const indicator = document.createElement( 'div' );
+        indicator.className = 'quick-stats-card-indicator absolute -top-1 -right-1 z-20';
+        indicator.innerHTML = `
+        <div class="relative">
+          <span class="flex h-5 w-5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent/60 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-5 w-5 bg-accent/90 items-center justify-center">
+              <span class="material-icons-round text-white text-[10px]">touch_app</span>
+            </span>
+          </span>
+        </div>`;
+        card.style.position = 'relative';
+        card.appendChild( indicator );
+      } );
+
+      // 8 saniye sonra ping animasyonunu durdur (badge kalır)
+      setTimeout( () => {
+        document.querySelectorAll( '.quick-stats-card-indicator .animate-ping' ).forEach( el => {
+          el.classList.remove( 'animate-ping' );
+          el.style.display = 'none';
+        } );
+      }, 8000 );
+    }
 
     // Global Voice Gender Toggle
     function toggleVoiceGender() {
