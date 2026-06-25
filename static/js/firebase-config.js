@@ -128,7 +128,7 @@ const OrbisFirebase = {
 
       if (isNative) {
         console.log(
-          "[Firebase] Native platform - Capacitor Google Auth kullanılıyor..."
+          "[Firebase] Native platform - Capacitor Google Auth deneniyor..."
         );
 
         // Capacitor Google Auth plugin kontrolü
@@ -149,13 +149,8 @@ const OrbisFirebase = {
         }
 
         if (!GoogleAuth) {
-          console.error("[Firebase] GoogleAuth plugin bulunamadı!");
-          alert(
-            "Google Auth eklentisi bulunamadı.\n\n" +
-              "Lütfen uygulamayı yeniden yükleyin veya " +
-              "destek@orbis.app adresine başvurun."
-          );
-          return null;
+          console.error("[Firebase] GoogleAuth plugin bulunamadı - Browser OAuth fallback deneniyor");
+          return await this._signInWithBrowserOAuth();
         }
 
         try {
@@ -185,33 +180,30 @@ const OrbisFirebase = {
           // Firebase'e giriş yap
           const result = await this.auth.signInWithCredential(credential);
           console.log("[Firebase] Firebase giriş başarılı:", result.user.email);
+          if (window.OrbisAnalytics) window.OrbisAnalytics.event('login', { method: 'google' });
 
           return result.user;
         } catch (nativeError) {
           console.error("[Firebase] Native Google Auth hatası:", nativeError);
 
           // Kullanıcı iptal etti mi?
-          const errorMsg = nativeError.message || JSON.stringify(nativeError);
+          const errorMsg = (nativeError && (nativeError.message || nativeError.errorMessage)) || JSON.stringify(nativeError);
 
           if (
             errorMsg.includes("canceled") ||
             errorMsg.includes("cancelled") ||
             errorMsg.includes("12501") ||
-            errorMsg.includes("user_cancelled")
+            errorMsg.includes("user_cancelled") ||
+            nativeError?.code === "12501"
           ) {
             console.log("[Firebase] Kullanıcı giriş işlemini iptal etti");
             return null;
           }
 
-          // Gerçek hata - kullanıcıya bildir
-          alert(
-            "Google giriş hatası!\n\n" +
-              "Hata: " +
-              errorMsg +
-              "\n\n" +
-              "İpucu: İnternet bağlantınızı kontrol edin ve tekrar deneyin."
-          );
-          return null;
+          // ⚠️ KRİTİK: Native Google Auth başarısız oldu (Play Services / SHA-1 / config sorunu)
+          // Browser OAuth flow'a fallback yap — her durumda çalışır
+          console.warn("[Firebase] Native Google Auth basarisiz, Browser OAuth fallback deneniyor:", errorMsg);
+          return await this._signInWithBrowserOAuth();
         }
       }
 
@@ -225,6 +217,10 @@ const OrbisFirebase = {
       try {
         const result = await this.auth.signInWithPopup(provider);
         console.log("[Firebase] Google ile giriş başarılı:", result.user.email);
+        if (window.OrbisAnalytics) {
+          const isNew = result.additionalUserInfo?.isNewUser;
+          window.OrbisAnalytics.event(isNew ? 'sign_up' : 'login', { method: 'google' });
+        }
         return result.user;
       } catch (popupError) {
         console.error(
@@ -250,6 +246,53 @@ const OrbisFirebase = {
     }
   },
 
+  /**
+   * Browser-based OAuth fallback — Capacitor Browser plugin ile.
+   * Native Google Auth başarısız olduğunda (Play Services eksik, SHA-1 uyumsuz, vs.)
+   * sistem tarayıcısında OAuth flow'u açarak giriş yapılmasını sağlar.
+   */
+  async _signInWithBrowserOAuth() {
+    try {
+      const isNative =
+        typeof Capacitor !== "undefined" && Capacitor.isNativePlatform();
+
+      if (!isNative) {
+        // Web'de zaten popup deneniyor, bu fallback Web için değil
+        return null;
+      }
+
+      console.log("[Firebase] Browser OAuth fallback başlatılıyor...");
+
+      // Capacitor Browser plugin kontrolü
+      const Browser = (Capacitor.Plugins && Capacitor.Plugins.Browser) ||
+                       (window.Plugins && window.Plugins.Browser);
+
+      if (!Browser) {
+        console.error("[Firebase] Browser plugin yok - Capacitor Browser kurulu olmali");
+        alert(
+          "Google giris simdi musait degil.\n\n" +
+          "Lutfen uygulamayi kapatip Google Play Store'dan guncellestirmisini deneyin."
+        );
+        return null;
+      }
+
+      // Provider ayarla
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+
+      // signInWithRedirect akışı: Capacitor Browser OAuth callback'i yakalar
+      // ve uygulamaya geri doner
+      await this.auth.signInWithRedirect(provider);
+      console.log("[Firebase] Browser OAuth redirect başlatıldı");
+      return null; // Redirect sonrası getRedirectResult() ile user handle edilecek
+
+    } catch (e) {
+      console.error("[Firebase] Browser OAuth fallback hatası:", e);
+      alert("Giris sirasinda hata: " + e.message);
+      return null;
+    }
+  },
+
   async signOut() {
     try {
       // Firestore listener'ı kaldır
@@ -257,6 +300,9 @@ const OrbisFirebase = {
         this.unsubscribe();
         this.unsubscribe = null;
       }
+
+      // Heartbeat'i durdur
+      this.stopHeartbeat();
 
       await this.auth.signOut();
       this.user = null;
@@ -285,6 +331,16 @@ const OrbisFirebase = {
     if (user) {
       console.log("[Firebase] Kullanıcı giriş yaptı:", user.email);
       this.loadUserData();
+
+      // Son login kaydı
+      fetch("/api/stats/user-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email, display_name: user.displayName || user.email }),
+      }).catch(() => {});
+
+      // Heartbeat başlat (her 60sn)
+      this.startHeartbeat(user.email, user.displayName);
 
       // GA: Login event
       if (typeof gtag === "function") {
@@ -386,6 +442,17 @@ const OrbisFirebase = {
       await this.db.collection("users").doc(this.user.uid).set(newUserData);
       this.userDoc = newUserData;
       console.log("[Firebase] Yeni kullanıcı oluşturuldu");
+
+      // Stats counter güncelle
+      try {
+        await fetch("/api/stats/user-created", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_premium: false })
+        });
+      } catch (e) {
+        console.log("[Stats] user-created notification failed", e);
+      }
     } catch (error) {
       console.error("[Firebase] Kullanıcı oluşturma hatası:", error);
     }
@@ -415,29 +482,11 @@ const OrbisFirebase = {
   // ═══════════════════════════════════════════════════════════════
 
   async activatePremium(packageId, credits, months) {
-    if (!this.user) {
-      alert("Premium satın almak için giriş yapmalısınız.");
-      return false;
-    }
-
-    const expiryDate = new Date();
-    expiryDate.setMonth(expiryDate.getMonth() + months);
-
-    const updates = {
-      isPremium: true,
-      premiumPackageId: packageId,
-      premiumExpiry: expiryDate.toISOString(),
-      credits: firebase.firestore.FieldValue.increment(credits),
-    };
-
-    const success = await this.updateUserData(updates);
-
-    if (success) {
-      // Satın alma kaydı
-      await this.logPurchase("premium", packageId, credits);
-    }
-
-    return success;
+    // DEPRECATED: Premium durumu artık client Firestore write ile atanmaz.
+    // Backend verify-purchase route + Admin SDK tek kaynak (firestore.rules).
+    // Bu metod saklı tutuldu (eski referanslar) ama no-op + uyarı.
+    console.warn("[ORBIS] activatePremium client-side deprecate. Backend '/api/monetization/verify-purchase' kullanın.");
+    return false;
   },
 
   async addCredits(amount, packagePrice) {
@@ -739,15 +788,14 @@ const OrbisFirebase = {
 
     try {
       // VAPID key - Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
-      // Bu key'i Firebase Console'dan alman gerekiyor
       const vapidKey =
-        "BDG800ijmQ1av11kHWR-ZnW_gVUKUYjKMH7oYqKnF-BsSb2K4ECB9PL0cQzpP90jehx5zwnR7WH46kYdlq6kUbE"; // TODO: Firebase Console'dan al
+        "BDG800ijmQ1av11kHWR-ZnW_gVUKUYjKMH7oYqKnF-BsSb2K4ECB9PL0cQzpP90jehx5zwnR7WH46kYdlq6kUbE";
 
       const token = await this.messaging.getToken({ vapidKey });
 
       if (token) {
         this.fcmToken = token;
-        console.log("[FCM] Token alındı:", token.substring(0, 20) + "...");
+        console.log("[FCM] Token alındı:", token.slice(0, 20) + "...");
 
         // Token'ı backend'e kaydet
         await this.saveFCMToken(token);
@@ -832,6 +880,44 @@ const OrbisFirebase = {
     if (/android/i.test(ua)) return "android";
     if (/iPad|iPhone|iPod/.test(ua)) return "ios";
     return "web";
+  },
+
+  // Heartbeat - her 60 saniyede bir backend'e canlı olduğunu bildir
+  _heartbeatInterval: null,
+
+  startHeartbeat(email, displayName) {
+    // Önceki intervali temizle
+    if (this._heartbeatInterval) {
+      clearInterval(this._heartbeatInterval);
+    }
+
+    // İlk heartbeat'i hemen gönder
+    this._sendHeartbeat(email, displayName);
+
+    // Sonra her 5 dakikada bir — backend load azalt (60s → 300s).
+    // 60 aktif user = 86k req/gün → 300s = ~17k req/gün.
+    this._heartbeatInterval = setInterval(() => {
+      this._sendHeartbeat(email, displayName);
+    }, 300000);
+  },
+
+  async _sendHeartbeat(email, displayName) {
+    try {
+      await fetch("/api/stats/heartbeat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, display_name: displayName }),
+      });
+    } catch (e) {
+      // Sessizce başarısız ol - önemli değil
+    }
+  },
+
+  stopHeartbeat() {
+    if (this._heartbeatInterval) {
+      clearInterval(this._heartbeatInterval);
+      this._heartbeatInterval = null;
+    }
   },
 };
 
