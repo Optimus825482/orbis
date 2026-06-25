@@ -1,5 +1,5 @@
-const CACHE_NAME = "orbis-v3";
-const ASSETS = [
+const CACHE_NAME = "orbis-v5"; // v5: new_result.html async/await fix
+const STATIC_ASSETS = [
   "/",
   "/static/css/tailwind.output.css",
   "/static/css/custom.css",
@@ -10,63 +10,71 @@ const ASSETS = [
   "/static/all-icons/Android/Icon-512.png",
 ];
 
-// Install event - cache assets
+// Install: cache static assets
 self.addEventListener("install", (event) => {
+  console.log("[SW] Installing v4...");
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log("[SW] Caching app shell");
-      return cache.addAll(ASSETS).catch((err) => {
-        console.log("[SW] Cache addAll failed:", err);
+      return cache.addAll(STATIC_ASSETS).catch((err) => {
+        console.log("[SW] Cache addAll partial error:", err.message);
       });
     })
   );
-  // Activate immediately
   self.skipWaiting();
 });
 
-// Activate event - clean old caches
+// Activate: clean old caches, take control
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log("[SW] Deleting old cache:", cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((k) => k !== CACHE_NAME)
+          .map((k) => caches.delete(k).then(() => console.log("[SW] Old cache deleted:", k)))
+      )
+    ).then(() => self.clients.claim())
   );
-  // Take control immediately
-  self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch: Network First for everything, cache fallback
 self.addEventListener("fetch", (event) => {
-  // Skip non-GET requests
+  // Skip non-GET
   if (event.request.method !== "GET") return;
 
-  // Skip cross-origin requests
-  if (!event.request.url.startsWith(self.location.origin)) return;
+  const url = new URL(event.request.url);
 
+  // Cross-origin: network only, don't cache
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // API calls: network only (never cache)
+  if (url.pathname.startsWith("/api/")) {
+    return;
+  }
+
+  // Static assets: network first, fallback to cache
+  // html pages: network first (so new deployments show immediately)
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then((response) => {
-        // Don't cache non-successful responses
-        if (!response || response.status !== 200 || response.type !== "basic") {
-          return response;
+    fetch(event.request)
+      .then((response) => {
+        // Cache successful responses
+        if (response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
-        // Clone the response
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
         return response;
-      });
-    })
+      })
+      .catch(() => {
+        // Offline: serve from cache
+        return caches.match(event.request).then((cached) => {
+          if (cached) return cached;
+          // If html and not in cache, serve index.html (SPA fallback)
+          if (url.pathname !== "/" && !url.pathname.match(/\.\w+$/)) {
+            return caches.match("/");
+          }
+          return new Response("Offline", { status: 503 });
+        });
+      })
   );
 });
