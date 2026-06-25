@@ -312,25 +312,6 @@ endblock %} {% block head %} {{ super() }}
   </div>
 </div>
 
-<!-- AdSense Banner (Web Only) -->
-<div id="adsense-banner-container" class="web-ads-only max-w-lg mx-auto px-4 mt-8">
-  <ins class="adsbygoogle" style="display: block" data-ad-client="ca-pub-2444093901783574" data-ad-slot="auto"
-    data-ad-format="auto" data-full-width-responsive="true"></ins>
-  <script>
-    // AdSense yalnızca web'de çalışır (Capacitor native değilse)
-    if (
-      !window.Capacitor ||
-      !window.Capacitor.isNativePlatform ||
-      !window.Capacitor.isNativePlatform()
-    ) {
-      ( adsbygoogle = window.adsbygoogle || [] ).push( {} );
-    } else {
-      // Native platformda gizle
-      document.getElementById( "adsense-banner-container" ).style.display =
-        "none";
-    }
-  </script>
-</div>
 
 <!-- Copyright Footer -->
 <footer class="mt-8 pb-6 text-center px-4">
@@ -894,8 +875,36 @@ endblock %} {% block head %} {{ super() }}
           }
         };
 
-        const cancelCallback = function () {
-          console.log( "[ORBIS] Analiz iptal edildi" );
+        const cancelCallback = function (reason) {
+          console.log( "[ORBIS] Analiz iptal edildi. reason:", reason );
+
+          // Loading overlay'i HER DURUMDA gizle
+          const loadingEl = document.getElementById( "loadingOverlay" );
+          if ( loadingEl ) {
+            $( loadingEl ).addClass( "hidden" ).removeClass( "flex" );
+          }
+
+          // Reason bilgisini UI'a yansıt
+          // Öncelik sırası: OrbisBridge.showAdErrorToast > OrbisBridge.explainAdFail > fallback alert
+          if ( window.OrbisBridge && typeof window.OrbisBridge.explainAdFail === "function" ) {
+            const msg = window.OrbisBridge.explainAdFail( reason );
+            if ( msg ) {
+              if ( typeof window.OrbisBridge.showAdErrorToast === "function" ) {
+                window.OrbisBridge.showAdErrorToast( msg, reason );
+              } else {
+                // Fallback: native alert
+                alert( "⚠️ " + msg );
+              }
+              return;
+            }
+            // msg null ise (örn. user_cancelled) — hiçbir şey gösterme, sessizce çık
+            return;
+          }
+
+          // OrbisBridge yoksa fallback
+          if ( reason ) {
+            alert( "⚠️ Analiz başlatılamadı. Tekrar deneyin. (kod: " + reason + ")" );
+          }
         };
 
         // Async fonksiyonu çağır
@@ -919,100 +928,10 @@ endblock %} {% block head %} {{ super() }}
       convertedBirthDate,
     ) {
       try {
-        console.log( "[ORBIS] submitForm called with:", {
-          birthDateDisplay,
-          transitDateDisplay,
-          convertedBirthDate,
-        } );
+        console.log( "[ORBIS] submitForm called" );
 
-        // 🎯 REKLAM İZLEME KONTROLÜ - YENİ STRATEJİ
-        const deviceId =
-          localStorage.getItem( "orbis_device_id" ) || "web_" + Date.now();
-        const userEmail = window.OrbisFirebase?.getCurrentUser()?.email || null;
-
-        // Kullanım kontrolü
-        const usageResponse = await fetch( "/api/check_usage", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify( { device_id: deviceId, email: userEmail } ),
-        } );
-        const usage = await usageResponse.json();
-
-        console.log( "[ORBIS] Usage check:", usage );
-
-        // Limit doldu mu?
-        if ( !usage.allowed ) {
-          alert( "Analiz yapmak için reklam izlemeniz gerekiyor! Premium'a geçerek reklamsız kullanabilirsiniz." );
-          if ( typeof showPremiumModal === "function" ) {
-            showPremiumModal();
-          }
-          return;
-        }
-
-        // Reklam izleme gerekli mi?
-        if ( usage.requires_ad ) {
-          console.log( "[ORBIS] Rewarded ad required for analysis" );
-
-          // Funnel: Reklam gerekli adımı
-          if ( window.OrbisBridge && typeof window.OrbisBridge.trackFunnelStep === 'function' ) {
-            window.OrbisBridge.trackFunnelStep( "analysis_flow", "ad_required", 2 );
-          }
-
-          // Rewarded ad göster
-          if ( window.OrbisRewardedAds && typeof window.OrbisRewardedAds.showForAnalysis === 'function' ) {
-            console.log( "[ORBIS] OrbisRewardedAds.showForAnalysis is available" );
-            const rewarded = await window.OrbisRewardedAds.showForAnalysis();
-
-            console.log( "[ORBIS] Rewarded ad result:", rewarded );
-
-            if ( !rewarded ) {
-              // Funnel: Reklam izlenmedi
-              if ( window.OrbisBridge ) {
-                window.OrbisBridge.trackEvent( "ad_skipped_or_failed", {
-                  reason: "user_declined_or_error",
-                  step: "analysis_start"
-                } );
-              }
-              alert( "Analiz yapmak için reklam izlemeniz gerekiyor!" );
-              $( "#loadingOverlay" ).addClass( "hidden" ).removeClass( "flex" );
-              return;
-            }
-
-            // Funnel: Reklam izlendi
-            if ( window.OrbisBridge ) {
-              window.OrbisBridge.trackFunnelStep( "analysis_flow", "ad_watched", 3 );
-            }
-
-            // Reklam izlendi, kullanımı kaydet
-            try {
-              const recordResponse = await fetch( "/api/record_ad_watch", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify( { device_id: deviceId, email: userEmail } ),
-              } );
-
-              const recordResult = await recordResponse.json();
-              console.log( "[ORBIS] Ad watch recorded:", recordResult );
-            } catch ( recordError ) {
-              console.error( "[ORBIS] Failed to record ad watch:", recordError );
-              // Devam et yine de - kayıt hatasında kullanıcıyı bloklamayalım
-            }
-
-            console.log( "[ORBIS] ✅ Ad watched successfully, proceeding to submit..." );
-          } else {
-            console.warn( "[ORBIS] OrbisRewardedAds not available" );
-            alert( "Reklam sistemi yüklenemedi. Lütfen uygulamayı yeniden başlatın." );
-            return;
-          }
-        } else {
-          // Funnel: Reklam gerekmiyor (premium veya limit içinde)
-          if ( window.OrbisBridge ) {
-            window.OrbisBridge.trackFunnelStep( "analysis_flow", "no_ad_required", 2 );
-          }
-        }
-
-        // 🎯 ŞU NOKTADA REKLAM BİTMİŞ, DEVAM ET
-        console.log( "[ORBIS] 🔄 Reklam kontrolü tamamlandı, loading başlıyor..." );
+        // 🎯 DOĞRUDAN ANALİZE GEÇ - requestAnalysis zaten reklamı halletti
+        console.log( "[ORBIS] 🔄 Loading başlıyor..." );
         $( "#loadingOverlay" ).removeClass( "hidden" ).addClass( "flex" );
         let msgIdx = 0;
         const msgInterval = setInterval( () => {

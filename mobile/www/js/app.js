@@ -107,7 +107,12 @@ const OrbisApp = {
       if (App) {
         App.addListener("backButton", ({ canGoBack }) => {
           if (!canGoBack) {
-            App.exitApp();
+            // Capacitor 6: close() arka plana gönderir, exitApp() deprecated.
+            if (typeof App.close === "function") {
+              App.close();
+            } else {
+              App.exitApp();
+            }
           } else {
             window.history.back();
           }

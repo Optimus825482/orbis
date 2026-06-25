@@ -6,10 +6,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#151022" />
   <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="ORBIS" />
+  <meta name="application-name" content="ORBIS" />
+  <meta name="msapplication-TileColor" content="#151022" />
+  <meta name="msapplication-TileImage" content="/static/all-icons/Android/Icon-144.png" />
   <link rel="manifest" href="/manifest.json" />
-  <link rel="apple-touch-icon" href="{{ url_for('static', filename='all-icons/iOS/Icon-180.png') }}" />
+  
+  <!-- iOS PWA: Apple Touch Icons (all sizes) -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='all-icons/iOS/Icon-180.png') }}" />
+  <link rel="apple-touch-icon" sizes="152x152" href="{{ url_for('static', filename='all-icons/iOS/Icon-152.png') }}" />
+  <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='all-icons/iOS/Icon-144.png') }}" />
+  <link rel="apple-touch-icon" sizes="120x120" href="{{ url_for('static', filename='all-icons/iOS/Icon-120.png') }}" />
+  <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='all-icons/iOS/Icon-114.png') }}" />
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='all-icons/Android/Icon-192.png') }}" />
+  <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='all-icons/Android/Icon-512.png') }}" />
+  
+  <!-- iOS Safari: mask icon for pinned tabs -->
+  <link rel="mask-icon" href="{{ url_for('static', filename='all-icons/iOS/Icon-1024.png') }}" color="#5b2bee" />
+  
+  <!-- Windows: Tile icon -->
+  <meta name="msapplication-square150x150logo" content="/static/all-icons/Android/Icon-144.png" />
 
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-PLJEZCGT27"></script>
@@ -21,10 +39,6 @@
     gtag( "js", new Date() );
     gtag( "config", "G-PLJEZCGT27" );
   </script>
-
-  <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2444093901783574"
-    crossorigin="anonymous"></script>
 
   <title>{% block title %}ORBIS - Kaderin Geometrisi{% endblock %}</title>
 
@@ -217,6 +231,12 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 
   {% block head %}{% endblock %}
+
+  <!-- Google Analytics 4 (KVKK consent gated) -->
+  <script>
+    window.ORBIS_GA4_ID = "{{ config.get('GA4_MEASUREMENT_ID', '') }}";
+  </script>
+  <script src="{{ url_for('static', filename='js/analytics.js') }}?v=20260623-1" defer></script>
 </head>
 
 <body class="bg-background-dark text-slate-100 overflow-x-hidden selection:bg-primary/30">
@@ -565,7 +585,7 @@
             <span class="material-icons-round text-5xl text-primary mb-3">account_circle</span>
             <h3 class="text-lg font-bold">ORBIS'e Giriş Yap</h3>
             <p class="text-xs text-slate-400 mt-2">
-              Premium ve kredileriniz tüm cihazlarınızda senkronize olsun
+              Analiz gecmisiniz tum cihazlarinizda senkronize olsun
             </p>
           </div>
 
@@ -597,15 +617,11 @@
             <p id="modal-user-email" class="text-xs text-slate-400"></p>
           </div>
 
-          <!-- Status -->
+          <!-- Status (Premium/credit kaldirildi) -->
           <div class="bg-slate-800 rounded-xl p-4 mb-4">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-xs text-slate-400">Durum</span>
-              <span id="modal-premium-badge" class="text-xs font-bold text-primary">Ücretsiz</span>
-            </div>
             <div class="flex justify-between items-center">
-              <span class="text-xs text-slate-400">Kredi</span>
-              <span id="modal-credits" class="text-xs font-bold">0</span>
+              <span class="text-xs text-slate-400">Uyelik</span>
+              <span id="modal-premium-badge" class="text-xs font-bold text-primary">Ucretsiz</span>
             </div>
           </div>
 
@@ -631,8 +647,11 @@
   <!-- Core JavaScript -->
   <script src="{{ url_for('static', filename='js/app.js') }}?v=20260202-3"></script>
 
+  <!-- AdMob Config — tek kaynak (mobile + web paylaşımlı) -->
+  <script src="{{ url_for('static', filename='js/admob-config.js') }}?v=20260623-1"></script>
+
   <!-- Mobile Bridge (Capacitor + AdMob) -->
-  <script src="{{ url_for('static', filename='js/mobile-bridge.js') }}?v=20260202-5"></script>
+  <script src="{{ url_for('static', filename='js/mobile-bridge.js') }}?v=20260623-2"></script>
 
   <!-- Firebase Config -->
   <script src="{{ url_for('static', filename='js/firebase-config.js') }}?v=20260202-3"></script>
@@ -679,16 +698,15 @@
         document.getElementById( "modal-user-email" ).textContent =
           user.email || "";
 
-        // Update status
-        const isPremium = userData?.isPremium || false;
-        const credits = userData?.credits || 0;
-        document.getElementById( "modal-premium-badge" ).textContent = isPremium
-          ? "💎 Premium"
-          : "Ücretsiz";
-        document.getElementById( "modal-premium-badge" ).className = isPremium
-          ? "text-xs font-bold text-yellow-400"
-          : "text-xs font-bold text-slate-400";
-        document.getElementById( "modal-credits" ).textContent = credits;
+        // Update status (Premium/credit kaldirildi)
+        const badge = document.getElementById( "modal-premium-badge" );
+        if (badge) {
+          badge.textContent = "Ucretsiz";
+          badge.className = "text-xs font-bold text-slate-400";
+        }
+        // Geriye uyumluluk: modal-credits artik kullanilmiyor ama varsa hata vermesin
+        const creditEl = document.getElementById( "modal-credits" );
+        if (creditEl) creditEl.textContent = "";
 
         // Update mobile nav icon
         document

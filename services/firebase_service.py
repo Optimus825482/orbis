@@ -4,6 +4,12 @@ Push Notifications & Server-side Firestore işlemleri
 """
 
 import os
+
+# GCP Regional Access Boundary devre dışı — firebase_admin import'undan
+# ÖNCE set edilmeli, yoksa internal client init'te Precondition check devreye girer.
+os.environ.setdefault('FIRESTORE_ACCESS_BOUNDARY_DISABLED', 'true')
+os.environ.setdefault('GOOGLE_CLOUD_FIRESTORE_ACCESS_BOUNDARY_DISABLED', 'true')
+
 import json
 import logging
 import firebase_admin
@@ -36,12 +42,16 @@ class FirebaseService:
     def _init_firebase(self):
         """Firebase Admin SDK'yı başlat"""
         self.db = None  # Önce None olarak başlat
-        
+
+        # Not: FIRESTORE_ACCESS_BOUNDARY_DISABLED modül import'unda (dosya başında)
+        # set ediliyor — burada tekrar set etmeye gerek yok, client init anına
+        # yetişmesi garanti.
+
         try:
             # Credential dosyası yolu
             cred_path = os.environ.get('FIREBASE_CREDENTIALS_PATH')
             
-            if cred_path and os.path.exists(cred_path):
+            if cred_path and os.path.isfile(cred_path):
                 # Dosyadan yükle
                 cred = credentials.Certificate(cred_path)
             elif os.environ.get('FIREBASE_CREDENTIALS_JSON'):
@@ -58,7 +68,7 @@ class FirebaseService:
                 
                 cred = None
                 for path in default_paths:
-                    if os.path.exists(path):
+                    if os.path.isfile(path):
                         cred = credentials.Certificate(path)
                         break
                 
@@ -220,8 +230,9 @@ class FirebaseService:
         
         Topics:
             - 'all_users': Tüm kullanıcılar
-            - 'premium_users': Premium kullanıcılar
             - 'daily_horoscope': Günlük burç yorumu isteyenler
+
+        Not: 'premium_users' topic'i kaldirildi. Uygulama ucretsiz.
         """
         try:
             # Android config - çift ses olmasın
@@ -312,92 +323,32 @@ class FirebaseService:
             return []
     
     def _remove_invalid_token(self, token: str):
-        """Geçersiz token'ı tüm kullanıcılardan sil"""
+        """Geçersiz token'ı users koleksiyonundan sil.
+        Firestore `array_contains` obje eşleştirme desteği yok — doc read + filter
+        yaklaşımı kullanılır. ArrayRemove partial obje eşleştirmediği için elle filtrele."""
         if not self.db:
             return
-            
+
         try:
-            # Token'ı içeren kullanıcıları bul ve sil
-            users = self.db.collection('users').where(
-                'fcmTokens', 'array_contains', {'token': token}
-            ).stream()
-            
-            for user in users:
-                self.db.collection('users').document(user.id).update({
-                    'fcmTokens': firestore.ArrayRemove([{'token': token}])
-                })
+            # Tüm kullanıcıları tara (N+1 yavaş ama doğru; ölçeklenebilir hale getirmek
+            # için fcmTokens yapısı {token: {...}} map'e taşınmalı — bkz. plan notu).
+            batch = 0
+            for doc in self.db.collection('users').limit(500).stream():
+                data = doc.to_dict() or {}
+                tokens = data.get('fcmTokens', [])
+                if not isinstance(tokens, list) or not tokens:
+                    continue
+                filtered = [t for t in tokens if not (isinstance(t, dict) and t.get('token') == token)]
+                if len(filtered) != len(tokens):
+                    self.db.collection('users').document(doc.id).update({'fcmTokens': filtered})
+                    batch += 1
+            if batch:
+                logger.info(f"[Firebase] {batch} kullanıcıdan stale token silindi: {token[:20]}…")
         except Exception as e:
             logger.error(f"[Firebase] Token silme hatası: {e}")
     
-    def activate_premium(
-        self,
-        user_id: str,
-        package_id: str,
-        credits: int,
-        months: int
-    ) -> bool:
-        """
-        Kullanıcıya premium aktivasyonu yap (satın alma sonrası)
-        Bu fonksiyon sadece backend'den çağrılmalı!
-        """
-        if not self.db:
-            return False
-            
-        try:
-            from datetime import datetime, timedelta
-            
-            expiry_date = datetime.now() + timedelta(days=months * 30)
-            
-            self.db.collection('users').document(user_id).update({
-                'isPremium': True,
-                'premiumPackageId': package_id,
-                'premiumExpiry': expiry_date.isoformat(),
-                'credits': firestore.Increment(credits),
-                'updatedAt': firestore.SERVER_TIMESTAMP
-            })
-            
-            # Satın alma kaydı
-            self.db.collection('purchases').add({
-                'userId': user_id,
-                'type': 'premium',
-                'packageId': package_id,
-                'credits': credits,
-                'months': months,
-                'timestamp': firestore.SERVER_TIMESTAMP
-            })
-            
-            logger.info(f"[Firebase] Premium aktivasyonu: {user_id} -> {package_id}")
-            return True
-
-        except Exception as e:
-            logger.error(f"[Firebase] Premium aktivasyon hatası: {e}")
-            return False
-    
-    def add_credits(self, user_id: str, amount: int, package_price: float) -> bool:
-        """Kullanıcıya kredi ekle (satın alma sonrası)"""
-        if not self.db:
-            return False
-            
-        try:
-            self.db.collection('users').document(user_id).update({
-                'credits': firestore.Increment(amount),
-                'updatedAt': firestore.SERVER_TIMESTAMP
-            })
-            
-            # Satın alma kaydı
-            self.db.collection('purchases').add({
-                'userId': user_id,
-                'type': 'credits',
-                'amount': amount,
-                'price': package_price,
-                'timestamp': firestore.SERVER_TIMESTAMP
-            })
-            
-            return True
-
-        except Exception as e:
-            logger.error(f"[Firebase] Kredi ekleme hatası: {e}")
-            return False
+    # Premium aktivasyon metodları kaldırıldı.
+    # Uygulama tamamen ücretsiz, her analiz için rewarded ad zorunlu.
 
 
 # Singleton instance

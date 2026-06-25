@@ -1,0 +1,43 @@
+{% extends "admin/layout.html" %}
+{% block title %}Fiyat Yönetimi{% endblock %}
+{% block page_title %}Fiyat Yönetimi{% endblock %}
+{% block page_subtitle %}Premium kaldirildi · Bu sayfa artik kullanilmiyor{% endblock %}
+
+{% block content %}
+<div class="stack-6 stagger" style="max-width: 720px;">
+  <div class="card">
+    <header class="card-head">
+      <div>
+        <h2 class="card-title">Premium Kaldırıldı</h2>
+        <p class="card-subtitle">Uygulama artık tamamen ücretsiz ve sadece reklam destekli</p>
+      </div>
+      <span class="badge badge--dot badge--success">ÜCRETSİZ</span>
+    </header>
+    <div class="card-body">
+      <p style="margin: 0 0 var(--space-3); color: var(--ink); font-size: 14px;">
+        Bu yönetim sayfası artık kullanılmıyor. Premium üyelik ve kredi satışı kaldırıldı.
+      </p>
+      <p style="margin: 0; color: var(--ink-muted); font-size: 13px;">
+        Kullanıcılar tüm analiz özelliklerine <strong>ücretsiz</strong> olarak erişir.
+        Analiz yapmak için tek gereksinim, kısa bir <strong>Rewarded reklam</strong> izlemektir.
+      </p>
+
+      <div style="margin-top: var(--space-5); padding: var(--space-4); background: var(--glass-bg-2); border: 1px solid var(--glass-border); border-radius: var(--radius-md);">
+        <h3 style="font-size: 13px; font-weight: 600; color: var(--ink); margin: 0 0 var(--space-3);">📊 Gelir Modeli</h3>
+        <ul style="margin: 0; padding-left: var(--space-4); color: var(--ink-muted); font-size: 13px; line-height: 1.8;">
+          <li><strong>Banner:</strong> Ana ekranda sürekli (pasif gelir)</li>
+          <li><strong>Rewarded:</strong> Her analiz öncesi zorunlu (yüksek CPM)</li>
+          <li><strong>Interstitial:</strong> Analizler arası (agresif olmayan sıklıkta)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert--info">
+    <span class="material-symbols-outlined">info</span>
+    <div style="font-size: 13px;">
+      <strong>Geçmiş:</strong> Daha önce burada <code style="background: var(--glass-bg-3); padding: 2px 6px; border-radius: 4px; color: var(--primary); font-size: 12px;">config/pricing</code> Firestore dokümanı kullanılarak premium fiyatları yönetiliyordu. Bu özellik tamamen kaldırıldı.
+    </div>
+  </div>
+</div>
+{% endblock %}

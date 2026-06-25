@@ -1,42 +1,39 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Kullanıcı koleksiyonu
+
+    // Admin SDK her zaman bypass eder — bu rules sadece client SDK için.
+    //
+    // PREMIUM/KREDİ KALDIRILDI: Uygulama tamamen ucretsiz.
+    // Eski korumalı alanlar (isPremium / credits / premium*) artik update kuralinda
+    // kontrol edilmez. Ancak geriye uyumluluk icin rules hâlâ bu alanlara
+    // client tarafindan yanlislikla yazilmasini engeller.
+    //
+    // İzinli client alanlar: dailyUsage, totalAnalyses, fcmTokens, lastSeen,
+    //                        adsWatched, rewardedAdsWatched
+
     match /users/{userId} {
-      // Kullanıcı sadece kendi verisini okuyabilir
-      allow read: if request.auth != null && request.auth.uid == userId;
-      
-      // Kullanıcı sadece kendi verisini yazabilir
-      // Ancak isPremium, premiumExpiry, credits alanları sadece backend tarafından değiştirilebilir
-      allow create: if request.auth != null && request.auth.uid == userId
-        && request.resource.data.isPremium == false
-        && request.resource.data.credits == 0;
-      
-      // Güncelleme - hassas alanlar korunuyor
+      // Kullanici kendi doc'unu okuyabilir; admin token her seyi okuyabilir (admin panel).
+      allow read: if request.auth != null
+        && (request.auth.uid == userId || request.auth.token.admin == true);
+
+      // Yeni kullanici olusturma
+      allow create: if request.auth != null && request.auth.uid == userId;
+
+      // Guncelleme — premium/credit alanlarina dokunamaz (geriye uyumluluk)
       allow update: if request.auth != null && request.auth.uid == userId
-        && (
-          // Normal kullanıcı güncellemeleri (dailyUsage, totalAnalyses)
-          (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['isPremium', 'premiumExpiry', 'premiumPackageId']))
-          ||
-          // Test modu için (production'da kaldırılacak)
-          true
-        );
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'isPremium', 'premiumExpiry', 'premiumPackageId', 'credits', 'premiumActivatedAt'
+        ]);
     }
-    
-    // Satın alma kayıtları
+
+    // purchases koleksiyonu artik sadece eski veriler icin (geriye uyumluluk)
     match /purchases/{purchaseId} {
-      // Kullanıcı sadece kendi satın almalarını görebilir
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      
-      // Yeni satın alma kaydı oluşturabilir
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      
-      // Satın almalar değiştirilemez
       allow update, delete: if false;
     }
-    
-    // Diğer tüm koleksiyonlar varsayılan olarak kapalı
+
     match /{document=**} {
       allow read, write: if false;
     }

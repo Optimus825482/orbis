@@ -1,508 +1,191 @@
-{% extends "admin/layout.html" %} {% block title %}ORBIS Admin - Kullanıcılar{%
-endblock %} {% block page_title %}Kullanıcı Yönetimi{% endblock %} {% block
-page_subtitle %}Tüm kullanıcıları görüntüle ve yönet{% endblock %} {% block
-content %}
-<!-- Filters & Search -->
-<div class="glass-card rounded-2xl p-4 mb-6">
-  <div class="flex flex-wrap items-center gap-4">
-    <!-- Search -->
-    <div class="flex-1 min-w-[200px]">
-      <div class="relative">
-        <span
-          class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
-          >search</span
-        >
-        <input
-          type="text"
-          id="search-input"
-          placeholder="Email veya isim ara..."
-          class="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-border-dark rounded-xl text-sm focus:outline-none focus:border-primary/50 transition-colors"
-        />
+{% extends "admin/layout.html" %}
+{% block title %}Kullanıcılar{% endblock %}
+{% block page_title %}Kullanıcılar{% endblock %}
+{% block page_subtitle %}Tüm kullanıcıları görüntüle, filtrele ve yönet (uygulama ucretsiz, reklam destekli){% endblock %}
+
+{% block content %}
+<!-- ═══ Filter Bar ═══ -->
+<div class="card stagger" style="margin-bottom: var(--space-5);">
+  <div class="card-body">
+    <div class="row row--wrap" style="gap: var(--space-3);">
+      <div class="input-group" style="flex: 1; min-width: 240px;">
+        <span class="input-group-icon material-symbols-outlined">search</span>
+        <input id="user-search" class="input" type="search" placeholder="E-posta veya ad ile ara…" />
       </div>
-    </div>
 
-    <!-- Filter Buttons -->
-    <div class="flex items-center gap-2">
-      <button
-        onclick="setFilter('all')"
-        data-filter="all"
-        class="filter-btn px-4 py-2 rounded-xl text-sm font-medium transition-all bg-primary/20 text-primary"
-      >
-        Tümü
-      </button>
-      <button
-        onclick="setFilter('premium')"
-        data-filter="premium"
-        class="filter-btn px-4 py-2 rounded-xl text-sm font-medium transition-all bg-white/5 text-slate-400 hover:bg-white/10"
-      >
-        <span class="material-icons-round text-sm align-middle mr-1"
-          >diamond</span
-        >
-        Premium
-      </button>
-      <button
-        onclick="setFilter('free')"
-        data-filter="free"
-        class="filter-btn px-4 py-2 rounded-xl text-sm font-medium transition-all bg-white/5 text-slate-400 hover:bg-white/10"
-      >
-        Ücretsiz
-      </button>
-    </div>
-
-    <!-- Refresh -->
-    <button
-      onclick="loadUsers()"
-      class="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
-    >
-      <span class="material-icons-round text-slate-400">refresh</span>
-    </button>
-  </div>
-</div>
-
-<!-- Users Table -->
-<div class="glass-card rounded-2xl overflow-hidden">
-  <div class="overflow-x-auto">
-    <table class="w-full">
-      <thead class="bg-white/5">
-        <tr class="text-left text-xs text-slate-500 uppercase tracking-wider">
-          <th class="px-6 py-4 font-medium">Kullanıcı</th>
-          <th class="px-6 py-4 font-medium">Durum</th>
-          <th class="px-6 py-4 font-medium">Paket</th>
-          <th class="px-6 py-4 font-medium">Kredi</th>
-          <th class="px-6 py-4 font-medium">Analiz</th>
-          <th class="px-6 py-4 font-medium">Kayıt Tarihi</th>
-          <th class="px-6 py-4 font-medium">İşlemler</th>
-        </tr>
-      </thead>
-      <tbody id="users-table">
-        <tr>
-          <td colspan="7" class="px-6 py-12 text-center text-slate-500">
-            <span class="material-icons-round animate-spin text-3xl"
-              >refresh</span
-            >
-            <span class="block mt-2">Yükleniyor...</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Pagination -->
-  <div
-    class="px-6 py-4 border-t border-border-dark flex items-center justify-between"
-  >
-    <div class="text-sm text-slate-500">
-      <span id="showing-count">0</span> /
-      <span id="total-count">0</span> kullanıcı
-    </div>
-    <div class="flex items-center gap-2">
-      <button
-        onclick="prevPage()"
-        id="prev-btn"
-        disabled
-        class="px-3 py-1.5 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm transition-colors"
-      >
-        <span class="material-icons-round text-sm">chevron_left</span>
-      </button>
-      <span class="text-sm text-slate-400"
-        >Sayfa <span id="current-page">1</span></span
-      >
-      <button
-        onclick="nextPage()"
-        id="next-btn"
-        disabled
-        class="px-3 py-1.5 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm transition-colors"
-      >
-        <span class="material-icons-round text-sm">chevron_right</span>
-      </button>
+      <div class="row" role="tablist" aria-label="Kullanıcı filtresi" style="gap: var(--space-2);">
+        <button class="target-option is-active" data-filter="all" type="button">
+          <span class="material-symbols-outlined" style="font-size: 18px;">groups</span>
+          <span>Tümü</span>
+        </button>
+        <button class="target-option" data-filter="admin" type="button">
+          <span class="material-symbols-outlined" style="font-size: 18px;">shield_person</span>
+          <span>Admin</span>
+        </button>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Quick Edit Modal -->
-<div
-  id="edit-modal"
-  class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4"
->
-  <div
-    class="bg-surface-dark rounded-2xl p-6 w-full max-w-md border border-border-dark"
-  >
-    <div class="flex items-center justify-between mb-6">
-      <h3 class="font-display font-bold text-lg">Kullanıcı Düzenle</h3>
-      <button
-        onclick="closeEditModal()"
-        class="p-2 hover:bg-white/5 rounded-lg transition-colors"
-      >
-        <span class="material-icons-round text-slate-400">close</span>
-      </button>
-    </div>
-
-    <div
-      id="edit-user-info"
-      class="flex items-center gap-3 mb-6 p-3 bg-white/5 rounded-xl"
-    >
-      <img id="edit-user-avatar" src="" alt="" class="w-10 h-10 rounded-full" />
-      <div>
-        <div id="edit-user-name" class="font-medium"></div>
-        <div id="edit-user-email" class="text-xs text-slate-500"></div>
-      </div>
-    </div>
-
-    <input type="hidden" id="edit-user-id" />
-
-    <!-- Premium Toggle -->
-    <div class="mb-4">
-      <label
-        class="flex items-center justify-between p-4 bg-white/5 rounded-xl cursor-pointer"
-      >
-        <div class="flex items-center gap-3">
-          <span class="material-icons-round text-yellow-400">diamond</span>
-          <span class="text-sm font-medium">Premium Üyelik</span>
+<!-- ═══ Users Table ═══ -->
+<div class="table-wrap stagger">
+  <table class="table" id="users-table">
+    <thead>
+      <tr>
+        <th>Kullanıcı</th>
+        <th>E-posta</th>
+        <th>Durum</th>
+        <th class="num">Analiz</th>
+        <th class="num">Reklam</th>
+        <th>Son görülme</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="users-tbody">
+      <tr><td colspan="7">
+        <div class="empty" style="padding: var(--space-10) 0;">
+          <div class="empty-icon"><span class="material-symbols-outlined">hourglass_empty</span></div>
+          <div class="empty-title">Yükleniyor…</div>
         </div>
-        <input
-          type="checkbox"
-          id="edit-premium"
-          class="w-5 h-5 rounded bg-white/10 border-border-dark text-primary focus:ring-primary/50"
-        />
-      </label>
-    </div>
+      </td></tr>
+    </tbody>
+  </table>
+</div>
 
-    <!-- Premium Options (shown when premium is checked) -->
-    <div
-      id="premium-options"
-      class="hidden space-y-4 mb-4 p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl"
-    >
-      <div>
-        <label class="block text-xs text-slate-500 mb-1">Paket</label>
-        <select
-          id="edit-package"
-          class="w-full px-3 py-2 bg-white/5 border border-border-dark rounded-lg text-sm focus:outline-none focus:border-primary/50"
-        >
-          <option value="admin_grant">Admin Grant</option>
-          <option value="monthly">Aylık</option>
-          <option value="yearly">Yıllık</option>
-          <option value="lifetime">Ömür Boyu</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs text-slate-500 mb-1">Süre (Ay)</label>
-        <input
-          type="number"
-          id="edit-months"
-          value="1"
-          min="1"
-          max="120"
-          class="w-full px-3 py-2 bg-white/5 border border-border-dark rounded-lg text-sm focus:outline-none focus:border-primary/50"
-        />
-      </div>
-    </div>
-
-    <!-- Credits -->
-    <div class="mb-6">
-      <label class="block text-xs text-slate-500 mb-2">Kredi İşlemi</label>
-      <div class="flex gap-2">
-        <select
-          id="credit-action"
-          class="px-3 py-2 bg-white/5 border border-border-dark rounded-lg text-sm focus:outline-none focus:border-primary/50"
-        >
-          <option value="add">Ekle</option>
-          <option value="subtract">Çıkar</option>
-          <option value="set">Ayarla</option>
-        </select>
-        <input
-          type="number"
-          id="credit-amount"
-          value="0"
-          min="0"
-          class="flex-1 px-3 py-2 bg-white/5 border border-border-dark rounded-lg text-sm focus:outline-none focus:border-primary/50"
-        />
-      </div>
-    </div>
-
-    <!-- Actions -->
-    <div class="flex gap-3">
-      <button
-        onclick="closeEditModal()"
-        class="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-medium transition-colors"
-      >
-        İptal
+<!-- ═══ User Detail Modal (read-only) ═══ -->
+<div id="edit-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Kullanıcı detayı" hidden style="display: none;">
+  <div class="modal">
+    <header class="modal-head">
+      <h2 class="modal-title">Kullanıcı Detayı</h2>
+      <button class="icon-btn icon-btn--ghost" type="button" data-close-modal aria-label="Kapat">
+        <span class="material-symbols-outlined">close</span>
       </button>
-      <button
-        onclick="saveUserChanges()"
-        class="flex-1 px-4 py-3 bg-primary hover:bg-primary/80 rounded-xl text-sm font-medium transition-colors"
-      >
-        Kaydet
-      </button>
+    </header>
+    <div class="modal-body">
+      <div class="stack-4">
+        <p style="margin: 0; color: var(--ink-muted); font-size: 13px;">
+          Uygulama ucretsiz oldugu icin premium/credit islemi yapilamiyor.
+          Bu alan yalnizca bilgi gosterir.
+        </p>
+        <div>
+          <label>Toplam Analiz</label>
+          <div id="detail-analyses" class="input" style="background: var(--bg-2);">—</div>
+        </div>
+        <div>
+          <label>İzlenen Reklam (Toplam)</label>
+          <div id="detail-ads" class="input" style="background: var(--bg-2);">—</div>
+        </div>
+        <div>
+          <label>Rewarded Reklam (Toplam)</label>
+          <div id="detail-rewarded" class="input" style="background: var(--bg-2);">—</div>
+        </div>
+      </div>
     </div>
+    <footer class="modal-foot">
+      <button class="btn btn--ghost" type="button" data-close-modal>Kapat</button>
+    </footer>
   </div>
 </div>
-{% endblock %} {% block scripts %}
+{% endblock %}
+
+{% block scripts %}
 <script>
-  let currentFilter = "all";
-  let currentSearch = "";
-  let currentPage = 0;
-  const pageSize = 20;
-  let totalUsers = 0;
+  let allUsers = [];
+  let currentFilter = 'all';
+  let searchQuery = '';
 
-  // Load users
-  async function loadUsers() {
-    const tbody = document.getElementById("users-table");
-    tbody.innerHTML = `
-            <tr>
-                <td colspan="7" class="px-6 py-12 text-center text-slate-500">
-                    <span class="material-icons-round animate-spin text-3xl">refresh</span>
-                    <span class="block mt-2">Yükleniyor...</span>
-                </td>
-            </tr>
-        `;
-
-    try {
-      const params = new URLSearchParams({
-        limit: pageSize,
-        offset: currentPage * pageSize,
-        filter: currentFilter,
-        search: currentSearch,
-      });
-
-      const res = await fetch(`/admin/api/users?${params}`);
-      const data = await res.json();
-
-      if (data.success) {
-        totalUsers = data.data.total;
-        renderUsers(data.data.users);
-        updatePagination();
-      } else {
-        throw new Error(data.error);
-      }
-    } catch (error) {
-      console.error("Load users error:", error);
-      tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="px-6 py-12 text-center text-red-400">
-                        <span class="material-icons-round text-3xl">error</span>
-                        <span class="block mt-2">Yüklenirken hata oluştu</span>
-                    </td>
-                </tr>
-            `;
-    }
+  function escapeHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
-  function renderUsers(users) {
-    const tbody = document.getElementById("users-table");
+  async function loadUsers() {
+    try {
+      const res = await fetch('/admin/api/users?limit=200', { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const json = await res.json();
+      allUsers = (json.data && json.data.users) || json.users || json.data || [];
+      renderUsers();
+    } catch (e) { console.warn('[admin] loadUsers failed', e); }
+  }
 
-    if (users.length === 0) {
-      tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="px-6 py-12 text-center text-slate-500">
-                        <span class="material-icons-round text-3xl">person_off</span>
-                        <span class="block mt-2">Kullanıcı bulunamadı</span>
-                    </td>
-                </tr>
-            `;
+  function renderUsers() {
+    const tbody = document.getElementById('users-tbody');
+    if (!tbody) return;
+    let filtered = allUsers.slice();
+    if (currentFilter === 'admin') filtered = filtered.filter(u => u.isAdmin);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(u => (u.email || '').toLowerCase().includes(q) || (u.displayName || u.name || '').toLowerCase().includes(q));
+    }
+    if (!filtered.length) {
+      tbody.innerHTML = '<tr><td colspan="7"><div class="empty" style="padding: var(--space-10) 0;">' +
+        '<div class="empty-icon"><span class="material-symbols-outlined">search_off</span></div>' +
+        '<div class="empty-title">Eşleşen kullanıcı yok</div>' +
+        '<div class="empty-desc">Farklı bir filtre veya arama terimi deneyin.</div>' +
+        '</div></td></tr>';
       return;
     }
-
-    tbody.innerHTML = users
-      .map(
-        (user) => `
-            <tr class="table-row border-b border-border-dark/50 transition-colors">
-                <td class="px-6 py-4">
-                    <div class="flex items-center gap-3">
-                        <img src="${
-                          user.photoURL ||
-                          "https://ui-avatars.com/api/?name=" +
-                            encodeURIComponent(user.displayName || "U")
-                        }&background=5b2bee&color=fff" 
-                             alt="" class="w-10 h-10 rounded-full">
-                        <div>
-                            <div class="font-medium">${
-                              user.displayName || "İsimsiz"
-                            }</div>
-                            <div class="text-xs text-slate-500">${
-                              user.email || "-"
-                            }</div>
-                        </div>
-                    </div>
-                </td>
-                <td class="px-6 py-4">
-                    ${
-                      user.isPremium
-                        ? '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-medium"><span class="material-icons-round text-xs">diamond</span> Premium</span>'
-                        : '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-500/20 text-slate-400 text-xs font-medium">Ücretsiz</span>'
-                    }
-                </td>
-                <td class="px-6 py-4">
-                    <span class="text-sm text-slate-400">${
-                      user.premiumPackageId || "-"
-                    }</span>
-                </td>
-                <td class="px-6 py-4">
-                    <span class="font-mono font-medium">${
-                      user.credits || 0
-                    }</span>
-                </td>
-                <td class="px-6 py-4">
-                    <span class="font-mono">${user.totalAnalyses || 0}</span>
-                </td>
-                <td class="px-6 py-4">
-                    <span class="text-sm text-slate-500">${formatDate(
-                      user.createdAt
-                    )}</span>
-                </td>
-                <td class="px-6 py-4">
-                    <div class="flex items-center gap-1">
-                        <a href="/admin/users/${
-                          user.id
-                        }" class="p-2 hover:bg-white/5 rounded-lg transition-colors" title="Detay">
-                            <span class="material-icons-round text-slate-400 text-lg">visibility</span>
-                        </a>
-                        <button onclick="openEditModal('${user.id}', '${
-          user.displayName || ""
-        }', '${user.email || ""}', '${user.photoURL || ""}', ${
-          user.isPremium
-        }, '${user.premiumPackageId || ""}')" 
-                                class="p-2 hover:bg-white/5 rounded-lg transition-colors" title="Düzenle">
-                            <span class="material-icons-round text-slate-400 text-lg">edit</span>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `
-      )
-      .join("");
+    tbody.innerHTML = filtered.map(u => {
+      // Premium kaldirildi: sadece admin rozeti goster, yoksa ucretsiz
+      const status = u.isAdmin
+        ? '<span class="badge badge--dot badge--primary">Admin</span>'
+        : '<span class="badge">Ücretsiz</span>';
+      const initial = (u.displayName || u.name || u.email || '?').charAt(0).toUpperCase();
+      return '<tr>' +
+        '<td><div class="row" style="gap: var(--space-3);">' +
+          '<div class="sidebar-avatar" style="width: 32px; height: 32px; font-size: 12px;">' + escapeHtml(initial) + '</div>' +
+          '<span style="font-weight: 500;">' + escapeHtml(u.displayName || u.name || '—') + '</span>' +
+        '</div></td>' +
+        '<td style="color: var(--ink-muted);">' + escapeHtml(u.email || '—') + '</td>' +
+        '<td>' + status + '</td>' +
+        '<td class="num">' + formatNumber(u.totalAnalyses || 0) + '</td>' +
+        '<td class="num">' + formatNumber(u.adsWatched || 0) + '</td>' +
+        '<td style="color: var(--ink-muted); font-size: 12px;">' + formatDate(u.lastSeen || u.lastLogin) + '</td>' +
+        '<td style="text-align: right;"><button class="btn btn--ghost btn--sm" data-edit="' + escapeHtml(u.id || u.uid) + '">' +
+          '<span class="material-symbols-outlined" style="font-size: 16px;">visibility</span> Detay' +
+        '</button></td>' +
+      '</tr>';
+    }).join('');
   }
 
-  function updatePagination() {
-    const showing = Math.min((currentPage + 1) * pageSize, totalUsers);
-    document.getElementById("showing-count").textContent = showing;
-    document.getElementById("total-count").textContent = totalUsers;
-    document.getElementById("current-page").textContent = currentPage + 1;
-
-    document.getElementById("prev-btn").disabled = currentPage === 0;
-    document.getElementById("next-btn").disabled =
-      (currentPage + 1) * pageSize >= totalUsers;
-  }
-
-  function setFilter(filter) {
-    currentFilter = filter;
-    currentPage = 0;
-
-    // Update button styles
-    document.querySelectorAll(".filter-btn").forEach((btn) => {
-      if (btn.dataset.filter === filter) {
-        btn.className =
-          "filter-btn px-4 py-2 rounded-xl text-sm font-medium transition-all bg-primary/20 text-primary";
-      } else {
-        btn.className =
-          "filter-btn px-4 py-2 rounded-xl text-sm font-medium transition-all bg-white/5 text-slate-400 hover:bg-white/10";
-      }
-    });
-
-    loadUsers();
-  }
-
-  function prevPage() {
-    if (currentPage > 0) {
-      currentPage--;
-      loadUsers();
-    }
-  }
-
-  function nextPage() {
-    if ((currentPage + 1) * pageSize < totalUsers) {
-      currentPage++;
-      loadUsers();
-    }
-  }
-
-  // Search with debounce
-  let searchTimeout;
-  document.getElementById("search-input").addEventListener("input", (e) => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-      currentSearch = e.target.value;
-      currentPage = 0;
-      loadUsers();
-    }, 300);
-  });
-
-  // Edit Modal
-  function openEditModal(id, name, email, photo, isPremium, packageId) {
-    document.getElementById("edit-user-id").value = id;
-    document.getElementById("edit-user-name").textContent = name || "İsimsiz";
-    document.getElementById("edit-user-email").textContent = email;
-    document.getElementById("edit-user-avatar").src =
-      photo ||
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(
-        name || "U"
-      )}&background=5b2bee&color=fff`;
-    document.getElementById("edit-premium").checked = isPremium;
-    document.getElementById("edit-package").value = packageId || "admin_grant";
-
-    togglePremiumOptions();
-
-    const modal = document.getElementById("edit-modal");
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
+  function openEditModal(userId) {
+    const u = allUsers.find(x => (x.id || x.uid) === userId);
+    if (!u) return;
+    document.getElementById('detail-analyses').textContent = formatNumber(u.totalAnalyses || 0);
+    document.getElementById('detail-ads').textContent = formatNumber(u.adsWatched || 0);
+    document.getElementById('detail-rewarded').textContent = formatNumber(u.rewardedAdsWatched || 0);
+    const modal = document.getElementById('edit-modal');
+    if (modal) { modal.hidden = false; modal.style.display = ''; }
   }
 
   function closeEditModal() {
-    const modal = document.getElementById("edit-modal");
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
+    const modal = document.getElementById('edit-modal');
+    if (modal) { modal.hidden = true; modal.style.display = 'none'; }
   }
 
-  document
-    .getElementById("edit-premium")
-    .addEventListener("change", togglePremiumOptions);
-
-  function togglePremiumOptions() {
-    const options = document.getElementById("premium-options");
-    const isPremium = document.getElementById("edit-premium").checked;
-    options.classList.toggle("hidden", !isPremium);
-  }
-
-  async function saveUserChanges() {
-    const userId = document.getElementById("edit-user-id").value;
-    const isPremium = document.getElementById("edit-premium").checked;
-    const packageId = document.getElementById("edit-package").value;
-    const months = parseInt(document.getElementById("edit-months").value) || 1;
-    const creditAction = document.getElementById("credit-action").value;
-    const creditAmount =
-      parseInt(document.getElementById("credit-amount").value) || 0;
-
-    try {
-      // Premium update
-      const premiumRes = await fetch(`/admin/api/users/${userId}/premium`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPremium, packageId, months }),
+  document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('user-search')?.addEventListener('input', function (e) { searchQuery = e.target.value || ''; renderUsers(); });
+    document.querySelectorAll('[data-filter]').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        currentFilter = btn.getAttribute('data-filter');
+        renderUsers();
       });
-
-      // Credit update (if amount > 0)
-      if (creditAmount > 0) {
-        await fetch(`/admin/api/users/${userId}/credits`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: creditAction, amount: creditAmount }),
-        });
-      }
-
-      showToast("Kullanıcı güncellendi", "success");
-      closeEditModal();
-      loadUsers();
-    } catch (error) {
-      console.error("Save error:", error);
-      showToast("Güncelleme başarısız", "error");
+    });
+    document.querySelectorAll('[data-close-modal]').forEach(function (el) { el.addEventListener('click', closeEditModal); });
+    document.getElementById('users-tbody')?.addEventListener('click', function (e) {
+      const btn = e.target.closest('[data-edit]');
+      if (btn) openEditModal(btn.getAttribute('data-edit'));
+    });
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('filter')) {
+      const f = urlParams.get('filter');
+      currentFilter = f;
+      document.querySelectorAll('[data-filter]').forEach(b => b.classList.toggle('is-active', b.getAttribute('data-filter') === f));
     }
-  }
-
-  // Check URL params for initial filter
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get("filter")) {
-    setFilter(urlParams.get("filter"));
-  } else {
     loadUsers();
-  }
+  });
 </script>
 {% endblock %}

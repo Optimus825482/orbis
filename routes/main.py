@@ -54,19 +54,19 @@ def index():
 
 @bp.route("/hakkimizda")
 def about():
-    """Hakkımızda sayfası - AdSense onayı için public içerik"""
+    """Hakkımızda sayfası - SEO için public içerik"""
     return render_template("public/about.html")
 
 
 @bp.route("/iletisim")
 def contact():
-    """İletişim sayfası - AdSense onayı için public içerik"""
+    """İletişim sayfası - SEO için public içerik"""
     return render_template("public/contact.html")
 
 
 @bp.route("/blog")
 def blog_index():
-    """Blog ana sayfası - AdSense onayı için public içerik"""
+    """Blog ana sayfası - SEO için public içerik"""
     return render_template("public/blog/index.html")
 
 
@@ -82,13 +82,13 @@ def blog_post(slug):
 
 @bp.route("/nasil-calisir")
 def how_it_works():
-    """Nasıl çalışır sayfası - AdSense onayı için public içerik"""
+    """Nasıl çalışır sayfası - SEO için public içerik"""
     return render_template("public/how-it-works.html")
 
 
 @bp.route("/sss")
 def faq():
-    """Sıkça sorulan sorular - AdSense onayı için public içerik"""
+    """Sıkça sorulan sorular - SEO için public içerik"""
     return render_template("public/faq.html")
 
 
@@ -114,6 +114,55 @@ Sitemap: https://app.orbisastro.online/sitemap.xml
 """
     from flask import Response
     return Response(content, mimetype="text/plain")
+
+
+@bp.route("/api/config/pricing", methods=["GET"])
+@handle_errors("Fiyat bilgileri alınamadı")
+def api_get_pricing():
+    """
+    Firestore'dan fiyat bilgilerini getir (public)
+    Eğer Firestore'da yoksa varsayılan fiyatları döndür
+    """
+    try:
+        from services.firebase_service import firebase_service
+        db = firebase_service.db
+        
+        if db:
+            doc = db.collection("config").document("pricing").get()
+            if doc.exists:
+                data = doc.to_dict()
+                return jsonify({
+                    "success": True,
+                    "source": "firestore",
+                    "data": {
+                        "daily": data.get("daily", 30),
+                        "monthly": data.get("monthly", 300),
+                        "yearly": data.get("yearly", 3000),
+                        "updated_at": data.get("updated_at"),
+                    }
+                })
+        
+        # Fallback: varsayılan fiyatlar
+        return jsonify({
+            "success": True,
+            "source": "default",
+            "data": {
+                "daily": 30,
+                "monthly": 300,
+                "yearly": 3000,
+            }
+        })
+    except Exception as e:
+        logger.error(f"[Config] Pricing fetch error: {e}")
+        return jsonify({
+            "success": True,
+            "source": "default",
+            "data": {
+                "daily": 30,
+                "monthly": 300,
+                "yearly": 3000,
+            }
+        })
 
 
 @bp.route("/sitemap.xml")
@@ -321,10 +370,10 @@ def api_get_ai_interpretation():
         if not can_use.get("allowed"):
             return jsonify({
                 "success": False,
-                "error": "daily_limit_reached",
-                "message": can_use.get("message", "Günlük ücretsiz yorum limitiniz doldu!"),
+                "error": "requires_ad",
+                "message": can_use.get("message", "Devam etmek için reklam izlemeniz gerekiyor."),
                 "remaining": 0,
-                "show_premium_modal": True
+                "requires_ad": True
             }), 429
     
     # Ek parametreler (tarih, dönem vb.) - hem Türkçe hem İngilizce destekle
@@ -343,7 +392,7 @@ def api_get_ai_interpretation():
         astro_data, interpretation_type, user_name, **extra_params
     )
     
-    # Başarılı yorum sonrası → kullanımı say
+    # Başarılı yorum sonrası → kullanımı say + stats counter güncelle
     if result.get("success"):
         # Kullanımı kaydet
         if device_id:
@@ -352,8 +401,15 @@ def api_get_ai_interpretation():
             usage_info = usage_tracker.record_usage(device_id, "ai_interpretation", email)
             result["usage"] = {
                 "remaining": usage_info.get("remaining", 0),
-                "is_premium": usage_info.get("is_premium", False)
+                "requires_ad": usage_info.get("requires_ad", True)
             }
+        
+        # Stats counter: analiz sayısını artır
+        try:
+            from services.stats_counter import stats_counter
+            stats_counter.on_analysis_completed()
+        except Exception:
+            pass
     
     return jsonify(result)
 
@@ -518,9 +574,50 @@ def api_record_ad_watch():
     
     logger.info(f"[API] record_ad_watch result: {result}")
     
+    # Stats counter: bagimsiz analiz sayisini da artir
+    try:
+        from services.stats_counter import stats_counter
+        stats_counter.on_analysis_completed()
+    except Exception:
+        pass
+    
     return jsonify({
         "success": True,
         "remaining": result.get('remaining'),
         "today_usage": result.get('today_usage')
     })
+
+
+@bp.route("/api/stats/user-created", methods=["POST"])
+    @handle_errors("İstatistik güncellenemedi")
+def api_user_created():
+    """Yeni kullanıcı oluşturulduğunda stats counter'ı güncelle"""
+    from services.stats_counter import stats_counter
+    stats_counter.on_user_created()
+    return jsonify({"success": True})
+
+
+@bp.route("/api/stats/heartbeat", methods=["POST"])
+@handle_errors("Kalp atisi guncellenemedi")
+def api_heartbeat():
+    """Kullanici kalp atisi - her 60 saniyede bir cagrilir"""
+    from services.stats_counter import stats_counter
+    data = request.get_json()
+    email = data.get("email", "anonymous")
+    name = data.get("display_name", email)
+    stats_counter.on_heartbeat(email, name)
+    return jsonify({"success": True})
+
+
+@bp.route("/api/stats/user-login", methods=["POST"])
+@handle_errors("Giris kaydi alinamadi")
+def api_user_login():
+    """Kullanici giris yapti - son login bilgisini guncelle"""
+    from services.stats_counter import stats_counter
+    data = request.get_json()
+    email = data.get("email", "")
+    name = data.get("display_name", email)
+    if email:
+        stats_counter.on_user_login(email, name)
+    return jsonify({"success": True})
 

@@ -1,161 +1,105 @@
 /**
  * ORBIS In-App Purchase (IAP) Module
- * Google Play Billing - Capacitor 6 uyumlu
- * Backend-first yaklaşım: Premium durumu backend'den kontrol edilir
+ * DEPRECATED: Premium satin alma KALDIRILDI. Uygulama tamamen ucretsiz.
+ * Bu modul sadece geriye uyumluluk icin korunuyor — butun metodlar no-op.
+ *
+ * Eski davranis: capacitor-plugin-cdv-purchase (Google Play Billing).
+ * Yeni davranis: Tum premium satin alma / abonelik islemleri devre disi.
  */
 
 const OrbisIAP = {
-  // Product IDs (Google Play Console'da tanımlı olmalı)
+  // Product IDs - artik kullanilmiyor (geriye uyumluluk)
   PRODUCTS: {
-    PREMIUM_DAILY: "astro_premium_daily", // YENİ: Günlük 30 TL
     PREMIUM_MONTHLY: "astro_premium_monthly",
     PREMIUM_YEARLY: "astro_premium_yearly",
+    PREMIUM_LIFETIME: "astro_premium_lifetime",
   },
 
-  // Fiyatlar (TRY)
+  // Fiyatlar - artik kullanilmiyor
   PRICES: {
-    PREMIUM_DAILY: "₺30/gün", // YENİ
-    PREMIUM_MONTHLY: "₺49,99/ay",
-    PREMIUM_YEARLY: "₺399,99/yıl",
+    PREMIUM_MONTHLY: "—",
+    PREMIUM_YEARLY: "—",
+    PREMIUM_LIFETIME: "—",
   },
 
   // State
   isInitialized: false,
-  isPremium: false,
+  isPremium: false, // Her zaman false
   purchaseInProgress: false,
+  _store: null,
+  _Platform: null,
+  _ProductType: null,
 
   /**
-   * IAP'ı başlat
+   * IAP'i baslat - artik no-op.
+   * Premium satin alma kaldirildi. Sadece loglama.
    */
   async initialize() {
     if (this.isInitialized) return;
-
-    try {
-      console.log("[IAP] Initializing...");
-
-      // Backend'den premium durumunu kontrol et
-      await this.checkSubscriptionStatus();
-
-      this.isInitialized = true;
-      console.log("[IAP] Initialized, isPremium:", this.isPremium);
-    } catch (error) {
-      console.error("[IAP] Initialization failed:", error);
-    }
+    console.info("[IAP] DEPRECATED: Premium satin alma kaldirildi. initialize() no-op.");
+    this.isInitialized = true;
+    this.isPremium = false; // her zaman false
   },
 
   /**
-   * Abonelik durumunu backend'den kontrol et
+   * Backend'den fiyatlari cek - DEPRECATED.
+   * Premium kaldirildi, fiyat gosterimi yok.
+   */
+  async loadPricesFromServer() {
+    console.info("[IAP] loadPricesFromServer: no-op (premium kaldirildi).");
+  },
+
+  /**
+   * Abonelik durumunu backend'den kontrol et - no-op.
    */
   async checkSubscriptionStatus() {
-    try {
-      const deviceId = localStorage.getItem("orbis_device_id");
-      const email = window.OrbisFirebase?.getCurrentUser()?.email;
+    this.isPremium = false;
+  },
 
-      if (!deviceId) {
-        console.log("[IAP] No device ID found");
-        return;
-      }
-
-      const response = await fetch(
-        "https://app.orbisastro.online/api/monetization/check-usage",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ device_id: deviceId, email: email }),
-        },
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        this.isPremium =
-          data.usage?.is_premium === true || data.usage?.is_admin === true;
-        console.log("[IAP] Premium status:", this.isPremium);
-
-        // Premium ise reklamları kapat
-        if (this.isPremium && window.OrbisAds) {
-          window.OrbisAds.showAds = false;
-          window.OrbisAds.isPremium = true;
-          window.OrbisAds.hideBanner();
-        }
-      }
-    } catch (error) {
-      console.error("[IAP] Check subscription error:", error);
-    }
+  async _getIdToken() {
+    // DEPRECATED
+    return null;
   },
 
   /**
-   * Premium satın al
+   * Backend verify-purchase - artik no-op.
+   */
+  async _verifyWithBackend(transaction) {
+    console.info("[IAP] _verifyWithBackend: no-op (premium kaldirildi).");
+    return false;
+  },
+
+  /**
+   * Premium satin al - artik no-op.
    */
   async purchase(productId) {
-    if (this.purchaseInProgress) {
-      return { success: false, message: "Satın alma işlemi devam ediyor..." };
+    console.info("[IAP] purchase: no-op (premium kaldirildi).", productId);
+    if (typeof alert !== "undefined") {
+      alert("Premium satin alma kaldirildi. Uygulama tamamen ucretsizdir.");
     }
-
-    // Native platform kontrolü
-    if (typeof Capacitor === "undefined" || !Capacitor.isNativePlatform()) {
-      return {
-        success: false,
-        message: "Satın alma işlemi sadece mobil uygulamada yapılabilir.",
-      };
-    }
-
-    this.purchaseInProgress = true;
-
-    try {
-      console.log("[IAP] Starting purchase for:", productId);
-
-      // Google Play Store'a yönlendir (şimdilik)
-      // TODO: cordova-plugin-purchase entegrasyonu eklenecek
-      const playStoreUrl =
-        "https://play.google.com/store/apps/details?id=com.orbisapp.astrology";
-
-      if (window.Capacitor?.Plugins?.Browser) {
-        await window.Capacitor.Plugins.Browser.open({ url: playStoreUrl });
-      } else {
-        window.open(playStoreUrl, "_system");
-      }
-
-      this.purchaseInProgress = false;
-      return {
-        success: false,
-        message:
-          "Google Play Store açılıyor. Uygulama içi satın alma yakında aktif olacak.",
-      };
-    } catch (error) {
-      console.error("[IAP] Purchase error:", error);
-      this.purchaseInProgress = false;
-      return { success: false, message: "Bir hata oluştu." };
-    }
+    return { success: false, message: "Premium satin alma kaldirildi. Uygulama tamamen ucretsiz." };
   },
 
   /**
-   * Aboneliği geri yükle
+   * Abonelik geri yukleme - artik no-op.
    */
   async restorePurchases() {
-    try {
-      await this.checkSubscriptionStatus();
-
-      if (this.isPremium) {
-        return { success: true, message: "Aboneliğiniz aktif!" };
-      }
-      return { success: false, message: "Aktif abonelik bulunamadı." };
-    } catch (error) {
-      return { success: false, message: "Geri yükleme hatası." };
-    }
+    console.info("[IAP] restorePurchases: no-op (premium kaldirildi).");
+    return { success: false, message: "Premium satin alma kaldirildi." };
   },
 
   /**
-   * Premium durumunu kontrol et
+   * Premium durumu - her zaman false.
    */
   isPremiumUser() {
-    return this.isPremium;
+    return false;
   },
 };
 
-// Global erişim
+// Global erisim
 window.OrbisIAP = OrbisIAP;
 
-// Başlat
+// Baslat
 document.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => OrbisIAP.initialize(), 2000);
 });

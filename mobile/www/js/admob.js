@@ -5,25 +5,22 @@
  */
 
 const OrbisAds = {
-  // Ad Unit IDs - AdMob Console'dan
-  AD_UNITS: {
-    // Banner reklam
+  // Ad Unit IDs — tek kaynak window.ADMOB_CONFIG (static/js/admob-config.js).
+  // Mobile webview bu dosyayı da yüklemeli; yüklenmezse fallback hardcoded.
+  AD_UNITS: (window.ADMOB_CONFIG && {
+    BANNER: window.ADMOB_CONFIG.bannerId,
+    INTERSTITIAL: window.ADMOB_CONFIG.interstitialId,
+    REWARDED_INTERSTITIAL: window.ADMOB_CONFIG.rewardedInterstitialId,
+    REWARDED_ANALYSIS: window.ADMOB_CONFIG.rewardedAnalysisId,
+  }) || {
     BANNER: "ca-app-pub-2444093901783574/1791137239",
-    // Geçiş reklamı (Interstitial)
     INTERSTITIAL: "ca-app-pub-2444093901783574/8681172156",
-    // Ödüllü Geçiş Reklamı (Rewarded Interstitial) - Genel kullanım
     REWARDED_INTERSTITIAL: "ca-app-pub-2444093901783574/9994253824",
-    // Ödüllü Video (Rewarded) - Analiz için
-    REWARDED_ANALYSIS: "ca-app-pub-2444093901783574/9994253824",
-
-    // Test Ad Unit IDs (DEV) - Sadece geliştirme için
-    // BANNER: "ca-app-pub-3940256099942544/6300978111",
-    // INTERSTITIAL: "ca-app-pub-3940256099942544/1033173712",
-    // REWARDED: "ca-app-pub-3940256099942544/5224354917",
+    REWARDED_ANALYSIS: "ca-app-pub-2444093901783574/3701964485",
   },
 
-  // App ID (Production) - ORBIS (com.orbisastro.orbis)
-  APP_ID: "ca-app-pub-2444093901783574~9279937953",
+  // App ID — tek kaynak window.ADMOB_CONFIG
+  APP_ID: (window.ADMOB_CONFIG && window.ADMOB_CONFIG.appId) || "ca-app-pub-2444093901783574~9279937953",
 
   // State
   isInitialized: false,
@@ -56,13 +53,14 @@ const OrbisAds = {
         const data = await response.json();
         this.showAds = data.usage?.show_ads !== false;
         this.isAdmin = data.usage?.is_admin === true;
-        this.isPremium = data.usage?.is_premium === true;
+        // Premium kaldirildi: her zaman false
+        this.isPremium = false;
 
         console.log(
           `[AdMob] Ad status - showAds: ${this.showAds}, isAdmin: ${this.isAdmin}, isPremium: ${this.isPremium}`,
         );
 
-        // Admin veya premium ise banner'ı gizle
+        // Admin ise banner'ı gizle
         if (!this.showAds) {
           this.hideBanner();
         }
@@ -76,6 +74,11 @@ const OrbisAds = {
 
   /**
    * AdMob'u başlat
+   *
+   * ⚠️ KRİTİK: Bu çağrı zorunlu. Yapılmadan prepare/show sessizce başarısız olur
+   * → AdMob panelinde "0 istek" gözükür.
+   * initializeForTesting:true olursa test reklam yüklenir (NO_FILL);
+   * false olursa gerçek reklam yüklenir (production).
    */
   async initialize() {
     if (this.isInitialized) return;
@@ -89,14 +92,47 @@ const OrbisAds = {
 
       const { AdMob } = Capacitor.Plugins;
 
-      // AdMob'u initialize et
+      // AppId sanity check — AndroidManifest'te tanımlı olmalı
+      if (!this.APP_ID || !this.APP_ID.startsWith("ca-app-pub-")) {
+        console.error("[AdMob] ❌ Geçersiz APP_ID:", this.APP_ID);
+        return;
+      }
+
+      // AdMob'u initialize et — requestTrackingAuthorization ayrı method
+      // (v6 plugin API'si). initializeForTesting:false = production reklam.
       await AdMob.initialize({
-        initializeForTesting: false, // Production mode
-        // requestTrackingAuthorization: true, // iOS için
+        initializeForTesting: false,
+        // Çocuk yönelimli değiliz (TR mevzuatı)
+        tagForChildDirectedTreatment: false,
+        tagForUnderAgeOfConsent: false,
       });
 
       this.isInitialized = true;
-      console.log("[AdMob] Initialized successfully");
+      console.log("[AdMob] ✅ Initialized successfully (appId=" + this.APP_ID + ")");
+
+      // iOS 14+ ATT (App Tracking Transparency) — ayrı method, Android silent.
+      try {
+        if (typeof AdMob.trackingAuthorizationStatus === "function") {
+          const tracking = await AdMob.trackingAuthorizationStatus();
+          if (tracking?.status === "notDetermined" && typeof AdMob.requestTrackingAuthorization === "function") {
+            await AdMob.requestTrackingAuthorization();
+          }
+        }
+      } catch (e) {
+        // iOS dışı platform — silent ignore
+      }
+
+      // GDPR/KVKK consent sorgula
+      try {
+        if (typeof AdMob.requestConsentInfo === "function") {
+          const consent = await AdMob.requestConsentInfo({});
+          console.log("[AdMob] Consent status:", consent?.status);
+          this._consentStatus = consent?.status || "UNKNOWN";
+        }
+      } catch (e) {
+        console.log("[AdMob] Consent info atlandı:", e?.message || e);
+        this._consentStatus = "UNKNOWN";
+      }
 
       // Event listeners
       this.setupEventListeners();

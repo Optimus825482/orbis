@@ -1,379 +1,267 @@
 <!DOCTYPE html>
-<html lang="tr" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="robots" content="noindex, nofollow" />
-    <title>{% block title %}ORBIS Admin{% endblock %}</title>
+<html lang="tr" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#faf9ff" />
+  <title>{% block title %}ORBIS Admin{% endblock %} · ORBIS</title>
 
-    <!-- Fonts & Icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/icon?family=Material+Icons+Round|Material+Icons+Outlined"
-      rel="stylesheet"
-    />
+  <link rel="manifest" href="{{ url_for('static', filename='manifest-admin.json') }}" />
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-    <script>
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            colors: {
-              primary: "#5b2bee",
-              accent: "#38bdf8",
-              "background-dark": "#0a0a12",
-              "surface-dark": "#12121a",
-              "card-dark": "#1a1a24",
-              "border-dark": "#2a2a3a",
-            },
-            fontFamily: {
-              sans: ["Inter", "sans-serif"],
-              display: ["Spline Sans", "sans-serif"],
-              mono: ["Space Grotesk", "monospace"],
-            },
-          },
-        },
-      };
-    </script>
+  <script>
+    // No-flash: lock light theme (modern glassmorphism aesthetic)
+    (function () {
+      try { document.documentElement.setAttribute('data-theme', 'light'); } catch (e) {}
+    })();
+  </script>
 
-    <style>
-      body {
-        background: linear-gradient(
-          135deg,
-          #0a0a12 0%,
-          #12121a 50%,
-          #0a0a12 100%
-        );
-        min-height: 100vh;
-      }
-      .glass-card {
-        background: rgba(26, 26, 36, 0.8);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-      }
-      .stat-card {
-        background: linear-gradient(
-          135deg,
-          rgba(91, 43, 238, 0.1) 0%,
-          rgba(56, 189, 248, 0.05) 100%
-        );
-        border: 1px solid rgba(91, 43, 238, 0.2);
-      }
-      .sidebar-link {
-        transition: all 0.2s ease;
-      }
-      .sidebar-link:hover,
-      .sidebar-link.active {
-        background: rgba(91, 43, 238, 0.15);
-        border-left: 3px solid #5b2bee;
-      }
-      .cosmic-glow {
-        box-shadow: 0 0 40px rgba(91, 43, 238, 0.15);
-      }
-      .table-row:hover {
-        background: rgba(91, 43, 238, 0.05);
-      }
-      /* Custom scrollbar */
-      ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #12121a;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #2a2a3a;
-        border-radius: 3px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #3a3a4a;
-      }
-    </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Round|Material+Icons+Outlined"
+    rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..700,0..1,-50..200"
+    rel="stylesheet" />
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin/tokens.css') }}?v=20260624-2" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin/base.css') }}?v=20260624-2" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin/layout.css') }}?v=20260624-2" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin/components.css') }}?v=20260624-4" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin/motion.css') }}?v=20260624-2" />
 
-    {% block head %}{% endblock %}
-  </head>
-  <body class="text-slate-100 overflow-x-hidden">
-    <!-- Background Pattern -->
-    <div class="fixed inset-0 pointer-events-none z-0 opacity-30">
-      <div
-        class="absolute inset-0"
-        style="
-          background-image: radial-gradient(
-            circle at 1px 1px,
-            rgba(91, 43, 238, 0.15) 1px,
-            transparent 0
-          );
-          background-size: 40px 40px;
-        "
-      ></div>
-    </div>
+  {% block head %}{% endblock %}
+</head>
+<body class="orbis-mesh">
+  <!-- Floating decorative orbs -->
+  <div class="orbis-orb orbis-orb--1" aria-hidden="true"></div>
+  <div class="orbis-orb orbis-orb--2" aria-hidden="true"></div>
+  <div class="orbis-orb orbis-orb--3" aria-hidden="true"></div>
+  <div class="orbis-orb orbis-orb--4" aria-hidden="true"></div>
 
-    <div class="flex min-h-screen relative z-10">
-      <!-- Sidebar -->
-      <aside
-        class="w-64 bg-surface-dark/80 backdrop-blur-xl border-r border-border-dark flex flex-col fixed h-full"
-      >
-        <!-- Logo -->
-        <div class="p-6 border-b border-border-dark">
-          <a
-            href="{{ url_for('admin.dashboard') }}"
-            class="flex items-center gap-3"
-          >
-            <div
-              class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center"
-            >
-              <span class="material-icons-round text-primary"
-                >all_inclusive</span
-              >
-            </div>
-            <div>
-              <span class="font-display font-bold text-lg tracking-wider"
-                >ORBIS</span
-              >
-              <span
-                class="block text-[10px] text-slate-500 uppercase tracking-widest"
-                >Admin Panel</span
-              >
-            </div>
-          </a>
+  <a href="#main" class="skip-link">İçeriğe geç</a>
+
+  <div class="app-shell" id="app-shell">
+    <div class="sidebar-backdrop" id="sidebar-backdrop" aria-hidden="true"></div>
+
+    <aside class="sidebar" id="sidebar" aria-label="Ana navigasyon">
+      <div class="sidebar-brand">
+        <a href="{{ url_for('admin.dashboard') }}" class="sidebar-brand-mark" aria-label="ORBIS Admin">
+          <span class="material-symbols-outlined">all_inclusive</span>
+        </a>
+        <div class="sidebar-brand-text">
+          <span class="sidebar-brand-name">ORBIS</span>
+          <span class="sidebar-brand-sub">Admin Panel</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Sayfa menüsü">
+        <div class="sidebar-section">
+          <span class="sidebar-section-label">Ana Menü</span>
+          <ul class="sidebar-list">
+            <li>
+              <a href="{{ url_for('admin.dashboard') }}" class="sidebar-link{% if request.endpoint == 'admin.dashboard' %} is-active{% endif %}" data-shortcut="g d">
+                <span class="sidebar-link-icon"><span class="material-symbols-outlined">dashboard</span></span>
+                <span class="sidebar-link-label">Dashboard</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('admin.users') }}" class="sidebar-link{% if request.endpoint and 'users' in request.endpoint %} is-active{% endif %}" data-shortcut="g u">
+                <span class="sidebar-link-icon"><span class="material-symbols-outlined">group</span></span>
+                <span class="sidebar-link-label">Kullanıcılar</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('admin.push_notifications') }}" class="sidebar-link{% if request.endpoint == 'admin.push_notifications' %} is-active{% endif %}" data-shortcut="g p">
+                <span class="sidebar-link-icon"><span class="material-symbols-outlined">notifications_active</span></span>
+                <span class="sidebar-link-label">Push Bildirimleri</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('admin.statistics') }}" class="sidebar-link{% if request.endpoint == 'admin.statistics' %} is-active{% endif %}" data-shortcut="g s">
+                <span class="sidebar-link-icon"><span class="material-symbols-outlined">monitoring</span></span>
+                <span class="sidebar-link-label">İstatistikler</span>
+              </a>
+              <a href="{{ url_for('admin.admob_page') }}" class="sidebar-link{% if request.endpoint == 'admin.admob_page' %} is-active{% endif %}" data-shortcut="g a">
+                <span class="sidebar-link-icon"><span class="material-symbols-outlined">ads_click</span></span>
+                <span class="sidebar-link-label">AdMob</span>
+              </a>
+            </li>
+          </ul>
         </div>
 
-        <!-- Navigation -->
-        <nav class="flex-1 py-6">
-          <div class="px-4 mb-2">
-            <span
-              class="text-[10px] uppercase tracking-widest text-slate-500 font-bold"
-              >Ana Menü</span
-            >
+        <div class="sidebar-section">
+          <span class="sidebar-section-label">Yapılandırma</span>
+          <ul class="sidebar-list">
+            <li>
+              <a href="{{ url_for('admin.pricing') }}" class="sidebar-link{% if request.endpoint == 'admin.pricing' %} is-active{% endif %}">
+                <span class="sidebar-link-icon"><span class="material-symbols-outlined">payments</span></span>
+                <span class="sidebar-link-label">Fiyat Yönetimi</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('admin.ai_settings') }}" class="sidebar-link{% if request.endpoint == 'admin.ai_settings' %} is-active{% endif %}">
+                <span class="sidebar-link-icon"><span class="material-symbols-outlined">neurology</span></span>
+                <span class="sidebar-link-label">AI Yapılandırma</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="sidebar-section">
+          <span class="sidebar-section-label">Hızlı Erişim</span>
+          <ul class="sidebar-list">
+            <li>
+              <a href="{{ url_for('main.index') }}" target="_blank" rel="noopener" class="sidebar-link">
+                <span class="sidebar-link-icon"><span class="material-symbols-outlined">open_in_new</span></span>
+                <span class="sidebar-link-label">Siteyi Görüntüle</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="sidebar-user">
+          <div class="sidebar-avatar" aria-hidden="true">
+            <span class="material-symbols-outlined" style="font-size: 18px;">shield_person</span>
           </div>
-
-          <a
-            href="{{ url_for('admin.dashboard') }}"
-            class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {% if request.endpoint == 'admin.dashboard' %}active text-primary{% else %}text-slate-400 hover:text-white{% endif %}"
-          >
-            <span class="material-icons-round text-xl">dashboard</span>
-            Dashboard
-          </a>
-
-          <a
-            href="{{ url_for('admin.users') }}"
-            class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {% if 'users' in request.endpoint %}active text-primary{% else %}text-slate-400 hover:text-white{% endif %}"
-          >
-            <span class="material-icons-round text-xl">people</span>
-            Kullanıcılar
-          </a>
-
-          <a
-            href="{{ url_for('admin.push_notifications') }}"
-            class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {% if request.endpoint == 'admin.push_notifications' %}active text-primary{% else %}text-slate-400 hover:text-white{% endif %}"
-          >
-            <span class="material-icons-round text-xl">notifications</span>
-            Push Bildirimleri
-          </a>
-
-          <a
-            href="{{ url_for('admin.statistics') }}"
-            class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm {% if request.endpoint == 'admin.statistics' %}active text-primary{% else %}text-slate-400 hover:text-white{% endif %}"
-          >
-            <span class="material-icons-round text-xl">analytics</span>
-            İstatistikler
-          </a>
-
-          <div class="px-4 mt-8 mb-2">
-            <span
-              class="text-[10px] uppercase tracking-widest text-slate-500 font-bold"
-              >Hızlı Erişim</span
-            >
-          </div>
-
-          <a
-            href="{{ url_for('main.index') }}"
-            target="_blank"
-            class="sidebar-link flex items-center gap-3 px-6 py-3 text-sm text-slate-400 hover:text-white"
-          >
-            <span class="material-icons-round text-xl">open_in_new</span>
-            Siteyi Görüntüle
-          </a>
-        </nav>
-
-        <!-- Admin Info -->
-        <div class="p-4 border-t border-border-dark">
-          <div class="flex items-center gap-3">
-            <div
-              class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center"
-            >
-              <span class="material-icons-round text-primary text-sm"
-                >admin_panel_settings</span
-              >
-            </div>
-            <div class="flex-1 min-w-0">
-              <span
-                id="admin-email"
-                class="text-xs text-slate-400 truncate block"
-                >{{ session.get('admin_email', 'Admin') }}</span
-              >
-            </div>
-            <a
-              href="{{ url_for('admin.logout') }}"
-              class="p-2 hover:bg-white/5 rounded-lg transition-colors"
-              title="Çıkış"
-            >
-              <span class="material-icons-round text-slate-500 text-lg"
-                >logout</span
-              >
-            </a>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebar-user-name">{{ session.get('admin_name', 'Admin') }}</div>
+            <div class="sidebar-user-email" id="sidebar-user-email">{{ session.get('admin_email', '—') }}</div>
           </div>
         </div>
-      </aside>
+        <a href="{{ url_for('admin.logout') }}" class="icon-btn" title="Çıkış" aria-label="Çıkış yap">
+          <span class="material-symbols-outlined">logout</span>
+        </a>
+      </div>
+    </aside>
 
-      <!-- Main Content -->
-      <main class="flex-1 ml-64">
-        <!-- Top Bar -->
-        <header
-          class="sticky top-0 z-40 bg-background-dark/80 backdrop-blur-xl border-b border-border-dark px-8 py-4"
-        >
-          <div class="flex items-center justify-between">
-            <div>
-              <h1 class="text-xl font-display font-bold">
-                {% block page_title %}Dashboard{% endblock %}
-              </h1>
-              <p class="text-xs text-slate-500 mt-1">
-                {% block page_subtitle %}ORBIS Yönetim Paneli{% endblock %}
-              </p>
-            </div>
-
-            <div class="flex items-center gap-4">
-              <!-- Refresh Button -->
-              <button
-                onclick="location.reload()"
-                class="p-2 hover:bg-white/5 rounded-lg transition-colors"
-                title="Yenile"
-              >
-                <span class="material-icons-round text-slate-400">refresh</span>
-              </button>
-
-              <!-- Current Time -->
-              <div class="text-right">
-                <span
-                  id="current-time"
-                  class="text-sm font-mono text-slate-400"
-                ></span>
-                <span
-                  id="current-date"
-                  class="block text-[10px] text-slate-500"
-                ></span>
-              </div>
-            </div>
+    <div class="app-main">
+      <header class="topbar" role="banner">
+        <div class="topbar-left">
+          <button type="button" id="sidebar-toggle" class="sidebar-toggle" aria-label="Menüyü aç/kapat">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+          <div class="page-heading">
+            <h1 class="page-title-small">{{ self.page_title() }}</h1>
           </div>
-        </header>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-clock" aria-hidden="true">
+            <span class="topbar-clock-time tabular" id="topbar-time">--:--:--</span>
+            <span class="topbar-clock-date" id="topbar-date">—</span>
+          </div>
+          <button type="button" onclick="location.reload()" class="icon-btn" aria-label="Yenile">
+            <span class="material-symbols-outlined">refresh</span>
+          </button>
+        </div>
+      </header>
 
-        <!-- Page Content -->
-        <div class="p-8">{% block content %}{% endblock %}</div>
+      <main id="main" class="app-content" role="main">
+        <div class="page-head">
+          <div class="page-head-text">
+            <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+            <p class="page-subtitle">{% block page_subtitle %}{% endblock %}</p>
+          </div>
+          <div class="page-actions">{% block page_actions %}{% endblock %}</div>
+        </div>
+        {% block content %}{% endblock %}
       </main>
     </div>
+  </div>
 
-    <!-- Toast Container -->
-    <div
-      id="toast-container"
-      class="fixed bottom-6 right-6 z-50 space-y-2"
-    ></div>
+  <div class="toast-container" id="toast-container" role="region" aria-label="Bildirimler"></div>
 
-    <!-- Scripts -->
-    <script>
-      // Update time
-      function updateTime() {
-        const now = new Date();
-        document.getElementById("current-time").textContent =
-          now.toLocaleTimeString("tr-TR");
-        document.getElementById("current-date").textContent =
-          now.toLocaleDateString("tr-TR", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-          });
-      }
-      updateTime();
-      setInterval(updateTime, 1000);
+  <script src="{{ url_for('static', filename='js/admin/theme.js') }}?v=20260624-2" defer></script>
+  <script src="{{ url_for('static', filename='js/admin/shortcuts.js') }}?v=20260624-2" defer></script>
+  <script src="{{ url_for('static', filename='js/admin/charts.js') }}?v=20260624-2" defer></script>
 
-      // Toast notification
-      function showToast(message, type = "success") {
-        const container = document.getElementById("toast-container");
-        const toast = document.createElement("div");
-
-        const bgColor =
-          type === "success"
-            ? "bg-green-500/20 border-green-500/30"
-            : type === "error"
-            ? "bg-red-500/20 border-red-500/30"
-            : "bg-primary/20 border-primary/30";
-        const icon =
-          type === "success"
-            ? "check_circle"
-            : type === "error"
-            ? "error"
-            : "info";
-
-        toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl border ${bgColor} backdrop-blur-xl animate-slide-in`;
-        toast.innerHTML = `
-                <span class="material-icons-round text-lg">${icon}</span>
-                <span class="text-sm">${message}</span>
-            `;
-
-        container.appendChild(toast);
-
-        setTimeout(() => {
-          toast.style.opacity = "0";
-          toast.style.transform = "translateX(100%)";
-          setTimeout(() => toast.remove(), 300);
-        }, 3000);
-      }
-
-      // Format number
-      function formatNumber(num) {
-        return new Intl.NumberFormat("tr-TR").format(num);
-      }
-
-      // Format date
-      function formatDate(dateStr) {
-        if (!dateStr) return "-";
-        const date = new Date(dateStr);
-        return date.toLocaleDateString("tr-TR", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
+  <script>
+    // Sidebar toggle + clock + global helpers
+    (function () {
+      var shell = document.getElementById('app-shell');
+      var btn = document.getElementById('sidebar-toggle');
+      var backdrop = document.getElementById('sidebar-backdrop');
+      if (btn && shell) {
+        btn.addEventListener('click', function () {
+          if (window.innerWidth < 1024) {
+            shell.classList.toggle('is-mobile-open');
+            if (backdrop) backdrop.classList.toggle('is-open');
+          } else {
+            shell.classList.toggle('is-collapsed');
+          }
+        });
+        if (backdrop) backdrop.addEventListener('click', function () {
+          shell.classList.remove('is-mobile-open');
+          backdrop.classList.remove('is-open');
         });
       }
-    </script>
 
-    <style>
-      @keyframes slide-in {
-        from {
-          opacity: 0;
-          transform: translateX(100%);
-        }
-        to {
-          opacity: 1;
-          transform: translateX(0);
-        }
+      function tick() {
+        var now = new Date();
+        var t = document.getElementById('topbar-time');
+        var d = document.getElementById('topbar-date');
+        if (t) t.textContent = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        if (d) d.textContent = now.toLocaleDateString('tr-TR', { weekday: 'short', day: 'numeric', month: 'short' });
       }
-      .animate-slide-in {
-        animation: slide-in 0.3s ease-out;
-      }
-    </style>
+      tick();
+      setInterval(tick, 1000);
 
-    {% block scripts %}{% endblock %}
-  </body>
+      // Global toast
+      window.showToast = function (message, type) {
+        type = type || 'info';
+        var container = document.getElementById('toast-container');
+        if (!container) return;
+        var t = document.createElement('div');
+        t.className = 'toast toast--' + type;
+        t.setAttribute('role', type === 'error' ? 'alert' : 'status');
+        var icon = type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info';
+        t.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">' + icon + '</span><span></span>';
+        t.querySelector('span:last-child').textContent = message;
+        container.appendChild(t);
+        var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        setTimeout(function () { t.classList.add('toast--leave'); }, 3500);
+        setTimeout(function () { t.remove(); }, reduce ? 3500 : 4000);
+      };
+
+      // Format helpers (geriye dönük uyumluluk)
+      window.formatNumber = function (n) {
+        if (n === null || n === undefined) return '—';
+        return new Intl.NumberFormat('tr-TR').format(n);
+      };
+      window.formatCurrency = function (n, cur) {
+        if (n === null || n === undefined) return '—';
+        cur = cur || 'TRY';
+        try {
+          return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: cur, maximumFractionDigits: 0 }).format(n);
+        } catch (e) { return String(n); }
+      };
+      window.formatPercent = function (n) {
+        if (n === null || n === undefined) return '—';
+        return new Intl.NumberFormat('tr-TR', { style: 'percent', maximumFractionDigits: 1 }).format(n);
+      };
+      window.formatDate = function (s) {
+        if (!s) return '—';
+        var d = new Date(s);
+        if (isNaN(d.getTime())) return '—';
+        return d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      };
+    })();
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('{{ url_for("static", filename="sw-admin.js") }}').catch(function () {});
+      });
+    }
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
 </html>

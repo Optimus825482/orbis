@@ -2224,21 +2224,21 @@ super() }}
     let description = '';
 
     if ( type === 'ascendant' ) {
-      sign = '{{ astro_data.natal_planet_positions.Ascendant.sign if astro_data.natal_planet_positions.Ascendant else "" }}';
+      sign = (astroData && astroData.natal_planet_positions && astroData.natal_planet_positions.Ascendant) ? astroData.natal_planet_positions.Ascendant.sign : '';
       title = sign + ' Yükselen';
       subtitle = 'Dış görünüm ve ilk izlenim';
       icon = '↑';
       bgClass = 'bg-rose-500/20 text-rose-400';
       description = signDescriptions[sign]?.asc || 'Yükselen burcunuz, dış dünyanın sizi nasıl gördüğünü belirler.';
     } else if ( type === 'moon' ) {
-      sign = '{{ astro_data.natal_planet_positions.Moon.sign if astro_data.natal_planet_positions.Moon else "" }}';
+      sign = (astroData && astroData.natal_planet_positions && astroData.natal_planet_positions.Moon) ? astroData.natal_planet_positions.Moon.sign : '';
       title = sign + ' Ay';
       subtitle = 'Duygusal doğa ve iç dünya';
       icon = '☾';
       bgClass = 'bg-cyan-500/20 text-cyan-400';
       description = signDescriptions[sign]?.moon || 'Ay burcunuz, duygusal doğanızı temsil eder.';
     } else if ( type === 'mc' ) {
-      sign = '{{ astro_data.natal_planet_positions.MC.sign if astro_data.natal_planet_positions.MC else "" }}';
+      sign = (astroData && astroData.natal_planet_positions && astroData.natal_planet_positions.MC) ? astroData.natal_planet_positions.MC.sign : '';
       title = sign + ' MC';
       subtitle = 'Kariyer ve toplumsal imaj';
       icon = '★';
@@ -2270,14 +2270,14 @@ super() }}
     let description = '';
 
     if ( type === 'vedic' ) {
-      const dasaLord = '{{ astro_data.vimshottari_dasa.main_dasa_lord_tr.split(" ")[0] if astro_data.vimshottari_dasa and astro_data.vimshottari_dasa.main_dasa_lord_tr else "" }}';
+      const dasaLord = (astroData && astroData.vimshottari_dasa && astroData.vimshottari_dasa.main_dasa_lord_tr) ? astroData.vimshottari_dasa.main_dasa_lord_tr.split(' ')[0] : '';
       title = dasaLord + ' Dasa Dönemi';
       subtitle = 'Vimshottari Dasa Sistemi';
       icon = '🕉️';
       bgClass = 'bg-orange-500/20 text-orange-400';
       description = dasaDescriptions[dasaLord] || 'Vedik astrolojinin 120 yıllık gezegen döngüsü. Her gezegen belirli bir süre hayatınızı yönetir.';
     } else if ( type === 'firdaria' ) {
-      const firdariaLord = '{{ astro_data.firdaria_periods.main_ruler if astro_data.firdaria_periods and astro_data.firdaria_periods.main_ruler else "" }}';
+      const firdariaLord = (astroData && astroData.firdaria_periods && astroData.firdaria_periods.main_ruler) ? astroData.firdaria_periods.main_ruler : '';
       title = firdariaLord + ' Firdaria';
       subtitle = 'Ortaçağ Dönem Sistemi';
       icon = '⏳';
@@ -2500,11 +2500,11 @@ super() }}
                 </div>
                 <h3 class="text-white font-bold text-lg mb-3">Reklam İzleme Gerekli</h3>
                 <p class="text-slate-400 text-sm mb-6 max-w-xs">
-                    AI yorum almak için reklam izlemeniz veya 
-                    Premium'a geçmeniz gerekiyor!
+                    AI yorum almak icin lutfen kisa bir reklam izleyin.
+                    Uygulamamiz tamamen ucretsizdir.
                 </p>
-                <button onclick="showPremiumModal()" class="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-xl shadow-lg shadow-amber-500/30 active:scale-95 transition-all">
-                    💎 Premium'a Geç - 30 TL/gün
+                <button onclick="closeAIModal()" class="px-6 py-3 bg-slate-700 text-white font-bold rounded-xl active:scale-95 transition-all">
+                    Tamam
                 </button>
             </div>
           `);
@@ -2520,47 +2520,88 @@ super() }}
       console.log( "[ORBIS] 🔍 window.OrbisRewardedAds:", window.OrbisRewardedAds );
       console.log( "[ORBIS] 🔍 typeof showForInterpretation:", typeof window.OrbisRewardedAds?.showForInterpretation );
 
-      // Rewarded ad göster
-      if ( window.OrbisRewardedAds && typeof window.OrbisRewardedAds.showForInterpretation === 'function' ) {
-        console.log( "[ORBIS] ✅ Showing rewarded ad..." );
-        const rewarded = await window.OrbisRewardedAds.showForInterpretation();
-        console.log( "[ORBIS] 🎁 Rewarded ad result:", rewarded );
-
-        if ( !rewarded ) {
-          $body.html( `
-                <div class="flex flex-col items-center justify-center py-8 px-4 text-center">
-                    <div class="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mb-6">
-                        <span class="material-icons-round text-4xl text-red-400">error</span>
-                    </div>
-                    <h3 class="text-white font-bold text-lg mb-3">Reklam İzleme Gerekli</h3>
-                    <p class="text-slate-400 text-sm mb-6 max-w-xs">
-                        AI yorum okumak için reklam izlemeniz gerekiyor!
-                    </p>
-                    <button onclick="closeAIModal()" class="px-6 py-3 bg-slate-700 text-white font-bold rounded-xl active:scale-95 transition-all">
-                        Tamam
-                    </button>
-                </div>
-              `);
-          return;
+      // Rewarded ad göster - OrbisRewardedAds veya direkt OrbisBridge.showRewardedAd()
+      const showAd = async () => {
+        if (window.OrbisRewardedAds && typeof window.OrbisRewardedAds.showForInterpretation === 'function') {
+          return await window.OrbisRewardedAds.showForInterpretation();
         }
+        if (window.OrbisBridge && typeof window.OrbisBridge.showRewardedAd === 'function') {
+          return await window.OrbisBridge.showRewardedAd();
+        }
+        return null; // Reklam sistemi yok
+      };
 
-        // Reklam izlendi, kullanımı kaydet
-        console.log( "[ORBIS] 📝 Recording ad watch..." );
-        const recordResponse = await fetch( '/api/record_ad_watch', {
+      const rewarded = await showAd();
+      console.log("[ORBIS] 🎁 Rewarded ad result:", rewarded);
+
+      if (rewarded === null) {
+        // Reklam sistemi hic yok - uygulama yeniden baslatilmali
+        console.error("[ORBIS] ❌ OrbisRewardedAds/OrbisBridge not available!");
+        $body.html(`
+          <div class="flex flex-col items-center justify-center py-8 px-4 text-center">
+            <div class="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mb-6">
+              <span class="material-icons-round text-4xl text-red-400">error</span>
+            </div>
+            <h3 class="text-white font-bold text-lg mb-3">Reklam Sistemi Yüklenemedi</h3>
+            <p class="text-slate-400 text-sm mb-6 max-w-xs">
+              Lütfen uygulamayı kapatıp tekrar açın.
+            </p>
+            <button onclick="closeAIModal()" class="px-6 py-3 bg-slate-700 text-white font-bold rounded-xl active:scale-95 transition-all">
+              Tamam
+            </button>
+          </div>
+        `);
+        return;
+      }
+
+      if (!rewarded) {
+        $body.html(`
+          <div class="flex flex-col items-center justify-center py-8 px-4 text-center">
+            <div class="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mb-6">
+              <span class="material-icons-round text-4xl text-red-400">error</span>
+            </div>
+            <h3 class="text-white font-bold text-lg mb-3">Reklam İzleme Gerekli</h3>
+            <p class="text-slate-400 text-sm mb-6 max-w-xs">
+              AI yorum okumak için reklam izlemeniz gerekiyor!
+            </p>
+            <button onclick="closeAIModal()" class="px-6 py-3 bg-slate-700 text-white font-bold rounded-xl active:scale-95 transition-all">
+              Tamam
+            </button>
+          </div>
+        `);
+        return;
+      }
+
+      // 🆕 REKLAM İZLENDİ - Backend'e kaydet
+      console.log("[ORBIS] 🎬 Recording ad watch to backend...");
+      try {
+        await fetch('/api/record_ad_watch', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify( { device_id: deviceId, email: userEmail } )
-        } );
-        const recordResult = await recordResponse.json();
+          body: JSON.stringify({ 
+            device_id: deviceId, 
+            email: userEmail 
+          })
+        });
+        console.log("[ORBIS] ✅ Ad watch recorded");
+      } catch (recordError) {
+        console.warn("[ORBIS] ⚠️ Ad watch record error (non-fatal):", recordError);
+      }
 
-        console.log( "[ORBIS] ✅ Ad watched for AI comment, usage recorded:", recordResult );
-        console.log( "[ORBIS] 📊 New remaining:", recordResult.remaining );
-      } else {
-        console.error( "[ORBIS] ❌ OrbisRewardedAds not available or not initialized!" );
-        console.log( "[ORBIS] 🔍 window.OrbisRewardedAds:", window.OrbisRewardedAds );
-        console.log( "[ORBIS] 🔍 Is mobile app:", typeof AdMob !== 'undefined' );
-        // Fallback: Web'de rewarded ad yok, devam et
-        console.log( "[ORBIS] ⚠️ Fallback: Continuing without ad (web environment)" );
+      // 🆕 Monetization API'ye de kaydet
+      try {
+        await fetch('/api/monetization/record-usage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            device_id: deviceId, 
+            email: userEmail,
+            feature: 'ad_watch'
+          })
+        });
+        console.log("[ORBIS] ✅ Monetization usage recorded");
+      } catch (recordError) {
+        console.warn("[ORBIS] ⚠️ Monetization record error (non-fatal):", recordError);
       }
     }
 
@@ -2591,11 +2632,11 @@ super() }}
                     </div>
                     <h3 class="text-white font-bold text-lg mb-3">Reklam İzleme Gerekli</h3>
                     <p class="text-slate-400 text-sm mb-6 max-w-xs">
-                        AI yorum almak için reklam izleyin veya 
-                        Premium'a geçerek reklamsız sınırsız yorum alın!
+                        AI yorum almak icin lutfen kisa bir reklam izleyin.
+                        Uygulamamiz tamamen ucretsizdir.
                     </p>
-                    <button onclick="showPremiumModal()" class="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-xl shadow-lg shadow-amber-500/30 active:scale-95 transition-all">
-                        💎 Premium'a Geç
+                    <button onclick="closeAIModal()" class="px-6 py-3 bg-slate-700 text-white font-bold rounded-xl active:scale-95 transition-all">
+                        Tamam
                     </button>
                 </div>
             `);
@@ -2610,14 +2651,10 @@ super() }}
 
         console.log( "[ORBIS] 📊 Result usage:", result.usage );
 
-        // Kalan yorum sayısını göster (premium değilse)
-        if ( result.usage && !result.usage.is_premium && result.usage.remaining !== 'unlimited' ) {
-          const remaining = result.usage.remaining;
-          console.log( "[ORBIS] 📊 Displaying remaining:", remaining );
-          const badge = remaining > 0
-            ? `<span class="text-emerald-400">${remaining} hak kaldı</span>`
-            : `<span class="text-amber-400">Son hakkınız!</span>`;
-          $body.prepend( `<div class="text-[10px] text-center mb-4 py-2 px-3 bg-white/5 rounded-lg">${badge}</div>` );
+        // Kalan yorum durumunu göster
+        if ( result.usage && !result.usage.is_premium ) {
+          console.log( "[ORBIS] 📊 Ücretsiz kullanıcı - reklam izleyerek devam" );
+          $body.prepend( `<div class="text-[10px] text-center mb-4 py-2 px-3 bg-white/5 rounded-lg text-amber-400">📺 Reklam izleyerek sınırsız AI yorum</div>` );
         } else if ( result.usage && result.usage.is_premium ) {
           console.log( "[ORBIS] 💎 Premium user - unlimited access" );
         }
@@ -2774,10 +2811,10 @@ super() }}
                         </div>
                         <h3 class="text-white font-bold text-sm mb-2">Reklam İzleme Gerekli</h3>
                         <p class="text-slate-400 text-[11px] mb-4 max-w-xs">
-                            AI yorum için reklam izleyin veya Premium'a geçin.
+                            AI yorum almak icin lutfen kisa bir reklam izleyin.
                         </p>
-                        <button onclick="showPremiumModal()" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold rounded-lg">
-                            💎 Premium'a Geç
+                        <button onclick="closeAIModal()" class="px-4 py-2 bg-slate-700 text-white text-xs font-bold rounded-lg">
+                            Tamam
                         </button>
                     </div>
                 `);
@@ -3532,98 +3569,33 @@ super() }}
         // Voice gender toggle removed - fixed to female voice
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // PREMIUM MODAL - Satın Alma Ekranı
+  // PREMIUM MODAL - KALDIRILDI
+  // Uygulama artik tamamen ucretsiz. Bu fonksiyonlar geriye uyumluluk icin no-op.
   // ═══════════════════════════════════════════════════════════════════════════
 
   function showPremiumModal() {
-    const modal = document.getElementById( 'premium-purchase-modal' );
-    if ( modal ) {
-      modal.classList.remove( 'hidden' );
-      modal.classList.add( 'flex' );
-      document.body.style.overflow = 'hidden';
-    }
+    // DEPRECATED: Premium kaldirildi. Uygulama ucretsiz.
+    console.info('[ORBIS] showPremiumModal called but premium is removed.');
+    if (typeof closeAIModal === 'function') closeAIModal();
   }
 
   function closePremiumModal() {
-    const modal = document.getElementById( 'premium-purchase-modal' );
-    if ( modal ) {
-      modal.classList.add( 'hidden' );
-      modal.classList.remove( 'flex' );
-      document.body.style.overflow = '';
-    }
+    // DEPRECATED: no-op
   }
 
   async function purchasePremium( planType ) {
-    const btn = event.target.closest( 'button' );
-    const originalText = btn.innerHTML;
-
-    // Loading state
-    btn.disabled = true;
-    btn.innerHTML = '<span class="material-icons-round animate-spin text-sm">sync</span> İşleniyor...';
-
-    try {
-      // IAP modülü kontrolü
-      if ( window.OrbisIAP ) {
-        const productId = planType === 'monthly'
-          ? window.OrbisIAP.PRODUCTS.PREMIUM_MONTHLY
-          : window.OrbisIAP.PRODUCTS.PREMIUM_YEARLY;
-
-        const result = await window.OrbisIAP.purchase( productId );
-
-        if ( result.success ) {
-          // Başarılı satın alma
-          showPurchaseSuccess( result.message );
-          closePremiumModal();
-
-          // Sayfayı yenile (premium durumu güncellensin)
-          setTimeout( () => location.reload(), 2000 );
-        } else {
-          // Hata veya iptal
-          showPurchaseError( result.message );
-        }
-      } else {
-        // Web'de çalışıyorsa bilgi ver
-        showPurchaseError( 'Satın alma işlemi sadece mobil uygulamada yapılabilir. Lütfen Google Play Store\'dan ORBIS uygulamasını indirin.' );
-      }
-    } catch ( error ) {
-      console.error( '[Premium] Purchase error:', error );
-      showPurchaseError( 'Bir hata oluştu. Lütfen tekrar deneyin.' );
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = originalText;
-    }
+    // DEPRECATED: Premium satin alma kaldirildi. Uygulama ucretsiz.
+    console.info('[ORBIS] purchasePremium called but premium is removed:', planType);
+    if (typeof closePremiumModal === 'function') closePremiumModal();
   }
 
   async function restorePurchases() {
-    const btn = event.target.closest( 'button' );
-    const originalText = btn.innerHTML;
-
-    btn.disabled = true;
-    btn.innerHTML = '<span class="material-icons-round animate-spin text-sm">sync</span>';
-
-    try {
-      if ( window.OrbisIAP ) {
-        const result = await window.OrbisIAP.restorePurchases();
-
-        if ( result.success ) {
-          showPurchaseSuccess( result.message );
-          closePremiumModal();
-          setTimeout( () => location.reload(), 2000 );
-        } else {
-          showPurchaseError( result.message );
-        }
-      } else {
-        showPurchaseError( 'Bu özellik sadece mobil uygulamada kullanılabilir.' );
-      }
-    } catch ( error ) {
-      showPurchaseError( 'Geri yükleme sırasında bir hata oluştu.' );
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = originalText;
-    }
+    // DEPRECATED: Premium satin alma kaldirildi. Uygulama ucretsiz.
+    console.info('[ORBIS] restorePurchases called but premium is removed.');
   }
 
   function showPurchaseSuccess( message ) {
+    // DEPRECATED: geriye uyumluluk icin korunuyor
     const toast = document.createElement( 'div' );
     toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-[300] bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-fade-in';
     toast.innerHTML = `<span class="material-icons-round">check_circle</span><span class="text-sm font-medium">${message}</span>`;
@@ -3632,6 +3604,7 @@ super() }}
   }
 
   function showPurchaseError( message ) {
+    // Geriye uyumluluk icin korunuyor
     const toast = document.createElement( 'div' );
     toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-[300] bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-fade-in max-w-sm text-center';
     toast.innerHTML = `<span class="material-icons-round">error</span><span class="text-sm font-medium">${message}</span>`;
@@ -3641,37 +3614,14 @@ super() }}
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
-     PREMIUM PURCHASE MODAL - Satın Alma Ekranı
+     PREMIUM PURCHASE MODAL - KALDIRILDI
+     Uygulama artik tamamen ucretsiz. Bu modal HTML geriye uyumluluk icin korunuyor
+     ama showPremiumModal() no-op (gostermez).
      ═══════════════════════════════════════════════════════════════════════════ -->
-<div id="premium-purchase-modal"
-  class="fixed inset-0 bg-black/90 backdrop-blur-xl z-[250] hidden items-center justify-center p-4">
-  <div
-    class="relative w-full max-w-md bg-gradient-to-b from-slate-900 to-slate-950 rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
-    <!-- Close Button -->
-    <button onclick="closePremiumModal()"
-      class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all z-10">
-      <span class="material-icons-round">close</span>
-    </button>
-
-    <!-- Header -->
-    <div class="relative pt-8 pb-6 px-6 text-center overflow-hidden">
-      <!-- Background Glow -->
-      <div
-        class="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-b from-amber-500/20 to-transparent blur-[80px] rounded-full">
-      </div>
-
-      <div class="relative z-10">
-        <!-- Premium Badge -->
-        <div
-          class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-full border border-amber-500/30 mb-4">
-          <span class="text-amber-400 text-lg">💎</span>
-          <span class="text-amber-300 text-xs font-bold uppercase tracking-widest">Premium</span>
-        </div>
-
-        <h2 class="text-2xl font-bold text-white mb-2">Sınırsız Kozmik Rehberlik</h2>
-        <p class="text-slate-400 text-sm">Tüm AI yorumlarına sınırsız erişim kazanın</p>
-      </div>
-    </div>
+<div id="premium-purchase-modal" class="hidden" style="display: none;" aria-hidden="true">
+  <!-- DEPRECATED: Premium kaldirildi. Bu modal artik gosterilmiyor. -->
+  <div style="display: none;">
+    <p>Premium satin alma kaldirildi. Uygulama tamamen ucretsizdir.</p>
 
     <!-- Features -->
     <div class="px-6 pb-6">
@@ -3704,17 +3654,32 @@ super() }}
 
       <!-- Pricing Cards -->
       <div class="space-y-3 mb-6">
+        <!-- Daily Plan -->
+        <button onclick="purchasePremium('daily')"
+          class="w-full p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/50 rounded-2xl transition-all group text-left">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-white font-bold">Günlük Plan</p>
+              <p class="text-slate-500 text-xs">24 saat reklamsız sınırsız</p>
+            </div>
+            <div class="text-right">
+              <p class="text-xl font-bold text-white">₺<span data-price-daily>30</span></p>
+              <p class="text-slate-500 text-[10px]">/gün</p>
+            </div>
+          </div>
+        </button>
+
         <!-- Monthly Plan -->
         <button onclick="purchasePremium('monthly')"
           class="w-full p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/50 rounded-2xl transition-all group text-left">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-white font-bold">Aylık Plan</p>
-              <p class="text-slate-500 text-xs">Her ay yenilenir</p>
+              <p class="text-slate-500 text-xs">₺<span data-price-normal-monthly>900</span> yerine <span class="text-emerald-400 font-bold">₺<span data-price-monthly>300</span></span></p>
             </div>
             <div class="text-right">
-              <p class="text-xl font-bold text-white">₺49,99</p>
-              <p class="text-slate-500 text-[10px]">/ay</p>
+              <p class="text-xl font-bold text-white">₺<span data-price-monthly>300</span></p>
+              <p class="text-slate-500 text-[10px]">/ay <span class="line-through text-slate-600">₺<span data-price-normal-monthly>900</span></span></p>
             </div>
           </div>
         </button>
@@ -3723,6 +3688,8 @@ super() }}
         <button onclick="purchasePremium('yearly')"
           class="w-full p-4 bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 border-2 border-amber-500/50 hover:border-amber-400 rounded-2xl transition-all group text-left relative overflow-hidden">
           <!-- Best Value Badge -->
+          <!-- DEPRECATED: Premium kaldirildi -->
+          <!--
           <div
             class="absolute -top-1 -right-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl uppercase tracking-wider">
             2 Ay Hediye
@@ -3731,28 +3698,31 @@ super() }}
           <div class="flex items-center justify-between">
             <div>
               <p class="text-white font-bold">Yıllık Plan</p>
-              <p class="text-amber-400/70 text-xs">En avantajlı seçenek</p>
+              <p class="text-amber-400/70 text-xs">Ayda ₺<span data-price-yearly-per-month>250</span> - En avantajlı</p>
             </div>
             <div class="text-right">
-              <p class="text-xl font-bold text-white">₺399,99</p>
-              <p class="text-slate-500 text-[10px]">/yıl <span class="line-through text-slate-600">₺599,88</span></p>
+              <p class="text-xl font-bold text-white">₺<span data-price-yearly>3000</span></p>
+              <p class="text-slate-500 text-[10px]">/yıl <span class="line-through text-slate-600">₺<span data-price-normal-yearly>10800</span></span></p>
             </div>
           </div>
+          -->
         </button>
       </div>
 
       <!-- Restore Purchases -->
+      <!-- DEPRECATED: Premium kaldirildi -->
+      <!--
       <button onclick="restorePurchases()"
         class="w-full py-3 text-slate-500 hover:text-slate-300 text-xs font-medium transition-colors flex items-center justify-center gap-2">
         <span class="material-icons-round text-sm">restore</span>
         Satın Alımları Geri Yükle
       </button>
 
-      <!-- Terms -->
       <p class="text-[9px] text-slate-600 text-center mt-4 leading-relaxed">
         Satın alma işlemi Google Play hesabınız üzerinden gerçekleştirilir.
         Abonelik dönem sonunda otomatik yenilenir. İstediğiniz zaman iptal edebilirsiniz.
       </p>
+      -->
     </div>
   </div>
 </div>
